@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 const searchData = [
   "Prestige Lakeside Habitat",
@@ -15,6 +16,7 @@ const searchData = [
 
 export default function SearchBar() {
   const [search, setSearch] = useState("");
+  const router = useRouter();
 
   const filteredResults = searchData.filter((item) =>
     item.toLowerCase().includes(search.toLowerCase())
@@ -45,7 +47,13 @@ export default function SearchBar() {
             filteredResults.map((item) => (
               <div
   key={item}
-  onClick={() => setSearch(item)}
+  onClick={() => {
+  const slug = item
+    .toLowerCase()
+    .replace(/\s+/g, "-");
+
+  router.push(`/property/${slug}`);
+}}
   className="cursor-pointer px-6 py-3 text-black hover:bg-gray-100"
 >
   {item}
