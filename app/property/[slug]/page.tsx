@@ -1,4 +1,5 @@
 import { properties } from "../../../data/properties";
+import { reviews } from "../../../data/reviews";
 import { notFound } from "next/navigation";
 
 type PropertyPageProps = {
@@ -18,9 +19,15 @@ export default async function PropertyPage({
     notFound();
   }
 
+  const propertyReviews = reviews.filter(
+    (review) => review.propertySlug === property.slug
+  );
+
   return (
     <main className="min-h-screen bg-gray-100 py-10">
       <div className="mx-auto max-w-5xl px-6">
+
+        {/* Property Header */}
 
         <h1 className="text-5xl font-bold text-gray-900">
           {property.name}
@@ -30,7 +37,10 @@ export default async function PropertyPage({
           {property.location}
         </p>
 
+        {/* Trust Score */}
+
         <div className="mt-8 rounded-3xl border border-gray-200 bg-white p-8 shadow-lg">
+
           <p className="text-sm font-semibold uppercase tracking-widest text-gray-500">
             Overall Trust Score
           </p>
@@ -47,32 +57,35 @@ export default async function PropertyPage({
               </p>
             </div>
           </div>
+
         </div>
+
+        {/* Information Cards */}
 
         <div className="mt-8 grid gap-6 md:grid-cols-2">
 
           <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-semibold">
+            <h2 className="text-xl font-semibold text-gray-900">
               Deposit Experience
             </h2>
 
-            <p className="mt-3 text-yellow-500 text-xl">
+            <p className="mt-3 text-xl text-yellow-500">
               {property.depositExperience}
             </p>
           </div>
 
           <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-semibold">
+            <h2 className="text-xl font-semibold text-gray-900">
               Society Rules
             </h2>
 
-            <p className="mt-3 text-yellow-500 text-xl">
+            <p className="mt-3 text-xl text-yellow-500">
               {property.societyRules}
             </p>
           </div>
 
           <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-semibold">
+            <h2 className="text-xl font-semibold text-gray-900">
               Rent
             </h2>
 
@@ -82,7 +95,7 @@ export default async function PropertyPage({
           </div>
 
           <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-semibold">
+            <h2 className="text-xl font-semibold text-gray-900">
               Nearby
             </h2>
 
@@ -91,6 +104,53 @@ export default async function PropertyPage({
                 <li key={place}>{place}</li>
               ))}
             </ul>
+          </div>
+
+        </div>
+
+        {/* Reviews */}
+
+        <div className="mt-10">
+
+          <h2 className="mb-6 text-3xl font-bold text-gray-900">
+            Verified Tenant Reviews
+          </h2>
+
+          <div className="space-y-6">
+
+            {propertyReviews.map((review) => (
+              <div
+                key={review.id}
+                className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm"
+              >
+
+                <div className="flex items-center justify-between">
+
+                  <h3 className="text-xl font-semibold text-gray-900">
+                    {review.title}
+                  </h3>
+
+                  <span className="text-yellow-500">
+                    {"★".repeat(review.rating)}
+                  </span>
+
+                </div>
+
+                <p className="mt-3 text-gray-700">
+                  {review.review}
+                </p>
+
+                <div className="mt-4 flex gap-4 text-sm text-gray-500">
+
+                  <span>✅ {review.reviewer}</span>
+
+                  <span>{review.stay}</span>
+
+                </div>
+
+              </div>
+            ))}
+
           </div>
 
         </div>
