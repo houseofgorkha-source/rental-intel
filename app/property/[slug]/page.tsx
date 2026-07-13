@@ -1,6 +1,7 @@
-import { properties } from "../../../data/properties";
-import { reviews } from "../../../data/reviews";
+import Link from "next/link";
 import { notFound } from "next/navigation";
+import { properties } from "@/data/properties";
+import { reviews } from "@/data/reviews";
 
 type PropertyPageProps = {
   params: Promise<{
@@ -27,7 +28,7 @@ export default async function PropertyPage({
     <main className="min-h-screen bg-gray-100 py-10">
       <div className="mx-auto max-w-5xl px-6">
 
-        {/* Property Header */}
+        {/* Header */}
 
         <h1 className="text-5xl font-bold text-gray-900">
           {property.name}
@@ -39,52 +40,51 @@ export default async function PropertyPage({
 
         {/* Trust Score */}
 
-        <div className="mt-8 rounded-3xl border border-gray-200 bg-white p-8 shadow-lg">
-
-          <p className="text-sm font-semibold uppercase tracking-widest text-gray-500">
+        <div className="mt-8 rounded-3xl bg-white p-8 shadow-lg">
+          <p className="text-sm uppercase tracking-wider text-gray-500">
             Overall Trust Score
           </p>
 
-          <div className="mt-3 flex items-center gap-4">
-            <span className="text-6xl font-extrabold text-[#1B4332]">
+          <div className="mt-4 flex items-center gap-4">
+            <span className="text-6xl font-bold text-[#1B4332]">
               {property.trustScore}
             </span>
 
             <div>
-              <p className="text-xl text-yellow-500">★★★★★</p>
+              <p className="text-yellow-500 text-xl">★★★★★</p>
+
               <p className="text-gray-500">
                 Based on verified tenant reviews
               </p>
             </div>
           </div>
-
         </div>
 
-        {/* Information Cards */}
+        {/* Information */}
 
         <div className="mt-8 grid gap-6 md:grid-cols-2">
 
-          <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
+          <div className="rounded-3xl bg-white p-6 shadow">
             <h2 className="text-xl font-semibold text-gray-900">
               Deposit Experience
             </h2>
 
-            <p className="mt-3 text-xl text-yellow-500">
+            <p className="mt-3 text-yellow-500">
               {property.depositExperience}
             </p>
           </div>
 
-          <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
+          <div className="rounded-3xl bg-white p-6 shadow">
             <h2 className="text-xl font-semibold text-gray-900">
               Society Rules
             </h2>
 
-            <p className="mt-3 text-xl text-yellow-500">
+            <p className="mt-3 text-yellow-500">
               {property.societyRules}
             </p>
           </div>
 
-          <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
+          <div className="rounded-3xl bg-white p-6 shadow">
             <h2 className="text-xl font-semibold text-gray-900">
               Rent
             </h2>
@@ -94,7 +94,7 @@ export default async function PropertyPage({
             </p>
           </div>
 
-          <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
+          <div className="rounded-3xl bg-white p-6 shadow">
             <h2 className="text-xl font-semibold text-gray-900">
               Nearby
             </h2>
@@ -112,16 +112,27 @@ export default async function PropertyPage({
 
         <div className="mt-10">
 
-          <h2 className="mb-6 text-3xl font-bold text-gray-900">
-            Verified Tenant Reviews
-          </h2>
+          <div className="flex items-center justify-between">
 
-          <div className="space-y-6">
+            <h2 className="text-3xl font-bold text-gray-900">
+              Reviews
+            </h2>
+
+            <Link
+              href={`/property/${property.slug}/review`}
+              className="rounded-xl bg-[#1B4332] px-5 py-3 font-semibold text-white hover:bg-[#2D6A4F]"
+            >
+              Share Your Experience
+            </Link>
+
+          </div>
+
+          <div className="mt-6 space-y-6">
 
             {propertyReviews.map((review) => (
               <div
                 key={review.id}
-                className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm"
+                className="rounded-3xl bg-white p-6 shadow"
               >
 
                 <div className="flex items-center justify-between">
@@ -140,12 +151,8 @@ export default async function PropertyPage({
                   {review.review}
                 </p>
 
-                <div className="mt-4 flex gap-4 text-sm text-gray-500">
-
-                  <span>✅ {review.reviewer}</span>
-
-                  <span>{review.stay}</span>
-
+                <div className="mt-4 text-sm text-gray-500">
+                  ✅ {review.reviewer} • {review.stay}
                 </div>
 
               </div>
