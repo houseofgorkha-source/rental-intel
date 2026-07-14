@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import StarRating from "./StarRating";
 import { reviewCategories } from "./reviewCategories";
 
@@ -10,6 +11,8 @@ const issueOptions=[
 export default function ReviewForm(){
 const [ratings,setRatings]=useState<Record<string,number>>({});
 const [issues,setIssues]=useState<string[]>([]);
+const router = useRouter();
+
 const toggleIssue=(i:string)=>setIssues(p=>p.includes(i)?p.filter(x=>x!==i):[...p,i]);
 
 return (
@@ -63,7 +66,15 @@ return (
 <p className="text-sm text-gray-600 mt-2">You can verify later by uploading supporting documents.</p>
 </div>
 
-<button type="button" className="mt-10 w-full rounded-xl bg-[#1B4332] py-4 text-white font-semibold hover:bg-[#2D6A4F]">Publish My Experience</button>
+<button
+  type="button"
+  onClick={() => {
+    router.push(window.location.pathname + "/success");
+  }}
+  className="mt-10 w-full rounded-xl bg-[#1B4332] py-4 text-white font-semibold hover:bg-[#2D6A4F]"
+>
+  Publish My Experience
+</button>
 </div>
 );
 }
