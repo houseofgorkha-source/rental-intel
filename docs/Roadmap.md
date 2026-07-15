@@ -1,42 +1,79 @@
 # RentalIntel Roadmap
 
-## Version 1
+## Version 1 (Current Goal)
 
--   [x] Homepage
--   [x] Search
--   [x] Autocomplete
--   [x] Dynamic Routing
--   [x] Shared Property Data
--   [x] Shared Review Data
--   [x] Property Page
--   [ ] Write Review
--   [ ] Property Submission
--   [ ] Google Login
--   [ ] Admin Dashboard
--   [ ] Deployment
+### Completed ✅
+
+- Homepage
+- Search
+- Search Autocomplete
+- Dynamic Property Pages
+- Property Reviews
+- Review Submission
+- Review Success Page
+- Review Journey
+- Add Property Entry Point
+- Blueprint v0.1
+- Architecture v0.1
+
+---
+
+### In Progress 🚧
+
+- Add Property Form
+- Property Preview
+- Duplicate Property Suggestions
+- User Authentication (Google Login)
+- Admin Verification Panel
+- RentalIntel ID
+- Supabase Integration
+- Website Deployment
+
+---
+
+### Version 1 Launch Checklist
+
+- Google Login
+- Property Submission
+- Admin Dashboard
+- Property Verification
+- Review Verification
+- Database Integration
+- Deployment
+- Privacy Policy
+- Terms & Conditions
+- Contact Page
+
+---
 
 ## Version 2
 
--   RentalIntel ID
--   Alias Engine
--   Duplicate Detection
--   Property Fingerprint
--   Google Maps Integration
--   Property Merge
--   Property Timeline
--   AI Review Summary
+- Google Maps / Google Places Integration
+- Alias Detection
+- Duplicate Detection
+- Property Fingerprint
+- Property Merge
+- Helpful Votes
+- Review Discussions
+- Threaded Replies
+- AI Review Summaries
+- Trusted Renter Program
+
+---
 
 ## Version 3
 
--   Mobile Apps
--   Owner Profiles
--   Broker Profiles
--   NGO Integration
--   Analytics
--   International Expansion
+- AI Duplicate Detection
+- Landlord Profiles
+- Broker Profiles
+- Community Reputation
+- Property Analytics
+- Rent Trends
+- Mobile Applications
+- Public API
 
-## Working Rule
+---
 
-Every feature follows:
+## Long-Term Vision
 
-Think → Document → Build → Test → Commit → Push
+RentalIntel aims to become the world's most trusted rental intelligence platform by preserving the history and identity of every rental property.

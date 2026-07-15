@@ -4,9 +4,11 @@
 
 Defines how the application is structured and how components interact.
 
+---
+
 ## Current Folder Structure
 
-``` text
+```text
 app/
 components/
 data/
@@ -14,9 +16,11 @@ docs/
 public/
 ```
 
+---
+
 ## Planned Structure
 
-``` text
+```text
 app/
 components/
 data/
@@ -28,49 +32,136 @@ database/
 api/
 ```
 
+---
+
 ## Responsibilities
 
--   app/: Pages and routing
--   components/: Reusable UI
--   data/: Shared data models (temporary, replaced by DB later)
--   docs/: Product documentation
+- app/: Pages, layouts and routing
+- components/: Reusable UI components
+- data/: Temporary local data (replaced by the database)
+- docs/: Product documentation
+- public/: Static assets
 
-## Current Data Models
+---
+
+## Routing
+
+```text
+/
+→ Homepage
+
+/property/[slug]
+→ Property Details
+
+/property/[slug]/review
+→ Write Review
+
+/property/[slug]/review/success
+→ Review Submitted
+
+/add-property
+→ Add Property
+```
+
+---
+
+## Current Models
 
 ### Property
 
--   slug
--   name
--   location
--   trustScore
--   rent
--   depositExperience
--   societyRules
--   nearby\[\]
+**Current**
 
-Future: - rentalIntelId - aliases\[\] - coordinates - placeId -
-ownerHistory - verificationStatus
+- slug
+- name
+- location
+- trustScore
+- rent
+- depositExperience
+- societyRules
+- nearby[]
+
+**Future**
+
+- rentalIntelId
+- aliases[]
+- coordinates
+- placeId
+- ownerHistory
+- verificationStatus
+
+---
 
 ### Review
 
--   id
--   propertySlug
--   reviewer
--   rating
--   title
--   review
--   stay
--   verified
+**Current**
 
-Future: - evidence - moderationStatus - createdAt - updatedAt
+- id
+- propertySlug
+- reviewer
+- title
+- review
+- rating
+- stay
+- verified
+
+**Future**
+
+- evidence
+- moderationStatus
+- createdAt
+- updatedAt
+
+---
+
+## Design Rules
+
+- Pages fetch and compose data.
+- Components render UI.
+- Data should have a single source of truth.
+- Avoid duplicating business logic.
+- Keep components reusable and focused.
+
+---
 
 ## Principles
 
--   One source of truth.
--   Pages never own data.
--   Components are reusable.
--   Business logic should move into lib/ over time.
+- One source of truth.
+- Pages never own data.
+- Components should remain reusable.
+- Business logic should move into `lib/` over time.
+- Keep data models independent of UI.
+
+---
+
+## Data Flow
+
+```text
+User
+   ↓
+Page
+   ↓
+Component
+   ↓
+Supabase
+   ↓
+Database
+```
+
+---
 
 ## Future Architecture
 
-Browser ↓ Next.js ↓ API ↓ Database ↓ Storage
+```text
+Browser
+   ↓
+Next.js
+   ↓
+Supabase
+├── PostgreSQL
+├── Authentication
+└── Storage
+```
+
+---
+
+This document evolves with RentalIntel.
