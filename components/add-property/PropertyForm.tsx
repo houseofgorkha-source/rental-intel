@@ -23,8 +23,7 @@ export default function PropertyForm() {
         </h1>
 
         <p className="mt-3 text-gray-600">
-          Help future tenants by adding a property that isn't yet listed on
-          RentalIntel.
+          Help future tenants by adding a property that isn&apos;t yet listed on RentalIntel.
         </p>
 
       </div>

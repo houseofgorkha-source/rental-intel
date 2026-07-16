@@ -64,7 +64,7 @@ export default function SearchBar() {
                 className="cursor-pointer border-t border-gray-200 bg-gray-50 px-6 py-5 transition hover:bg-blue-50"
               >
                 <p className="font-semibold text-blue-600">
-                  ➕ Can't find your property?
+                  ➕ Can&apos;t find your property?
                 </p>
 
                 <p className="mt-1 text-sm text-gray-600">
@@ -80,7 +80,7 @@ export default function SearchBar() {
               </div>
 
               <h3 className="mt-5 text-2xl font-semibold text-gray-900">
-                Can't find your property?
+                Can&apos;t find your property?
               </h3>
 
               <p className="mt-3 text-gray-600">
