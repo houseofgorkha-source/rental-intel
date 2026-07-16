@@ -32,26 +32,22 @@ export default function SignupForm() {
 
       </div>
 
-      <label className="mb-2 block font-medium text-gray-900">
-        Full Name
-      </label>
+      <div className="space-y-6">
 
-      <input
-        type="text"
-        placeholder="John Doe"
-        className="w-full rounded-xl border border-gray-300 px-4 py-3 outline-none focus:border-blue-600"
-      />
+  <InputField
+    label="Full Name"
+    placeholder="John Doe"
+    required
+  />
 
-      <label className="mt-6 mb-2 block font-medium text-gray-900">
-        Email Address
-      </label>
+  <InputField
+    label="Email Address"
+    type="email"
+    placeholder="you@example.com"
+    required
+  />
 
-      <input
-        type="email"
-        placeholder="you@example.com"
-        className="w-full rounded-xl border border-gray-300 px-4 py-3 outline-none focus:border-blue-600"
-      />
-
+</div>
       <Button fullWidth className="mt-8">
         Create Account
       </Button>

@@ -30,15 +30,12 @@ export default function LoginForm() {
 
       <div>
 
-        <label className="mb-2 block font-medium text-gray-900">
-          Email Address
-        </label>
-
-        <input
-          type="email"
-          placeholder="you@example.com"
-          className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none transition-colors focus:border-blue-600"
-        />
+        <InputField
+  label="Email Address"
+  type="email"
+  placeholder="you@example.com"
+  required
+/>
 
       </div>
 
