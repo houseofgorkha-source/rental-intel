@@ -25,7 +25,7 @@ export default async function PropertyPage({
   );
 
   return (
-    <main className="min-h-screen bg-gray-100 py-10">
+    <main className="min-h-screen bg-white py-10">
       <div className="mx-auto max-w-5xl px-6">
 
         {/* Header */}
@@ -40,13 +40,13 @@ export default async function PropertyPage({
 
         {/* Trust Score */}
 
-        <div className="mt-8 rounded-3xl bg-white p-8 shadow-lg">
+        <div className="mt-8 rounded-2xl border border-gray-200 bg-white p-8">
           <p className="text-sm uppercase tracking-wider text-gray-500">
             Overall Trust Score
           </p>
 
           <div className="mt-4 flex items-center gap-4">
-            <span className="text-6xl font-bold text-[#1B4332]">
+            <span className="text-6xl font-bold text-gray-900">
               {property.trustScore}
             </span>
 
@@ -64,12 +64,12 @@ export default async function PropertyPage({
 
         <div className="mt-8 grid gap-6 md:grid-cols-2">
 
-          <div className="rounded-3xl bg-white p-6 shadow">
+          <div className="rounded-2xl border border-gray-200 bg-white p-6">
             <h2 className="text-xl font-semibold text-gray-900">
               Deposit Experience
             </h2>
 
-            <p className="mt-3 text-yellow-500">
+            <p className="mt-3 text-gray-700">
               {property.depositExperience}
             </p>
           </div>
@@ -79,7 +79,7 @@ export default async function PropertyPage({
               Society Rules
             </h2>
 
-            <p className="mt-3 text-yellow-500">
+            <p className="mt-3 text-gray-700">
               {property.societyRules}
             </p>
           </div>
@@ -89,7 +89,7 @@ export default async function PropertyPage({
               Rent
             </h2>
 
-            <p className="mt-3 text-3xl font-bold text-[#1B4332]">
+            <p className="mt-3 text-3xl font-bold text-gray-900 ">
               {property.rent}
             </p>
           </div>
@@ -120,7 +120,7 @@ export default async function PropertyPage({
 
             <Link
               href={`/property/${property.slug}/review`}
-              className="rounded-xl bg-[#1B4332] px-5 py-3 font-semibold text-white hover:bg-[#2D6A4F]"
+              className="inline-flex items-center justify-center rounded-full bg-blue-600 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-blue-700"
             >
               Share Your Experience
             </Link>
@@ -132,7 +132,7 @@ export default async function PropertyPage({
             {propertyReviews.map((review) => (
               <div
                 key={review.id}
-                className="rounded-3xl bg-white p-6 shadow"
+                className="rounded-2xl border border-gray-200 bg-white p-6"
               >
 
                 <div className="flex items-center justify-between">
@@ -141,7 +141,7 @@ export default async function PropertyPage({
                     {review.title}
                   </h3>
 
-                  <span className="text-yellow-500">
+                  <span className="text-blue-600">
                     {"★".repeat(review.rating)}
                   </span>
 

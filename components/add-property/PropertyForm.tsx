@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+
 
 import InputField from "./InputField";
 import TextAreaField from "./TextAreaField";
@@ -9,7 +9,7 @@ import InfoCard from "./InfoCard";
 import Button from "../shared/Button";
 
 export default function PropertyForm() {
-  const router = useRouter();
+  
 
   return (
     <div className="mx-auto max-w-2xl px-6 py-12">
@@ -109,11 +109,12 @@ export default function PropertyForm() {
       </div>
 
       <Button
+  type="button"
+  variant="primary"
   fullWidth
   className="mt-10"
-  onClick={() => router.push("/add-property/preview")}
 >
-  Continue
+  Submit Property
 </Button>
 
     </div>
