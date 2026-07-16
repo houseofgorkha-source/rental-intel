@@ -75,11 +75,16 @@ Published
 
 Google Maps / Google Places integration is planned for Version 2 after launch.
 
-### Version 1 Decisions
+## Version 1 Decisions
 
 - Manual property submission before Google Maps integration.
+  - Reason: Reduce complexity for the MVP and maintain high data quality.
+
 - Human verification before automated verification.
+  - Reason: Build trust and ensure property quality before introducing automation.
+
 - Google Login only.
+  - Reason: Keep authentication simple for Version 1 and reduce development complexity.
 
 ## Property Fingerprint
 
