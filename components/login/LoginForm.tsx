@@ -2,28 +2,19 @@
 
 import Link from "next/link";
 import Button from "../shared/Button";
+import AuthHeader from "../shared/AuthHeader";
+import AuthCard from "../shared/AuthCard";
+import InputField from "../shared/InputField";
+import TextAreaField from "../shared/TextAreaField";
 
 export default function LoginForm() {
   return (
-    <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-8">
+    <AuthCard>
 
-      <div className="text-center">
-
-  <div className="text-5xl">🏠</div>
-
-  <p className="mt-5 text-sm font-semibold uppercase tracking-[0.2em] text-blue-600">
-    RentalIntel
-  </p>
-
-  <h1 className="mt-3 text-3xl font-bold tracking-tight text-gray-900">
-    Welcome Back
-  </h1>
-
-  <p className="mt-3 text-gray-600">
-    Sign in to write reviews, add properties, and help future renters.
-  </p>
-
-</div>
+      <AuthHeader
+  title="Welcome Back"
+  description="Sign in to write reviews, add properties, and help future renters."
+/>
 
       <div className="mt-10">
         <Button fullWidth>
@@ -80,6 +71,6 @@ export default function LoginForm() {
   </Link>
 
 </div>
-    </div>
+    </AuthCard>
   );
 }

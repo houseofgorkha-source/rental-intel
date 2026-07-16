@@ -2,28 +2,19 @@
 
 import Link from "next/link";
 import Button from "../shared/Button";
+import AuthHeader from "../shared/AuthHeader";
+import AuthCard from "../shared/AuthCard";
+import InputField from "../shared/InputField";
+import TextAreaField from "../shared/TextAreaField";
 
 export default function SignupForm() {
   return (
-    <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-8">
+    <AuthCard>
 
-      <div className="text-center">
-
-        <div className="text-5xl">🏠</div>
-
-        <p className="mt-5 text-sm font-semibold uppercase tracking-[0.2em] text-blue-600">
-          RentalIntel
-        </p>
-
-        <h1 className="mt-3 text-3xl font-bold tracking-tight text-gray-900">
-          Create Account
-        </h1>
-
-        <p className="mt-3 text-gray-600">
-          Join RentalIntel and help renters make smarter decisions.
-        </p>
-
-      </div>
+      <AuthHeader
+  title="Create Account"
+  description="Join RentalIntel and help renters make smarter decisions."
+/>
 
       <div className="mt-10">
 
@@ -80,6 +71,6 @@ export default function SignupForm() {
 
       </div>
 
-    </div>
+    </AuthCard>
   );
 }

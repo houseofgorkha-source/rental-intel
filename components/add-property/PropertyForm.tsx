@@ -2,8 +2,8 @@
 
 
 
-import InputField from "./InputField";
-import TextAreaField from "./TextAreaField";
+import InputField from "../shared/InputField";
+import TextAreaField from "../shared/TextAreaField";
 import SectionTitle from "./SectionTitle";
 import InfoCard from "./InfoCard";
 import Button from "../shared/Button";
