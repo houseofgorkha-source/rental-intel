@@ -141,7 +141,7 @@ export default async function PropertyPage({
                     {review.title}
                   </h3>
 
-                  <span className="text-blue-600">
+                  <span className="text-yellow-500">
                     {"★".repeat(review.rating)}
                   </span>
 
