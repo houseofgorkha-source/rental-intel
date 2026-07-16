@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
+
 import { properties } from "../../../../data/properties";
 import ReviewForm from "../../../../components/review/ReviewForm";
-import Link from "next/link";
 
 type ReviewPageProps = {
   params: Promise<{
@@ -21,25 +22,34 @@ export default async function ReviewPage({
   }
 
   return (
-    <main className="min-h-screen bg-gray-100 py-10">
-      <div className="mx-auto max-w-5xl px-6">
+    <main className="min-h-screen bg-white py-12">
+      <div className="mx-auto max-w-4xl px-6">
 
         <Link
-  href={`/property/${property.slug}`}
-  className="mb-6 inline-block text-[#1B4332] hover:underline"
->
-  ← Back to Property
-</Link>
+          href={`/property/${property.slug}`}
+          className="inline-flex items-center text-sm font-medium text-blue-600 transition-colors hover:text-blue-700"
+        >
+          ← Back to Property
+        </Link>
 
-        <h1 className="text-5xl font-bold text-gray-900">
-          {property.name}
-        </h1>
+        <div className="mt-8 rounded-2xl border border-gray-200 bg-white p-8">
 
-        <p className="mt-2 mb-10 text-lg text-gray-600">
-          Share your honest experience to help future tenants.
-        </p>
+          <h1 className="text-4xl font-bold tracking-tight text-gray-900">
+            Share Your Experience
+          </h1>
 
-        <ReviewForm />
+          <p className="mt-3 text-gray-600">
+            Help future tenants by sharing your honest experience at{" "}
+            <span className="font-medium text-gray-900">
+              {property.name}
+            </span>.
+          </p>
+
+        </div>
+
+        <div className="mt-8">
+          <ReviewForm />
+        </div>
 
       </div>
     </main>
