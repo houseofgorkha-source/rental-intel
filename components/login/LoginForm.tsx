@@ -56,20 +56,30 @@ export default function LoginForm() {
       </Button>
 
       <p className="mt-8 text-center text-sm text-gray-500">
-        By continuing, you agree to our Terms and Privacy Policy.
-      </p>
+  Don't have an account?
+</p>
 
-      <div className="mt-8 text-center">
+<div className="mt-3 text-center">
 
-        <Link
-          href="/"
-          className="text-sm font-medium text-blue-600 hover:underline"
-        >
-          ← Back to Home
-        </Link>
+  <Link
+    href="/signup"
+    className="font-medium text-blue-600 hover:underline"
+  >
+    Create Account
+  </Link>
 
-      </div>
+</div>
 
+<div className="mt-8 text-center">
+
+  <Link
+    href="/"
+    className="text-sm text-gray-500 hover:text-blue-600"
+  >
+    ← Back to Home
+  </Link>
+
+</div>
     </div>
   );
 }
