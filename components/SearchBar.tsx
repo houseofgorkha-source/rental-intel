@@ -13,18 +13,18 @@ export default function SearchBar() {
   );
 
   return (
-    <div className="relative mt-12 w-full max-w-3xl">
+    <div className="relative w-full">
       <div className="flex overflow-hidden rounded-full border border-gray-300 bg-white transition focus-within:border-blue-600">
 
         <input
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search properties, landlords, brokers, societies or areas..."
+          placeholder="Search properties, societies or areas..."
           className="flex-1 bg-white px-7 py-4 text-base text-gray-900 placeholder:text-gray-400 outline-none"
         />
 
-        <button className="border-l border-gray-300 bg-white px-6 text-xl transition hover:bg-blue-50">
+        <button className="w-20 border-l border-gray-300 bg-white text-xl transition hover:bg-blue-50">
           🔍
         </button>
 
