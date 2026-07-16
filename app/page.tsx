@@ -1,37 +1,42 @@
 import SearchBar from "../components/SearchBar";
+
 export default function Home() {
   return (
     <main className="min-h-screen bg-white">
       <section className="mx-auto flex min-h-screen max-w-5xl flex-col items-center justify-center px-6 text-center">
 
-        {/* Brand */}
-        <h1 className="text-7xl font-extrabold tracking-tight text-[#1B4332] md:text-8xl">
+        <h1 className="text-7xl font-extrabold tracking-tight text-gray-900 md:text-8xl">
           RentalIntel
         </h1>
 
-        {/* Tagline */}
-        <p className="mt-4 text-2xl font-extrabold uppercase tracking-wide">
-          <span className="text-pink-500">Know</span>{" "}
-          <span className="text-purple-500">it</span>{" "}
-          <span className="text-sky-500">before</span>{" "}
-          <span className="text-green-500">you</span>{" "}
-          <span className="text-yellow-500">rent</span>{" "}
-          <span className="text-pink-500">it.</span>
+        <p className="mt-4 text-xl font-semibold tracking-wide text-gray-600 md:text-2xl">
+          Know it before you rent it.
         </p>
-        {/* Search */}
-       <SearchBar />
 
-        {/* Trust Statement */}
+        <div className="mt-12 w-full">
+          <SearchBar />
+        </div>
 
-        <p className="mt-8 max-w-3xl text-base leading-8 text-gray-600">
-          <span className="font-semibold text-[#1B4332]">
-            Every published review comes from a verified tenant who has lived there.
-          </span>{" "}
-            <br />
-            <br />
-          Every review is verified by the RentalIntel team before it is published,
-          helping you make informed rental decisions with confidence.
-        </p>
+        <div className="mt-12 max-w-3xl rounded-2xl border border-gray-200 bg-white p-8">
+
+          <h2 className="text-xl font-semibold text-gray-900">
+            Trusted by Design
+          </h2>
+
+          <p className="mt-4 leading-8 text-gray-600">
+            <span className="font-semibold text-gray-900">
+              Every published review comes from a verified tenant who has lived
+              there.
+            </span>
+          </p>
+
+          <p className="mt-4 leading-8 text-gray-600">
+            Every review is manually verified by the RentalIntel team before it
+            is published, helping renters make informed decisions with greater
+            confidence.
+          </p>
+
+        </div>
 
       </section>
     </main>
