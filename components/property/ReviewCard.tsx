@@ -1,15 +1,8 @@
+import TrustBadge from "@/components/shared/TrustBadge";
 import type { Review } from "@/data/reviews";
 
-
 type ReviewCardProps = {
-  review: {
-    id: number;
-    title: string;
-    rating: number;
-    review: string;
-    reviewer: string;
-    stay: string;
-  };
+  review: Review;
 };
 
 export default function ReviewCard({ review }: ReviewCardProps) {
@@ -20,11 +13,19 @@ export default function ReviewCard({ review }: ReviewCardProps) {
 
         <h3 className="text-xl font-semibold text-gray-900">
           {review.title}
+          <p className="mt-1 text-sm text-gray-500">
+  By {review.reviewer}
+</p>
         </h3>
 
-        <span className="text-yellow-500">
-          {"★".repeat(review.rating)}
-        </span>
+        <div className="text-right">
+  <div className="text-yellow-500 text-lg">
+    {"★".repeat(review.rating)}
+  </div>
+  <div className="text-xs text-gray-500">
+    {review.rating}/5
+  </div>
+</div>
 
       </div>
 
@@ -32,9 +33,25 @@ export default function ReviewCard({ review }: ReviewCardProps) {
         {review.review}
       </p>
 
-      <div className="mt-4 text-sm text-gray-500">
-        ✅ {review.reviewer} • {review.stay}
-      </div>
+    <div className="mt-4 flex items-center justify-between">
+  <div className="flex items-center gap-3">
+    <TrustBadge type={review.verified ? "tenant" : "community"} />
+
+    <span
+      className={`text-sm font-medium ${
+        review.wouldRecommend ? "text-green-600" : "text-red-600"
+      }`}
+    >
+      {review.wouldRecommend
+        ? "👍 Recommends"
+        : "👎 Doesn't recommend"}
+    </span>
+  </div>
+
+  <span className="text-sm text-gray-500">
+    {review.stay}
+  </span>
+</div>
 
     </div>
   );
