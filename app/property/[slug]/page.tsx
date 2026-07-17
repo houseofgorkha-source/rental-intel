@@ -4,7 +4,6 @@ import { properties } from "@/data/properties";
 import { reviews } from "@/data/reviews";
 import ReviewCard from "@/components/property/ReviewCard";
 
-
 type PropertyPageProps = {
   params: Promise<{
     slug: string;
@@ -35,12 +34,19 @@ const recommendationPercentage =
     ? 0
     : Math.round((recommendedCount / propertyReviews.length) * 100);
 
+    const ratingCounts = {
+  5: propertyReviews.filter((review) => review.rating === 5).length,
+  4: propertyReviews.filter((review) => review.rating === 4).length,
+  3: propertyReviews.filter((review) => review.rating === 3).length,
+  2: propertyReviews.filter((review) => review.rating === 2).length,
+  1: propertyReviews.filter((review) => review.rating === 1).length,
+};
+
   const sortOptions = [
   "Newest",
   "Highest Rated",
   "Lowest Rated",
 ];
-
   return (
     <main className="min-h-screen bg-white py-10">
       <div className="mx-auto max-w-5xl px-6">
@@ -131,45 +137,53 @@ const recommendationPercentage =
 
         <div className="mt-10">
 
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+  <div className="flex flex-col gap-6">
 
-  <h2 className="text-3xl font-bold text-gray-900">
-    Reviews ({propertyReviews.length})
-  </h2>
+    <div className="rounded-2xl border border-gray-200 bg-white p-6">
+      <p className="text-3xl font-bold text-green-600">
+        {recommendationPercentage}% Recommend
+      </p>
 
-<div className="mt-6 rounded-2xl border border-gray-200 bg-white p-6">
-  <p className="text-2xl font-bold text-green-600">
-    {recommendationPercentage}% Recommend
-  </p>
+      <p className="mt-2 text-gray-600">
+        👍 {recommendedCount} of {propertyReviews.length}{" "}
+        {propertyReviews.length === 1 ? "reviewer recommends" : "reviewers recommend"} this property.
+      </p>
+    </div>
 
-  <p className="mt-2 text-gray-600">
-    👍 {recommendedCount} of {propertyReviews.length}{" "}
-    {propertyReviews.length === 1 ? "reviewer recommends" : "reviewers recommend"} this property.
-  </p>
-</div>
+    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
 
-  <div className="flex items-center gap-3">
+      <h2 className="text-3xl font-bold text-gray-900">
+        Reviews ({propertyReviews.length})
+      </h2>
 
-    <select
-      className="rounded-full border border-gray-300 px-4 py-2 text-sm text-gray-700 focus:border-blue-500 focus:outline-none"
-    >
-      {sortOptions.map((option) => (
-        <option key={option}>
-          {option}
-        </option>
-      ))}
-    </select>
+      <div className="flex flex-wrap items-center gap-3">
 
-    <Link
-      href={`/property/${property.slug}/review`}
-      className="inline-flex items-center justify-center rounded-full bg-blue-600 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-blue-700"
-    >
-      Share Your Experience
-    </Link>
+        <label className="text-sm font-medium text-gray-600">
+          Sort:
+        </label>
+
+        <select
+          className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 focus:border-blue-500 focus:outline-none"
+        >
+          {sortOptions.map((option) => (
+            <option key={option}>{option}</option>
+          ))}
+        </select>
+
+        <Link
+          href={`/property/${property.slug}/review`}
+          className="rounded-lg bg-blue-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
+        >
+          ✍️ Write Review
+        </Link>
+
+        
+      </div>
+
+    </div>
 
   </div>
-
-</div>
+         
 
           <div className="mt-6 space-y-6">
 
