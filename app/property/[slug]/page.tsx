@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { properties } from "@/data/properties";
 import { reviews } from "@/data/reviews";
+import ReviewCard from "@/components/property/ReviewCard";
 
 type PropertyPageProps = {
   params: Promise<{
@@ -129,34 +130,14 @@ export default async function PropertyPage({
 
           <div className="mt-6 space-y-6">
 
-            {propertyReviews.map((review) => (
-              <div
-                key={review.id}
-                className="rounded-2xl border border-gray-200 bg-white p-6"
-              >
-
-                <div className="flex items-center justify-between">
-
-                  <h3 className="text-xl font-semibold text-gray-900">
-                    {review.title}
-                  </h3>
-
-                  <span className="text-yellow-500">
-                    {"★".repeat(review.rating)}
-                  </span>
-
-                </div>
-
-                <p className="mt-3 text-gray-700">
-                  {review.review}
-                </p>
-
-                <div className="mt-4 text-sm text-gray-500">
-                  ✅ {review.reviewer} • {review.stay}
-                </div>
-
-              </div>
-            ))}
+           <div className="mt-6 space-y-6">
+  {propertyReviews.map((review) => (
+    <ReviewCard
+      key={review.id}
+      review={review}
+    />
+  ))}
+</div>
 
           </div>
 
