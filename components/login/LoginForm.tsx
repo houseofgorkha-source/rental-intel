@@ -5,7 +5,6 @@ import Button from "../shared/Button";
 import AuthHeader from "../shared/AuthHeader";
 import AuthCard from "../shared/AuthCard";
 import InputField from "../shared/InputField";
-import TextAreaField from "../shared/TextAreaField";
 
 export default function LoginForm() {
   return (
@@ -44,7 +43,7 @@ export default function LoginForm() {
       </Button>
 
       <p className="mt-8 text-center text-sm text-gray-500">
-  Don't have an account?
+  Don&apos;t have an account?
 </p>
 
 <div className="mt-3 text-center">

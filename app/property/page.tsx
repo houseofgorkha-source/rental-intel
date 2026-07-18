@@ -13,7 +13,7 @@ export default function PropertiesPage() {
         </h1>
 
         <p className="mt-4 max-w-2xl text-lg text-gray-600">
-          Soon you'll be able to browse verified rental properties, compare
+          Soon you&apos;ll be able to browse verified rental properties, compare
           reviews, and discover trusted homes before you rent.
         </p>
 

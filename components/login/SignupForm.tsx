@@ -5,7 +5,6 @@ import Button from "../shared/Button";
 import AuthHeader from "../shared/AuthHeader";
 import AuthCard from "../shared/AuthCard";
 import InputField from "../shared/InputField";
-import TextAreaField from "../shared/TextAreaField";
 
 export default function SignupForm() {
   return (

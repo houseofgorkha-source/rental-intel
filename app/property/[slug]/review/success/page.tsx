@@ -159,15 +159,12 @@ export default async function SuccessPage({
             ← Return to Property
           </Link>
 
-          <button
-            disabled
-            className="inline-flex items-center justify-center rounded-full border border-gray-300 bg-white px-6 py-4 text-sm font-medium text-gray-500"
+          <Link
+            href={`/property/${slug}/review/verify`}
+            className="inline-flex items-center justify-center rounded-full border border-gray-300 bg-white px-6 py-4 text-sm font-medium text-gray-900 transition-colors hover:border-blue-600 hover:bg-blue-50 hover:text-blue-600"
           >
             🛡 Verify My Review
-            <span className="ml-2 text-xs">
-              (Coming Soon)
-            </span>
-          </button>
+          </Link>
 
         </div>
 

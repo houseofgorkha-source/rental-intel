@@ -153,10 +153,12 @@ const maxCount = Math.max(...Object.values(ratingCounts), 1);
                   e.target.value as (typeof sortOptions)[number]
                 )
               }
-              className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm"
+              className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900"
             >
               {sortOptions.map((option) => (
-                <option key={option}>{option}</option>
+                <option key={option} className="bg-white text-gray-900">
+                  {option}
+                </option>
               ))}
             </select>
 

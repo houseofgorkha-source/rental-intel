@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { properties } from "@/data/properties";
 import { reviews } from "@/data/reviews";
@@ -40,7 +41,14 @@ const recommendationPercentage =
 
         {/* Header */}
 
-        <h1 className="text-5xl font-bold text-gray-900">
+        <Link
+          href="/"
+          className="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-700"
+        >
+          ← Back to Search
+        </Link>
+
+        <h1 className="mt-6 text-5xl font-bold text-gray-900">
           {property.name}
         </h1>
 
