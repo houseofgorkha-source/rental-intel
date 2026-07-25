@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import VerifyStayForm from "@/components/review/VerifyStayForm";
-import { properties } from "@/data/properties";
+import { createClient } from "@/lib/supabase/server";
 
 type VerifyStayPageProps = {
   params: Promise<{
@@ -12,11 +12,18 @@ export default async function VerifyStayPage({
   params,
 }: VerifyStayPageProps) {
   const { slug } = await params;
-  const property = properties.find((item) => item.slug === slug);
+  const supabase = await createClient();
 
-  if (!property) {
-    notFound();
-  }
+const { data: property, error } = await supabase
+  .from("properties")
+  .select("name, slug")
+  .eq("slug", slug)
+  .eq("status", "published")
+  .single();
+
+if (error || !property) {
+  notFound();
+}
 
   return <VerifyStayForm propertyName={property.name} propertySlug={property.slug} />;
 }

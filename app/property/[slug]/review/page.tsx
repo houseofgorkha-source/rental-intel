@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-
-import { properties } from "../../../../data/properties";
+import { createClient } from "@/lib/supabase/server";
 import ReviewForm from "../../../../components/review/ReviewForm";
 
 type ReviewPageProps = {
@@ -15,11 +14,18 @@ export default async function ReviewPage({
 }: ReviewPageProps) {
   const { slug } = await params;
 
-  const property = properties.find((p) => p.slug === slug);
+  const supabase = await createClient();
 
-  if (!property) {
-    notFound();
-  }
+const { data: property, error } = await supabase
+  .from("properties")
+  .select("name, slug")
+  .eq("slug", slug)
+  .eq("status", "published")
+  .single();
+
+if (error || !property) {
+  notFound();
+}
 
   return (
     <main className="min-h-screen bg-white py-12">
