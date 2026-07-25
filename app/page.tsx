@@ -1,6 +1,37 @@
 import SearchBar from "../components/SearchBar";
+import { createClient } from "@/lib/supabase/server";
 
-export default function Home() {
+export const dynamic = "force-dynamic";
+
+async function getProperties() {
+  if (
+    !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    !process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+  ) {
+    return [];
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("properties")
+    .select("slug, name, area, city")
+    .eq("status", "published")
+    .order("name");
+
+  if (error || !data) {
+    return [];
+  }
+
+  return data.map((property) => ({
+    slug: property.slug,
+    name: property.name,
+    location: `${property.area}, ${property.city}`,
+  }));
+}
+
+export default async function Home() {
+  const properties = await getProperties();
+
   return (
     <main className="min-h-screen bg-white">
       <section className="mx-auto flex min-h-screen max-w-6xl flex-col items-center justify-center px-6 text-center">
@@ -22,7 +53,13 @@ export default function Home() {
         {/* Search */}
 
         <div className="mt-10 w-full max-w-4xl">
-          <SearchBar />
+          <SearchBar properties={properties} />
+
+          {properties.length === 0 && (
+            <p className="mt-4 text-sm text-gray-600">
+              No properties are available yet.
+            </p>
+          )}
         </div>
 
         {/* Trust Statement */}

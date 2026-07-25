@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { properties } from "@/data/properties";
 import { reviews } from "@/data/reviews";
 import PropertyGallery from "@/components/property/PropertyGallery";
 import ReviewSection from "@/components/property/ReviewSection";
+import { createClient } from "@/lib/supabase/server";
 
 type PropertyPageProps = {
   params: Promise<{
@@ -16,11 +16,38 @@ export default async function PropertyPage({
 }: PropertyPageProps) {
   const { slug } = await params;
 
-  const property = properties.find((p) => p.slug === slug);
+const supabase = await createClient();
 
-  if (!property) {
-    notFound();
-  }
+const { data: property, error } = await supabase
+  .from("properties")
+  .select("*")
+  .eq("slug", slug)
+  .eq("status", "published")
+  .single();
+
+if (error || !property) {
+  notFound();
+}
+
+const { data: propertyImages } = await supabase
+  .from("property_images")
+  .select("storage_path, alt_text")
+  .eq("property_id", property.id)
+  .order("sort_order");
+
+const images =
+  propertyImages?.map((image) => {
+    const {
+      data: { publicUrl },
+    } = supabase.storage
+      .from("property-images")
+      .getPublicUrl(image.storage_path);
+
+    return {
+      src: publicUrl,
+      alt: image.alt_text ?? property.name,
+    };
+  }) ?? [];
 
   const propertyReviews = reviews.filter(
     (review) => review.propertySlug === property.slug
@@ -53,10 +80,12 @@ const recommendationPercentage =
         </h1>
 
         <p className="mt-2 text-lg text-gray-600">
-          {property.location}
+          {property.area}, {property.city}, {property.state}
         </p>
 
-        <PropertyGallery images={property.images} />
+        <PropertyGallery images={images} />
+
+        
 
         {/* Trust Score */}
 
@@ -67,7 +96,7 @@ const recommendationPercentage =
 
           <div className="mt-4 flex items-center gap-4">
             <span className="text-6xl font-bold text-gray-900">
-              {property.trustScore}
+              {recommendationPercentage}%
             </span>
 
             <div>
@@ -91,9 +120,9 @@ const recommendationPercentage =
               Deposit Experience
             </h2>
 
-            <p className="mt-3 text-gray-700">
-              {property.depositExperience}
-            </p>
+            <p className="mt-3 text-gray-700 italic text-gray-500">
+  Deposit insights will appear once verified tenant reviews are available.
+</p>
           </div>
 
           <div className="rounded-3xl bg-white p-6 shadow">
@@ -101,8 +130,8 @@ const recommendationPercentage =
               Society Rules
             </h2>
 
-            <p className="mt-3 text-gray-700">
-              {property.societyRules}
+            <p className="mt-3 text-gray-700 italic text-gray-500">
+  Society insights will appear as more verified tenants share their experiences.
             </p>
           </div>
 
@@ -112,21 +141,10 @@ const recommendationPercentage =
             </h2>
 
             <p className="mt-3 text-3xl font-bold text-gray-900 ">
-              {property.rent}
+              ₹{property.asking_rent.toLocaleString("en-IN")}/month
             </p>
           </div>
 
-          <div className="rounded-3xl bg-white p-6 shadow">
-            <h2 className="text-xl font-semibold text-gray-900">
-              Nearby
-            </h2>
-
-            <ul className="mt-3 list-disc pl-5 text-gray-600">
-              {property.nearby.map((place) => (
-                <li key={place}>{place}</li>
-              ))}
-            </ul>
-          </div>
 
         </div>
 

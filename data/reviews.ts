@@ -83,4 +83,66 @@ export const reviews: Review[] = [
   date: "15 Jun 2026",
   wouldRecommend: true,
 },
+
+{
+  id: 6,
+  propertySlug: "prestige-falcon-city",
+  reviewer: "Vikram Reddy",
+  rating: 4,
+  title: "Modern township with good amenities",
+  review:
+    "The society has excellent security, clean common areas, and a great clubhouse. Traffic outside during peak hours can be frustrating, but living inside is comfortable.",
+  stay: "Feb 2024 - Present",
+  verified: true,
+  date: "18 Jul 2026",
+  wouldRecommend: true,
+},
+
+{
+  id: 7,
+  propertySlug: "prestige-falcon-city",
+  reviewer: "Sneha Iyer",
+  rating: 3,
+  title: "Comfortable but maintenance could improve",
+  review:
+    "The apartment is spacious and facilities are decent. However, maintenance requests sometimes take a couple of days to be resolved.",
+  stay: "May 2023 - Mar 2025",
+  verified: true,
+  date: "03 Jul 2026",
+  wouldRecommend: true,
+},
+
+{
+  id: 8,
+  propertySlug: "prestige-shantiniketan",
+  reviewer: "Karan Malhotra",
+  rating: 5,
+  title: "Excellent place for families",
+  review:
+    "Large green spaces, good security, and plenty of shops nearby. The community is friendly and the maintenance team is responsive.",
+  stay: "Jan 2024 - Present",
+  verified: true,
+  date: "20 Jul 2026",
+  wouldRecommend: true,
+},
+
+{
+  id: 9,
+  propertySlug: "prestige-shantiniketan",
+  reviewer: "Aditi Sen",
+  rating: 2,
+  title: "Good location but owner was difficult",
+  review:
+    "The society itself is excellent, but dealing with the owner during move-out was stressful. Deposit settlement took longer than promised.",
+  stay: "Aug 2022 - Nov 2024",
+  verified: true,
+  date: "11 Jul 2026",
+  wouldRecommend: false,
+},
 ];
+
+
+
+
+
+

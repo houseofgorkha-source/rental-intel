@@ -2,9 +2,18 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { properties } from "../data/properties";
 
-export default function SearchBar() {
+type SearchProperty = {
+  slug: string;
+  name: string;
+  location: string;
+};
+
+type SearchBarProps = {
+  properties: SearchProperty[];
+};
+
+export default function SearchBar({ properties }: SearchBarProps) {
   const [search, setSearch] = useState("");
   const router = useRouter();
 
