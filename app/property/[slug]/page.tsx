@@ -120,9 +120,9 @@ const recommendationPercentage =
               Deposit Experience
             </h2>
 
-            <p className="mt-3 text-gray-700 italic text-gray-500">
-  Deposit insights will appear once verified tenant reviews are available.
-</p>
+            <p className="mt-3 text-gray-700">
+              Not available
+            </p>
           </div>
 
           <div className="rounded-3xl bg-white p-6 shadow">
@@ -130,8 +130,8 @@ const recommendationPercentage =
               Society Rules
             </h2>
 
-            <p className="mt-3 text-gray-700 italic text-gray-500">
-  Society insights will appear as more verified tenants share their experiences.
+            <p className="mt-3 text-gray-700">
+              Not available
             </p>
           </div>
 
@@ -141,10 +141,21 @@ const recommendationPercentage =
             </h2>
 
             <p className="mt-3 text-3xl font-bold text-gray-900 ">
-              ₹{property.asking_rent.toLocaleString("en-IN")}/month
+              {property.asking_rent === null
+                ? "Not available"
+                : `₹${property.asking_rent.toLocaleString("en-IN")}/month`}
             </p>
           </div>
 
+        <div className="rounded-3xl bg-white p-6 shadow">
+          <h2 className="text-xl font-semibold text-gray-900">
+            Nearby
+          </h2>
+
+          <p className="mt-3 text-gray-700">
+            Not available
+          </p>
+        </div>
 
         </div>
 
