@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 type SearchProperty = {
@@ -15,11 +15,57 @@ type SearchBarProps = {
 
 export default function SearchBar({ properties }: SearchBarProps) {
   const [search, setSearch] = useState("");
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
+  const resultRefs = useRef<(HTMLDivElement | null)[]>([]);
   const router = useRouter();
 
   const filteredResults = properties.filter((property) =>
     property.name.toLowerCase().includes(search.toLowerCase())
   );
+
+  useEffect(() => {
+    resultRefs.current[highlightedIndex]?.scrollIntoView({
+      block: "nearest",
+    });
+  }, [highlightedIndex]);
+
+  const selectProperty = (property: SearchProperty) => {
+    router.push(`/property/${property.slug}`);
+  };
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Escape") {
+      setIsDropdownOpen(false);
+      setHighlightedIndex(-1);
+      return;
+    }
+
+    if (!isDropdownOpen || filteredResults.length === 0) {
+      return;
+    }
+
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      setHighlightedIndex((currentIndex) =>
+        currentIndex === filteredResults.length - 1 ? 0 : currentIndex + 1,
+      );
+      return;
+    }
+
+    if (event.key === "ArrowUp") {
+      event.preventDefault();
+      setHighlightedIndex((currentIndex) =>
+        currentIndex <= 0 ? filteredResults.length - 1 : currentIndex - 1,
+      );
+      return;
+    }
+
+    if (event.key === "Enter" && highlightedIndex >= 0) {
+      event.preventDefault();
+      selectProperty(filteredResults[highlightedIndex]);
+    }
+  };
 
   return (
     <div className="relative w-full">
@@ -28,8 +74,18 @@ export default function SearchBar({ properties }: SearchBarProps) {
         <input
           type="text"
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setIsDropdownOpen(true);
+            setHighlightedIndex(-1);
+          }}
+          onFocus={() => search && setIsDropdownOpen(true)}
+          onKeyDown={handleKeyDown}
           placeholder="Search properties, societies or areas..."
+          role="combobox"
+          aria-autocomplete="list"
+          aria-expanded={Boolean(search) && isDropdownOpen}
+          aria-controls="property-search-results"
           className="flex-1 bg-white px-7 py-4 text-base text-gray-900 placeholder:text-gray-400 outline-none"
         />
 
@@ -39,8 +95,11 @@ export default function SearchBar({ properties }: SearchBarProps) {
 
       </div>
 
-      {search && (
-        <div className="absolute z-20 mt-3 w-full overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-lg">
+      {search && isDropdownOpen && (
+        <div
+          id="property-search-results"
+          className="absolute z-20 mt-3 w-full overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-lg"
+        >
 
           {filteredResults.length > 0 ? (
             <>
@@ -48,11 +107,16 @@ export default function SearchBar({ properties }: SearchBarProps) {
                 Search Results
               </div>
 
-              {filteredResults.map((property) => (
+              {filteredResults.map((property, index) => (
                 <div
                   key={property.slug}
-                  onClick={() => router.push(`/property/${property.slug}`)}
-                  className="cursor-pointer border-b border-gray-100 px-6 py-4 transition hover:bg-gray-50 last:border-b-0"
+                  ref={(element) => {
+                    resultRefs.current[index] = element;
+                  }}
+                  onClick={() => selectProperty(property)}
+                  className={`cursor-pointer border-b border-gray-100 px-6 py-4 transition hover:bg-gray-50 last:border-b-0 ${
+                    highlightedIndex === index ? "bg-gray-50" : ""
+                  }`}
                 >
                   <p className="font-semibold text-gray-900">
                     {property.name}
