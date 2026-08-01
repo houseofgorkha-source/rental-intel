@@ -11,6 +11,7 @@ type CreateReviewInput = {
 
 type CreateReviewResult = {
   error?: string;
+  reviewId?: string;
 };
 
 export async function createReview({
@@ -37,18 +38,22 @@ export async function createReview({
     return { error: "Please sign in to publish a review." };
   }
 
-  const { error } = await supabase.from("reviews").insert({
-    property_id: propertyId,
-    author_id: user.id,
-    title: "Tenant review",
-    body: comment.trim(),
-    overall_rating: overallRating,
-    recommendation,
-  });
+  const { data: review, error } = await supabase
+    .from("reviews")
+    .insert({
+      property_id: propertyId,
+      author_id: user.id,
+      title: "Tenant review",
+      body: comment.trim(),
+      overall_rating: overallRating,
+      recommendation,
+    })
+    .select("id")
+    .single();
 
   if (error) {
     return { error: "Unable to publish your review. Please try again." };
   }
 
-  return {};
+  return { reviewId: review.id };
 }

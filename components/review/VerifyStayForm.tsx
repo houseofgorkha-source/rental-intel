@@ -1,8 +1,15 @@
+"use client";
+
 import Link from "next/link";
+import { FormEvent, useState } from "react";
+import { useRouter } from "next/navigation";
+import { createVerification } from "@/app/actions/verification";
 
 type VerifyStayFormProps = {
   propertyName: string;
   propertySlug: string;
+  reviewId: string;
+  isSubmitted: boolean;
 };
 
 const acceptedDocuments = [
@@ -27,7 +34,26 @@ const acceptedDocuments = [
 export default function VerifyStayForm({
   propertyName,
   propertySlug,
+  reviewId,
+  isSubmitted,
 }: VerifyStayFormProps) {
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const router = useRouter();
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError(null);
+    setIsSubmitting(true);
+    const result = await createVerification(new FormData(event.currentTarget));
+    if (result.error) {
+      setError(result.error);
+      setIsSubmitting(false);
+      return;
+    }
+    router.refresh();
+  };
+
   return (
     <main className="min-h-screen bg-white py-12">
       <div className="mx-auto max-w-4xl px-6">
@@ -54,6 +80,8 @@ export default function VerifyStayForm({
           </p>
         </div>
 
+        <form onSubmit={handleSubmit}>
+        <input type="hidden" name="reviewId" value={reviewId} />
         <section className="mt-8 rounded-2xl border border-gray-200 bg-white p-8">
           <h2 className="text-2xl font-semibold text-gray-900">
             Accepted documents
@@ -81,9 +109,10 @@ export default function VerifyStayForm({
                   {document.description}
                 </p>
 
-                <p className="mt-5 text-sm font-medium text-blue-600">
-                  Upload document
-                </p>
+                <label className="mt-5 block cursor-pointer text-sm font-medium text-blue-600">
+                  {isSubmitted ? "Document submitted" : "Upload document"}
+                  {!isSubmitted && <input className="sr-only" type="file" name={document.title.toLowerCase().replaceAll(" ", "_")} accept="application/pdf,image/jpeg,image/png" />}
+                </label>
               </div>
             ))}
           </div>
@@ -121,12 +150,16 @@ export default function VerifyStayForm({
           </div>
         </div>
 
+        {error && <p role="alert" className="mt-4 text-sm text-red-600">{error}</p>}
+
         <button
-          type="button"
+          type="submit"
+          disabled={isSubmitted || isSubmitting}
           className="mt-8 w-full rounded-full bg-blue-600 px-6 py-4 text-sm font-medium text-white hover:bg-blue-700"
         >
-          Submit for Verification
+          {isSubmitted ? "Verification Submitted" : isSubmitting ? "Submitting..." : "Submit for Verification"}
         </button>
+        </form>
       </div>
     </main>
   );

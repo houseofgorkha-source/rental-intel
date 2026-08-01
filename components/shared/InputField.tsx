@@ -4,6 +4,9 @@ type InputFieldProps = {
   required?: boolean;
   helperText?: string;
   type?: string;
+  name?: string;
+  accept?: string;
+  multiple?: boolean;
 };
 
 export default function InputField({
@@ -12,6 +15,9 @@ export default function InputField({
   required = false,
   helperText,
   type = "text",
+  name,
+  accept,
+  multiple = false,
 }: InputFieldProps) {
   return (
     <div className="space-y-2">
@@ -23,6 +29,9 @@ export default function InputField({
 
       <input
         type={type}
+        name={name}
+        accept={accept}
+        multiple={multiple}
         placeholder={placeholder}
         className="
           w-full

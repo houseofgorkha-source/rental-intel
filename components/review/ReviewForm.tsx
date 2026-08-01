@@ -99,7 +99,7 @@ export default function ReviewForm({ propertyId }: ReviewFormProps) {
       return;
     }
 
-    router.push(window.location.pathname + "/success");
+    router.push(`${window.location.pathname}/success?reviewId=${result.reviewId}`);
   };
 
   const toggleTrait = (

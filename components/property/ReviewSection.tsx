@@ -9,6 +9,7 @@ type Props = {
   propertyReviews: Review[];
   recommendationPercentage: number;
   recommendedCount: number;
+  canWriteReview: boolean;
 };
 
 const sortOptions = [
@@ -30,6 +31,7 @@ export default function ReviewSection({
   propertyReviews,
   recommendationPercentage,
   recommendedCount,
+  canWriteReview,
 }: Props) {
   const [filter, setFilter] =
     useState<(typeof filterOptions)[number]>("All");
@@ -161,12 +163,12 @@ const maxCount = Math.max(...Object.values(ratingCounts), 1);
               ))}
             </select>
 
-            <Link
+            {canWriteReview ? <Link
               href={`/property/${propertySlug}/review`}
               className="rounded-lg bg-blue-600 px-6 py-3 text-sm font-semibold text-white hover:bg-blue-700"
             >
               ✍️ Write Review
-            </Link>
+            </Link> : <p className="text-sm font-medium text-gray-600">Pending approval</p>}
 
           </div>
 

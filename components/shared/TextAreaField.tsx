@@ -4,6 +4,7 @@ type TextAreaFieldProps = {
   helperText?: string;
   required?: boolean;
   rows?: number;
+  name?: string;
 };
 
 export default function TextAreaField({
@@ -12,6 +13,7 @@ export default function TextAreaField({
   helperText,
   required = false,
   rows = 4,
+  name,
 }: TextAreaFieldProps) {
   return (
     <div className="space-y-2">
@@ -23,6 +25,7 @@ export default function TextAreaField({
 
       <textarea
         rows={rows}
+        name={name}
         placeholder={placeholder}
         className="
           w-full

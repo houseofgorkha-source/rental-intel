@@ -1,7 +1,8 @@
 "use client";
 
-
-
+import { FormEvent, useState } from "react";
+import { useRouter } from "next/navigation";
+import { createProperty } from "@/app/actions/property";
 import InputField from "../shared/InputField";
 import TextAreaField from "../shared/TextAreaField";
 import SectionTitle from "./SectionTitle";
@@ -9,7 +10,25 @@ import InfoCard from "./InfoCard";
 import Button from "../shared/Button";
 
 export default function PropertyForm() {
-  
+  const [submissionError, setSubmissionError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const router = useRouter();
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setSubmissionError(null);
+    setIsSubmitting(true);
+
+    const result = await createProperty(new FormData(event.currentTarget));
+
+    if (result.error) {
+      setSubmissionError(result.error);
+      setIsSubmitting(false);
+      return;
+    }
+
+    router.push(`/property/${result.slug}`);
+  };
 
   return (
     <div className="mx-auto max-w-2xl px-6 py-12">
@@ -38,7 +57,8 @@ export default function PropertyForm() {
 
       </div>
 
-      <div className="mt-10 rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
+      <form onSubmit={handleSubmit}>
+        <div className="mt-10 rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
 
         <SectionTitle
           title="Property Details"
@@ -50,12 +70,14 @@ export default function PropertyForm() {
           <InputField
             label="Property / Society Name"
             placeholder="Prestige Lakeside Habitat"
+            name="name"
             required
           />
 
           <InputField
             label="Address"
             placeholder="#31, C/o Anna PG, 27th Main Road"
+            name="addressLine1"
             helperText="House number, building, street or anything that helps identify the property."
             required
           />
@@ -63,11 +85,13 @@ export default function PropertyForm() {
           <InputField
             label="Address Line 2"
             placeholder="Near Empire Restaurant, Opposite BDA Complex"
+            name="addressLine2"
           />
 
           <InputField
             label="Area / Locality"
             placeholder="Ejipura"
+            name="area"
             required
           />
 
@@ -76,12 +100,14 @@ export default function PropertyForm() {
             <InputField
               label="City"
               placeholder="Bengaluru"
+              name="city"
               required
             />
 
             <InputField
               label="State"
               placeholder="Karnataka"
+              name="state"
               required
             />
 
@@ -90,31 +116,53 @@ export default function PropertyForm() {
           <InputField
             label="PIN Code"
             placeholder="560095"
+            name="postalCode"
           />
 
           <InputField
             label="Google Maps Link"
             placeholder="https://maps.google.com/..."
+            name="mapsUrl"
+            type="url"
             helperText="Optional for Version 1. Adding a Google Maps link helps us verify the property faster."
           />
 
           <TextAreaField
             label="Additional Notes"
             placeholder="Anything else that helps identify this property?"
+            name="notes"
+          />
+
+          <InputField
+            label="Property Images"
+            placeholder=""
+            name="images"
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            multiple
+            helperText="Optional. You can select multiple JPG, PNG, or WebP images."
           />
 
         </div>
 
-      </div>
+        </div>
 
-      <Button
-  type="button"
-  variant="primary"
-  fullWidth
-  className="mt-10"
->
-  Submit Property
-</Button>
+        {submissionError && (
+          <p role="alert" className="mt-6 text-sm text-red-600">
+            {submissionError}
+          </p>
+        )}
+
+        <Button
+          type="submit"
+          variant="primary"
+          fullWidth
+          disabled={isSubmitting}
+          className="mt-10"
+        >
+          {isSubmitting ? "Submitting..." : "Submit Property"}
+        </Button>
+      </form>
 
     </div>
   );

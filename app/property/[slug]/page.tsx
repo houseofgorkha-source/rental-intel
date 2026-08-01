@@ -53,7 +53,6 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
     .from("properties")
     .select("*")
     .eq("slug", slug)
-    .eq("status", "published")
     .single();
 
   if (error || !property) {
@@ -202,6 +201,7 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
             propertyReviews={propertyReviews}
             recommendationPercentage={recommendationPercentage}
             recommendedCount={recommendedCount}
+            canWriteReview={property.status === "published"}
           />
         </>
       </div>

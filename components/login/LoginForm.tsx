@@ -1,12 +1,46 @@
 "use client";
 
 import Link from "next/link";
+import { FormEvent, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 import Button from "../shared/Button";
 import AuthHeader from "../shared/AuthHeader";
 import AuthCard from "../shared/AuthCard";
 import InputField from "../shared/InputField";
 
 export default function LoginForm() {
+  const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleEmailLogin = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError(null);
+    setMessage(null);
+    setIsSubmitting(true);
+    const formData = new FormData(event.currentTarget);
+    const email = String(formData.get("email") || "").trim();
+    const { error: authError } = await createClient().auth.signInWithOtp({
+      email,
+      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+    });
+    setIsSubmitting(false);
+    if (authError) {
+      setError(authError.message);
+      return;
+    }
+    setMessage("Check your email for a sign-in link.");
+  };
+
+  const handleGoogleLogin = async () => {
+    setError(null);
+    const { error: authError } = await createClient().auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: `${window.location.origin}/auth/callback` },
+    });
+    if (authError) setError(authError.message);
+  };
+
   return (
     <AuthCard>
 
@@ -16,7 +50,7 @@ export default function LoginForm() {
 />
 
       <div className="mt-10">
-        <Button fullWidth>
+        <Button type="button" fullWidth onClick={handleGoogleLogin}>
           Continue with Google
         </Button>
       </div>
@@ -27,20 +61,26 @@ export default function LoginForm() {
         <div className="h-px flex-1 bg-gray-200" />
       </div>
 
+      <form onSubmit={handleEmailLogin}>
       <div>
 
         <InputField
   label="Email Address"
   type="email"
   placeholder="you@example.com"
+  name="email"
   required
 />
 
       </div>
 
-      <Button fullWidth className="mt-8">
-        Continue
+      <Button fullWidth className="mt-8" disabled={isSubmitting}>
+        {isSubmitting ? "Sending..." : "Continue"}
       </Button>
+      </form>
+
+      {message && <p className="mt-4 text-sm text-green-700">{message}</p>}
+      {error && <p role="alert" className="mt-4 text-sm text-red-600">{error}</p>}
 
       <p className="mt-8 text-center text-sm text-gray-500">
   Don&apos;t have an account?

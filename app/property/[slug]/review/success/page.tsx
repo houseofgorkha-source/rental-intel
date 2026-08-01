@@ -4,12 +4,15 @@ type SuccessPageProps = {
   params: Promise<{
     slug: string;
   }>;
+  searchParams: Promise<{ reviewId?: string }>;
 };
 
 export default async function SuccessPage({
   params,
+  searchParams,
 }: SuccessPageProps) {
   const { slug } = await params;
+  const { reviewId } = await searchParams;
 
   const propertyName = slug
     .split("-")
@@ -160,7 +163,7 @@ export default async function SuccessPage({
           </Link>
 
           <Link
-            href={`/property/${slug}/review/verify`}
+            href={`/property/${slug}/review/verify?reviewId=${reviewId ?? ""}`}
             className="inline-flex items-center justify-center rounded-full border border-gray-300 bg-white px-6 py-4 text-sm font-medium text-gray-900 transition-colors hover:border-blue-600 hover:bg-blue-50 hover:text-blue-600"
           >
             🛡 Verify My Review
