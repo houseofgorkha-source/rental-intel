@@ -9,6 +9,7 @@ type PropertyPageProps = {
   params: Promise<{
     slug: string;
   }>;
+  searchParams: Promise<{ verification?: string }>;
 };
 
 type ReviewRow = {
@@ -44,8 +45,9 @@ function formatStay(
   }`;
 }
 
-export default async function PropertyPage({ params }: PropertyPageProps) {
+export default async function PropertyPage({ params, searchParams }: PropertyPageProps) {
   const { slug } = await params;
+  const { verification } = await searchParams;
 
   const supabase = await createClient();
 
@@ -123,6 +125,12 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
         >
           ← Back to Search
         </Link>
+
+        {verification === "submitted" && (
+          <p className="mt-4 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-green-700">
+            Verification submitted. We&apos;ll review your documents.
+          </p>
+        )}
 
         <h1 className="mt-6 text-5xl font-bold text-gray-900">
           {property.name}

@@ -36,12 +36,12 @@ export default async function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="relative min-h-full flex flex-col">
-        <header className="absolute inset-x-0 top-0 z-20 px-6 py-5">
+        <header className="pointer-events-none absolute inset-x-0 top-0 z-20 px-6 py-5">
           <div className="mx-auto flex max-w-6xl justify-end">
             {user ? (
               <AccountMenu email={user.email ?? "RentalIntel member"} />
             ) : (
-              <nav className="flex items-center gap-4 text-sm font-medium">
+              <nav className="pointer-events-auto flex items-center gap-4 text-sm font-medium">
                 <Link href="/login" className="text-gray-700 hover:text-blue-600">
                   Login
                 </Link>

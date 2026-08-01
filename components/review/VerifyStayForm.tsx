@@ -51,7 +51,7 @@ export default function VerifyStayForm({
       setIsSubmitting(false);
       return;
     }
-    router.refresh();
+    router.push(`/property/${propertySlug}?verification=submitted`);
   };
 
   return (
