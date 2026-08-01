@@ -2,8 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import ReviewCard from "@/components/property/ReviewCard";
-import { Review } from "@/data/reviews";
+import ReviewCard, { type Review } from "@/components/property/ReviewCard";
 
 type Props = {
   propertySlug: string;

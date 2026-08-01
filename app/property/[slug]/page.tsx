@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { reviews } from "@/data/reviews";
 import PropertyGallery from "@/components/property/PropertyGallery";
 import ReviewSection from "@/components/property/ReviewSection";
+import type { Review } from "@/components/property/ReviewCard";
 import { createClient } from "@/lib/supabase/server";
 
 type PropertyPageProps = {
@@ -11,61 +11,111 @@ type PropertyPageProps = {
   }>;
 };
 
-export default async function PropertyPage({
-  params,
-}: PropertyPageProps) {
-  const { slug } = await params;
+type ReviewRow = {
+  id: string;
+  title: string;
+  body: string;
+  overall_rating: number;
+  recommendation: "yes" | "maybe" | "no";
+  verification_status: "unverified" | "pending" | "verified" | "rejected";
+  stay_start_date: string | null;
+  stay_end_date: string | null;
+  created_at: string;
+  is_anonymous: boolean;
+  author: { display_name: string }[];
+};
 
-const supabase = await createClient();
+function formatStay(
+  stayStartDate: string | null,
+  stayEndDate: string | null,
+) {
+  if (!stayStartDate) {
+    return "Stay dates not provided";
+  }
 
-const { data: property, error } = await supabase
-  .from("properties")
-  .select("*")
-  .eq("slug", slug)
-  .eq("status", "published")
-  .single();
+  const formatDate = (date: string) =>
+    new Intl.DateTimeFormat("en-IN", {
+      month: "short",
+      year: "numeric",
+    }).format(new Date(`${date}T00:00:00`));
 
-if (error || !property) {
-  notFound();
+  return `${formatDate(stayStartDate)} - ${
+    stayEndDate ? formatDate(stayEndDate) : "Present"
+  }`;
 }
 
-const { data: propertyImages } = await supabase
-  .from("property_images")
-  .select("storage_path, alt_text")
-  .eq("property_id", property.id)
-  .order("sort_order");
+export default async function PropertyPage({ params }: PropertyPageProps) {
+  const { slug } = await params;
 
-const images =
-  propertyImages?.map((image) => {
-    const {
-      data: { publicUrl },
-    } = supabase.storage
-      .from("property-images")
-      .getPublicUrl(image.storage_path);
+  const supabase = await createClient();
 
-    return {
-      src: publicUrl,
-      alt: image.alt_text ?? property.name,
-    };
-  }) ?? [];
+  const { data: property, error } = await supabase
+    .from("properties")
+    .select("*")
+    .eq("slug", slug)
+    .eq("status", "published")
+    .single();
 
-  const propertyReviews = reviews.filter(
-    (review) => review.propertySlug === property.slug
+  if (error || !property) {
+    notFound();
+  }
+
+  const { data: propertyImages } = await supabase
+    .from("property_images")
+    .select("storage_path, alt_text")
+    .eq("property_id", property.id)
+    .order("sort_order");
+
+  const images =
+    propertyImages?.map((image) => {
+      const {
+        data: { publicUrl },
+      } = supabase.storage
+        .from("property-images")
+        .getPublicUrl(image.storage_path);
+
+      return {
+        src: publicUrl,
+        alt: image.alt_text ?? property.name,
+      };
+    }) ?? [];
+
+  const { data: reviewRows } = await supabase
+    .from("reviews")
+    .select(
+      "id, title, body, overall_rating, recommendation, verification_status, stay_start_date, stay_end_date, created_at, is_anonymous, author:profiles!reviews_author_id_fkey(display_name)",
+    )
+    .eq("property_id", property.id)
+    .order("created_at", { ascending: false });
+
+  const propertyReviews: Review[] = ((reviewRows ?? []) as ReviewRow[]).map(
+    (review) => ({
+      id: review.id,
+      reviewer: review.is_anonymous
+        ? "Anonymous"
+        : review.author[0]?.display_name ?? "RentalIntel member",
+      rating: review.overall_rating,
+      title: review.title,
+      review: review.body,
+      stay: formatStay(review.stay_start_date, review.stay_end_date),
+      verified: review.verification_status === "verified",
+      date: review.created_at,
+      wouldRecommend: review.recommendation === "yes",
+    }),
   );
 
   const recommendedCount = propertyReviews.filter(
-  (review) => review.wouldRecommend
-).length;
+    (review) => review.wouldRecommend,
+  ).length;
 
-const recommendationPercentage =
-  propertyReviews.length === 0
-    ? 0
-    : Math.round((recommendedCount / propertyReviews.length) * 100);
+  const recommendationPercentage =
+    propertyReviews.length === 0
+      ? 0
+      : Math.round((recommendedCount / propertyReviews.length) * 100);
 
-    return (
+  return (
     <main className="min-h-screen bg-white py-10">
-       <div className="mx-auto max-w-5xl px-6">
-
+      <div className="mx-auto max-w-5xl px-6">
         {/* Header */}
 
         <Link
@@ -85,8 +135,6 @@ const recommendationPercentage =
 
         <PropertyGallery images={images} />
 
-        
-
         {/* Trust Score */}
 
         <div className="mt-8 rounded-2xl border border-gray-200 bg-white p-8">
@@ -103,10 +151,9 @@ const recommendationPercentage =
               <p className="text-yellow-500 text-xl">★★★★★</p>
 
               <p className="text-gray-500">
-  Based on {propertyReviews.length} verified{" "}
-  {propertyReviews.length === 1 ? "review" : "reviews"}
-</p>
-
+                Based on {propertyReviews.length} verified{" "}
+                {propertyReviews.length === 1 ? "review" : "reviews"}
+              </p>
             </div>
           </div>
         </div>
@@ -114,15 +161,12 @@ const recommendationPercentage =
         {/* Information */}
 
         <div className="mt-8 grid gap-6 md:grid-cols-2">
-
           <div className="rounded-2xl border border-gray-200 bg-white p-6">
             <h2 className="text-xl font-semibold text-gray-900">
               Deposit Experience
             </h2>
 
-            <p className="mt-3 text-gray-700">
-              Not available
-            </p>
+            <p className="mt-3 text-gray-700">Not available</p>
           </div>
 
           <div className="rounded-3xl bg-white p-6 shadow">
@@ -130,15 +174,11 @@ const recommendationPercentage =
               Society Rules
             </h2>
 
-            <p className="mt-3 text-gray-700">
-              Not available
-            </p>
+            <p className="mt-3 text-gray-700">Not available</p>
           </div>
 
           <div className="rounded-3xl bg-white p-6 shadow">
-            <h2 className="text-xl font-semibold text-gray-900">
-              Rent
-            </h2>
+            <h2 className="text-xl font-semibold text-gray-900">Rent</h2>
 
             <p className="mt-3 text-3xl font-bold text-gray-900 ">
               {property.asking_rent === null
@@ -147,28 +187,24 @@ const recommendationPercentage =
             </p>
           </div>
 
-        <div className="rounded-3xl bg-white p-6 shadow">
-          <h2 className="text-xl font-semibold text-gray-900">
-            Nearby
-          </h2>
+          <div className="rounded-3xl bg-white p-6 shadow">
+            <h2 className="text-xl font-semibold text-gray-900">Nearby</h2>
 
-          <p className="mt-3 text-gray-700">
-            Not available
-          </p>
-        </div>
-
+            <p className="mt-3 text-gray-700">Not available</p>
+          </div>
         </div>
 
         {/* Reviews */}
 
-<ReviewSection
-  propertySlug={property.slug}
-  propertyReviews={propertyReviews}
-  recommendationPercentage={recommendationPercentage}
-  recommendedCount={recommendedCount}
-/>
-
-    </div>
-  </main>
+        <>
+          <ReviewSection
+            propertySlug={property.slug}
+            propertyReviews={propertyReviews}
+            recommendationPercentage={recommendationPercentage}
+            recommendedCount={recommendedCount}
+          />
+        </>
+      </div>
+    </main>
   );
 }

@@ -1,186 +1,388 @@
 "use client";
-
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { createReview } from "@/app/actions/review";
 import StarRating from "./StarRating";
+import {
+  negativeOwnerTraits,
+  positiveOwnerTraits,
+  quickRatingCategories,
+} from "./reviewCategories";
 
-const reviewCategories = [
-  { id: "owner", label: "Owner Behaviour" },
-  { id: "maintenance", label: "Maintenance" },
-  { id: "water", label: "Water Supply" },
-  { id: "security", label: "Security" },
-  { id: "cleanliness", label: "Cleanliness" },
-];
+type YesNoValue = "yes" | "no" | null;
 
-const issueOptions = [
-  "Deposit Delay",
-  "Deposit Deduction",
-  "Hidden Charges",
-  "Water Issues",
-  "Power Issues",
-  "Noise",
-  "Parking",
-  "Safety",
-  "Owner Behaviour",
-  "Maintenance",
-  "Broker Issues",
-  "Pet Restrictions",
-  "Other",
-];
+const rentAgainOptions = [
+  "Definitely",
+  "Probably",
+  "Not Sure",
+  "Probably Not",
+  "Never Again",
+] as const;
 
-export default function ReviewForm() {
-  const [ratings, setRatings] = useState<Record<string, number>>({});
-  const [issues, setIssues] = useState<string[]>([]);
+type RentAgainOption = (typeof rentAgainOptions)[number];
+
+type YesNoFieldProps = {
+  label: string;
+  value: YesNoValue;
+  onChange: (value: YesNoValue) => void;
+};
+
+function YesNoField({ label, value, onChange }: YesNoFieldProps) {
+  return (
+    <fieldset>
+      <legend className="mb-3 font-medium text-gray-900">{label}</legend>
+
+      <div className="flex gap-6">
+        {(["yes", "no"] as const).map((option) => (
+          <label key={option} className="flex items-center text-gray-700">
+            <input
+              type="radio"
+              name={label}
+              checked={value === option}
+              onChange={() => onChange(option)}
+              className="mr-2"
+            />
+            {option === "yes" ? "Yes" : "No"}
+          </label>
+        ))}
+      </div>
+    </fieldset>
+  );
+}
+
+type ReviewFormProps = {
+  propertyId: string;
+};
+
+export default function ReviewForm({ propertyId }: ReviewFormProps) {
+  const [overallRating, setOverallRating] = useState(0);
+  const [wouldRecommend, setWouldRecommend] = useState<YesNoValue>(null);
+  const [wouldRentAgain, setWouldRentAgain] = useState<RentAgainOption | null>(
+    null,
+  );
+  const [quickRatings, setQuickRatings] = useState<Record<string, number>>({});
+  const [ownerRating, setOwnerRating] = useState(0);
+  const [positiveTraits, setPositiveTraits] = useState<string[]>([]);
+  const [negativeTraits, setNegativeTraits] = useState<string[]>([]);
+  const [depositTaken, setDepositTaken] = useState<YesNoValue>(null);
+  const [depositMoreThanTwoMonths, setDepositMoreThanTwoMonths] =
+    useState<YesNoValue>(null);
+  const [depositReturned, setDepositReturned] = useState<YesNoValue>(null);
+  const [returnedOnTime, setReturnedOnTime] = useState<YesNoValue>(null);
+  const [additionalDeductions, setAdditionalDeductions] =
+    useState<YesNoValue>(null);
+  const [depositExperience, setDepositExperience] = useState(0);
+  const [comment, setComment] = useState("");
+  const [submissionError, setSubmissionError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
 
-  const toggleIssue = (issue: string) => {
-    setIssues((prev) =>
-      prev.includes(issue)
-        ? prev.filter((i) => i !== issue)
-        : [...prev, issue]
+  const handleSubmit = async () => {
+    if (!wouldRecommend) {
+      setSubmissionError("Please say whether you would recommend this property.");
+      return;
+    }
+
+    setSubmissionError(null);
+    setIsSubmitting(true);
+
+    const result = await createReview({
+      propertyId,
+      overallRating,
+      recommendation: wouldRecommend,
+      comment,
+    });
+
+    if (result.error) {
+      setSubmissionError(result.error);
+      setIsSubmitting(false);
+      return;
+    }
+
+    router.push(window.location.pathname + "/success");
+  };
+
+  const toggleTrait = (
+    trait: string,
+    setTraits: React.Dispatch<React.SetStateAction<string[]>>,
+  ) => {
+    setTraits((currentTraits) =>
+      currentTraits.includes(trait)
+        ? currentTraits.filter((item) => item !== trait)
+        : [...currentTraits, trait],
     );
   };
 
   return (
     <div className="mx-auto max-w-4xl rounded-2xl border border-gray-200 bg-white p-8">
+      <div className="space-y-10">
+        <section>
+          <h2 className="text-2xl font-semibold text-gray-900">
+            Overall Experience
+          </h2>
 
-      <div className="space-y-6">
+          <div className="mt-6 space-y-6">
+            <StarRating
+              label="Overall Rating"
+              value={overallRating}
+              onChange={setOverallRating}
+            />
 
-        {reviewCategories.map((category) => (
-          <StarRating
-            key={category.id}
-            label={category.label}
-            value={ratings[category.id] ?? 0}
-            onChange={(value) =>
-              setRatings({
-                ...ratings,
-                [category.id]: value,
-              })
-            }
-          />
-        ))}
+            <YesNoField
+              label="Would you recommend this property?"
+              value={wouldRecommend}
+              onChange={setWouldRecommend}
+            />
 
-      </div>
+            <fieldset>
+              <legend className="mb-3 font-medium text-gray-900">
+                Would you rent this property again?
+              </legend>
 
-      <div className="mt-8">
+              <div className="flex flex-wrap gap-3">
+                {rentAgainOptions.map((option) => (
+                  <label
+                    key={option}
+                    className={`cursor-pointer rounded-full px-4 py-2 text-sm font-medium transition ${
+                      wouldRentAgain === option
+                        ? "bg-blue-600 text-white"
+                        : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-100"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="would-rent-again"
+                      value={option}
+                      checked={wouldRentAgain === option}
+                      onChange={() => setWouldRentAgain(option)}
+                      className="sr-only"
+                    />
+                    {option}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+          </div>
+        </section>
 
-        <label className="mb-2 block font-medium text-gray-900">
-          Review Title
-        </label>
+        <section>
+          <h2 className="text-2xl font-semibold text-gray-900">
+            Quick Ratings
+          </h2>
 
-        <input
-          className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none transition-colors focus:border-blue-600"
-          placeholder="Deposit returned within 10 days"
-        />
+          <div className="mt-6 grid gap-5 md:grid-cols-2">
+            {quickRatingCategories.map((category) => (
+              <StarRating
+                key={category.id}
+                label={category.label}
+                value={quickRatings[category.id] ?? 0}
+                onChange={(value) =>
+                  setQuickRatings((currentRatings) => ({
+                    ...currentRatings,
+                    [category.id]: value,
+                  }))
+                }
+              />
+            ))}
+          </div>
+        </section>
 
-      </div>
+        <section>
+          <h2 className="text-2xl font-semibold text-gray-900">
+            Owner Behaviour
+          </h2>
 
-      <div className="mt-6">
+          <div className="mt-6 space-y-6">
+            <StarRating
+              label="Overall Owner Rating"
+              value={ownerRating}
+              onChange={setOwnerRating}
+            />
 
-        <label className="mb-2 block font-medium text-gray-900">
-          Share Your Experience
-        </label>
+            <div>
+              <h3 className="font-medium text-gray-900">Positive traits</h3>
 
-        <textarea
-          rows={6}
-          className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none transition-colors focus:border-blue-600"
-          placeholder="Tell future tenants what went well..."
-        />
+              <div className="mt-3 flex flex-wrap gap-3">
+                {positiveOwnerTraits.map((trait) => (
+                  <label
+                    key={trait}
+                    className={`cursor-pointer rounded-full px-4 py-2 text-sm font-medium transition ${
+                      positiveTraits.includes(trait)
+                        ? "bg-blue-600 text-white"
+                        : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-100"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={positiveTraits.includes(trait)}
+                      onChange={() => toggleTrait(trait, setPositiveTraits)}
+                      className="sr-only"
+                    />
+                    {trait}
+                  </label>
+                ))}
+              </div>
+            </div>
 
-      </div>
+            <div>
+              <h3 className="font-medium text-gray-900">Negative traits</h3>
 
-      <div className="mt-8 grid gap-6 md:grid-cols-2">
+              <div className="mt-3 flex flex-wrap gap-3">
+                {negativeOwnerTraits.map((trait) => (
+                  <label
+                    key={trait}
+                    className={`cursor-pointer rounded-full px-4 py-2 text-sm font-medium transition ${
+                      negativeTraits.includes(trait)
+                        ? "bg-blue-600 text-white"
+                        : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-100"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={negativeTraits.includes(trait)}
+                      onChange={() => toggleTrait(trait, setNegativeTraits)}
+                      className="sr-only"
+                    />
+                    {trait}
+                  </label>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
 
-        <input
-          className="rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none transition-colors focus:border-blue-600"
-          placeholder="Monthly Rent"
-        />
+        <section>
+          <h2 className="text-2xl font-semibold text-gray-900">
+            Security Deposit
+          </h2>
 
-        <input
-          className="rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none transition-colors focus:border-blue-600"
-          placeholder="Security Deposit"
-        />
+          <div className="mt-6">
+            <YesNoField
+              label="Was a security deposit taken?"
+              value={depositTaken}
+              onChange={setDepositTaken}
+            />
+          </div>
 
-      </div>
+          {depositTaken === "yes" && (
+            <div className="mt-6 space-y-6 rounded-2xl border border-gray-200 bg-gray-50 p-6">
+              <div>
+                <label className="mb-2 block font-medium text-gray-900">
+                  Deposit amount (months of rent)
+                </label>
 
-      <div className="mt-8">
+                <input
+                  type="number"
+                  min="0"
+                  step="0.5"
+                  placeholder="For example, 2"
+                  className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none transition-colors focus:border-blue-600"
+                />
+              </div>
 
-        <h2 className="mb-3 font-semibold text-gray-900">
-          Would you recommend this property?
-        </h2>
-
-        <div className="flex gap-6">
-
-          <label className="text-gray-700">
-            <input className="mr-2" type="radio" name="recommend" />
-            Yes
-          </label>
-
-          <label className="text-gray-700">
-            <input className="mr-2" type="radio" name="recommend" />
-            Maybe
-          </label>
-
-          <label className="text-gray-700">
-            <input className="mr-2" type="radio" name="recommend" />
-            No
-          </label>
-
-        </div>
-
-      </div>
-
-      <div className="mt-8">
-
-        <h2 className="mb-3 font-semibold text-gray-900">
-          Problems Experienced
-        </h2>
-
-        <div className="grid gap-3 md:grid-cols-2">
-
-          {issueOptions.map((issue) => (
-            <label key={issue} className="text-gray-700">
-
-              <input
-                className="mr-2"
-                type="checkbox"
-                checked={issues.includes(issue)}
-                onChange={() => toggleIssue(issue)}
+              <YesNoField
+                label="Was the deposit more than two months' rent?"
+                value={depositMoreThanTwoMonths}
+                onChange={setDepositMoreThanTwoMonths}
               />
 
-              {issue}
+              <YesNoField
+                label="Was the deposit returned?"
+                value={depositReturned}
+                onChange={setDepositReturned}
+              />
 
-            </label>
-          ))}
+              <YesNoField
+                label="Was it returned within the agreed timeline?"
+                value={returnedOnTime}
+                onChange={setReturnedOnTime}
+              />
 
-        </div>
+              <YesNoField
+                label="Were additional deductions made?"
+                value={additionalDeductions}
+                onChange={setAdditionalDeductions}
+              />
 
+              {additionalDeductions === "yes" && (
+                <div className="grid gap-6 md:grid-cols-2">
+                  <div>
+                    <label className="mb-2 block font-medium text-gray-900">
+                      Deduction reason
+                    </label>
+
+                    <input
+                      type="text"
+                      placeholder="For example, repair charges"
+                      className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none transition-colors focus:border-blue-600"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block font-medium text-gray-900">
+                      Approximate deduction amount
+                    </label>
+
+                    <input
+                      type="number"
+                      min="0"
+                      placeholder="Amount in ₹"
+                      className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none transition-colors focus:border-blue-600"
+                    />
+                  </div>
+                </div>
+              )}
+
+              <StarRating
+                label="Overall deposit experience"
+                value={depositExperience}
+                onChange={setDepositExperience}
+              />
+            </div>
+          )}
+        </section>
+
+        <section>
+          <h2 className="text-2xl font-semibold text-gray-900">
+            Additional Comments
+          </h2>
+
+          <textarea
+            rows={6}
+            value={comment}
+            onChange={(event) => setComment(event.target.value)}
+            placeholder="Share anything else future tenants should know..."
+            className="mt-6 w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none transition-colors focus:border-blue-600"
+          />
+        </section>
       </div>
 
-      <div className="mt-8 rounded-2xl border border-gray-200 bg-gray-50 p-5">
-
+      <div className="mt-10 rounded-2xl border border-gray-200 bg-gray-50 p-5">
         <h2 className="font-semibold text-gray-900">
           Current Verification Status
         </h2>
 
-        <p className="mt-2 text-gray-700">
-          ⚪ Unverified
-        </p>
+        <p className="mt-2 text-gray-700">⚪ Unverified</p>
 
         <p className="mt-2 text-sm text-gray-600">
           You can verify later by uploading supporting documents.
         </p>
-
       </div>
 
       <button
         type="button"
-        onClick={() => router.push(window.location.pathname + "/success")}
+        onClick={handleSubmit}
+        disabled={isSubmitting}
         className="mt-10 w-full rounded-full bg-blue-600 px-6 py-4 text-sm font-medium text-white transition-colors hover:bg-blue-700"
       >
-        Publish My Experience
+        {isSubmitting ? "Publishing..." : "Publish My Experience"}
       </button>
 
+      {submissionError && (
+        <p role="alert" className="mt-4 text-sm text-red-600">
+          {submissionError}
+        </p>
+      )}
     </div>
   );
 }

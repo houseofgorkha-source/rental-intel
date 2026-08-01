@@ -1,5 +1,16 @@
 import TrustBadge from "@/components/shared/TrustBadge";
-import type { Review } from "@/data/reviews";
+
+export type Review = {
+  id: string;
+  reviewer: string;
+  rating: number;
+  title: string;
+  review: string;
+  stay: string;
+  verified: boolean;
+  date: string;
+  wouldRecommend: boolean;
+};
 
 type ReviewCardProps = {
   review: Review;

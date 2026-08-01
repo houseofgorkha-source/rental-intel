@@ -23,6 +23,8 @@ export default function StarRating({
             key={star}
             type="button"
             onClick={() => onChange(star)}
+            aria-label={`${label}: ${star} out of 5 stars`}
+            aria-pressed={star === value}
             className="text-4xl transition hover:scale-110"
           >
             <span

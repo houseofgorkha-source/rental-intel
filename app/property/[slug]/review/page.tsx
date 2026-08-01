@@ -16,16 +16,16 @@ export default async function ReviewPage({
 
   const supabase = await createClient();
 
-const { data: property, error } = await supabase
-  .from("properties")
-  .select("name, slug")
-  .eq("slug", slug)
-  .eq("status", "published")
-  .single();
+  const { data: property, error } = await supabase
+    .from("properties")
+    .select("id, name, slug")
+    .eq("slug", slug)
+    .eq("status", "published")
+    .single();
 
-if (error || !property) {
-  notFound();
-}
+  if (error || !property) {
+    notFound();
+  }
 
   return (
     <main className="min-h-screen bg-white py-12">
@@ -54,7 +54,7 @@ if (error || !property) {
         </div>
 
         <div className="mt-8">
-          <ReviewForm />
+          <ReviewForm propertyId={property.id} />
         </div>
 
       </div>
