@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import ReviewForm from "../../../../components/review/ReviewForm";
@@ -15,6 +15,8 @@ export default async function ReviewPage({
   const { slug } = await params;
 
   const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect(`/login?next=/property/${slug}/review`);
 
   const { data: property, error } = await supabase
     .from("properties")

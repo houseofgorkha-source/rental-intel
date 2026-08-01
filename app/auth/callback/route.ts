@@ -7,9 +7,16 @@ export async function GET(request: NextRequest) {
   const next = requestUrl.searchParams.get("next") || "/";
   const safeNext = next.startsWith("/") && !next.startsWith("//") ? next : "/";
 
+  if (!code) {
+    return NextResponse.redirect(new URL("/login?error=Authentication%20link%20is%20invalid%20or%20expired.", requestUrl.origin));
+  }
+
   if (code) {
     const supabase = await createClient();
-    await supabase.auth.exchangeCodeForSession(code);
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    if (error) {
+      return NextResponse.redirect(new URL("/login?error=Authentication%20link%20is%20invalid%20or%20expired.", requestUrl.origin));
+    }
   }
 
   return NextResponse.redirect(new URL(safeNext, requestUrl.origin));

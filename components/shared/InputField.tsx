@@ -7,6 +7,7 @@ type InputFieldProps = {
   name?: string;
   accept?: string;
   multiple?: boolean;
+  onChange?: ChangeEventHandler<HTMLInputElement>;
 };
 
 export default function InputField({
@@ -18,6 +19,7 @@ export default function InputField({
   name,
   accept,
   multiple = false,
+  onChange,
 }: InputFieldProps) {
   return (
     <div className="space-y-2">
@@ -32,6 +34,7 @@ export default function InputField({
         name={name}
         accept={accept}
         multiple={multiple}
+        onChange={onChange}
         placeholder={placeholder}
         className="
           w-full
@@ -61,3 +64,4 @@ export default function InputField({
     </div>
   );
 }
+import type { ChangeEventHandler } from "react";

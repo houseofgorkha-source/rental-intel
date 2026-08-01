@@ -15,6 +15,9 @@ type PropertyImageInsert = {
 };
 
 const allowedImageTypes = ["image/jpeg", "image/png", "image/webp"];
+const maxFileSize = 5 * 1024 * 1024;
+const maxFileCount = 5;
+const maxTotalSize = 20 * 1024 * 1024;
 
 function getTextValue(formData: FormData, name: string) {
   const value = formData.get(name);
@@ -53,9 +56,11 @@ export async function createProperty(
     .getAll("images")
     .filter((value): value is File => value instanceof File && value.size > 0);
 
-  if (imageFiles.some((file) => !allowedImageTypes.includes(file.type))) {
-    return { error: "Images must be JPG, PNG, or WebP files." };
+  if (imageFiles.length > maxFileCount) return { error: "You can upload up to 5 images." };
+  if (imageFiles.some((file) => !allowedImageTypes.includes(file.type) || file.size > maxFileSize)) {
+    return { error: "Images must be JPG, PNG, or WebP files up to 5 MB each." };
   }
+  if (imageFiles.reduce((total, file) => total + file.size, 0) > maxTotalSize) return { error: "Total image upload size must be 20 MB or less." };
 
   const supabase = await createClient();
   const {
@@ -92,6 +97,12 @@ export async function createProperty(
   }
 
   const propertyImages: PropertyImageInsert[] = [];
+  const uploadedPaths: string[] = [];
+
+  const cleanUp = async () => {
+    if (uploadedPaths.length) await supabase.storage.from("property-images").remove(uploadedPaths);
+    await supabase.from("properties").delete().eq("id", property.id);
+  };
 
   for (const [index, file] of imageFiles.entries()) {
     const storagePath = `properties/${user.id}/${property.id}/${index}-${crypto.randomUUID()}.${getFileExtension(file)}`;
@@ -100,8 +111,11 @@ export async function createProperty(
       .upload(storagePath, file, { contentType: file.type });
 
     if (uploadError) {
-      return { error: "Your property was saved, but an image could not be uploaded." };
+      await cleanUp();
+      return { error: "Unable to upload property images. Please try again." };
     }
+
+    uploadedPaths.push(storagePath);
 
     propertyImages.push({
       property_id: property.id,
@@ -117,7 +131,8 @@ export async function createProperty(
       .insert(propertyImages);
 
     if (propertyImagesError) {
-      return { error: "Your property was saved, but its images could not be linked." };
+      await cleanUp();
+      return { error: "Unable to save property images. Please try again." };
     }
   }
 

@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
 
 type SuccessPageProps = {
   params: Promise<{
@@ -13,6 +15,18 @@ export default async function SuccessPage({
 }: SuccessPageProps) {
   const { slug } = await params;
   const { reviewId } = await searchParams;
+  if (!reviewId) notFound();
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) notFound();
+  const { data: review } = await supabase
+    .from("reviews")
+    .select("id, properties!inner(slug)")
+    .eq("id", reviewId)
+    .eq("author_id", user.id)
+    .eq("properties.slug", slug)
+    .maybeSingle();
+  if (!review) notFound();
 
   const propertyName = slug
     .split("-")

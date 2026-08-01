@@ -58,7 +58,7 @@ export default function VerifyStayForm({
     <main className="min-h-screen bg-white py-12">
       <div className="mx-auto max-w-4xl px-6">
         <Link
-          href={`/property/${propertySlug}/review/success`}
+          href={`/property/${propertySlug}/review/success?reviewId=${reviewId}`}
           className="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-700"
         >
           ← Back to Review Status
@@ -138,14 +138,14 @@ export default function VerifyStayForm({
 
           <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="text-xl font-semibold text-gray-900">Pending Review</h2>
+              <h2 className="text-xl font-semibold text-gray-900">{isSubmitted ? "Pending Review" : "Not submitted"}</h2>
               <p className="mt-1 text-sm text-gray-600">
-                Sample status shown while a submitted document is reviewed.
+                {isSubmitted ? "Your documents are awaiting review." : "Upload a document to start verification."}
               </p>
             </div>
 
             <span className="w-fit rounded-full bg-yellow-100 px-3 py-1 text-sm font-medium text-yellow-700">
-              Pending Review
+              {isSubmitted ? "Pending Review" : "Not submitted"}
             </span>
           </div>
         </div>

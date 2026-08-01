@@ -9,6 +9,18 @@ import SectionTitle from "./SectionTitle";
 import InfoCard from "./InfoCard";
 import Button from "../shared/Button";
 
+const maxFileSize = 5 * 1024 * 1024;
+const maxFileCount = 5;
+const maxTotalSize = 20 * 1024 * 1024;
+const allowedImageTypes = ["image/jpeg", "image/png", "image/webp"];
+
+function getImageError(files: File[]) {
+  if (files.length > maxFileCount) return "You can upload up to 5 images.";
+  if (files.some((file) => !allowedImageTypes.includes(file.type) || file.size > maxFileSize)) return "Images must be JPG, PNG, or WebP files up to 5 MB each.";
+  if (files.reduce((total, file) => total + file.size, 0) > maxTotalSize) return "Total image upload size must be 20 MB or less.";
+  return null;
+}
+
 export default function PropertyForm() {
   const [submissionError, setSubmissionError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -16,18 +28,26 @@ export default function PropertyForm() {
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    const imageError = getImageError(Array.from(new FormData(event.currentTarget).getAll("images")).filter((value): value is File => value instanceof File && value.size > 0));
+    if (imageError) {
+      setSubmissionError(imageError);
+      return;
+    }
     setSubmissionError(null);
     setIsSubmitting(true);
 
-    const result = await createProperty(new FormData(event.currentTarget));
-
-    if (result.error) {
-      setSubmissionError(result.error);
+    try {
+      const result = await createProperty(new FormData(event.currentTarget));
+      if (result.error) {
+        setSubmissionError(result.error);
+        return;
+      }
+      router.push(`/property/${result.slug}`);
+    } catch {
+      setSubmissionError("Unable to submit your property. Please try again.");
+    } finally {
       setIsSubmitting(false);
-      return;
     }
-
-    router.push(`/property/${result.slug}`);
   };
 
   return (
@@ -140,6 +160,11 @@ export default function PropertyForm() {
             type="file"
             accept="image/jpeg,image/png,image/webp"
             multiple
+            onChange={(event) => {
+              const imageError = getImageError(Array.from(event.target.files ?? []));
+              setSubmissionError(imageError);
+              if (imageError) event.target.value = "";
+            }}
             helperText="Optional. You can select multiple JPG, PNG, or WebP images."
           />
 

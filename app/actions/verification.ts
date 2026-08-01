@@ -10,6 +10,9 @@ const documentFields = [
 ] as const;
 
 type VerificationResult = { error?: string };
+const maxFileSize = 5 * 1024 * 1024;
+const maxFileCount = 4;
+const maxTotalSize = 15 * 1024 * 1024;
 
 export async function createVerification(
   formData: FormData,
@@ -26,15 +29,18 @@ export async function createVerification(
     return { error: "Please choose at least one supporting document." };
   }
 
+  if (documents.length > maxFileCount) return { error: "You can upload up to 4 documents." };
+
   if (
     documents.some(
       ({ file }) =>
         !["application/pdf", "image/jpeg", "image/png"].includes(file.type) ||
-        file.size > 5 * 1024 * 1024,
+        file.size > maxFileSize,
     )
   ) {
     return { error: "Documents must be PDF, JPG, or PNG files up to 5 MB." };
   }
+  if (documents.reduce((total, { file }) => total + file.size, 0) > maxTotalSize) return { error: "Total document upload size must be 15 MB or less." };
 
   const supabase = await createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -55,6 +61,11 @@ export async function createVerification(
     document_type: (typeof documentFields)[number];
     storage_path: string;
   }[];
+  const uploadedPaths: string[] = [];
+  const cleanUp = async () => {
+    if (uploadedPaths.length) await supabase.storage.from("verification-documents").remove(uploadedPaths);
+    await supabase.from("review_verifications").delete().eq("id", verification.id);
+  };
 
   for (const { documentType, file } of documents) {
     const extension = file.name.split(".").pop()?.toLowerCase() || "file";
@@ -63,14 +74,21 @@ export async function createVerification(
       .from("verification-documents")
       .upload(path, file, { contentType: file.type });
 
-    if (uploadError) return { error: "Your request was created, but a document could not be uploaded." };
+    if (uploadError) {
+      await cleanUp();
+      return { error: "Unable to upload verification documents. Please try again." };
+    }
+    uploadedPaths.push(path);
     documentRows.push({ verification_id: verification.id, document_type: documentType, storage_path: path });
   }
 
   const { error: documentError } = await supabase
     .from("verification_documents")
     .insert(documentRows);
-  if (documentError) return { error: "Your request was created, but its documents could not be linked." };
+  if (documentError) {
+    await cleanUp();
+    return { error: "Unable to save verification documents. Please try again." };
+  }
 
   return {};
 }

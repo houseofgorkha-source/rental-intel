@@ -158,7 +158,7 @@ export default async function PropertyPage({ params, searchParams }: PropertyPag
               <p className="text-yellow-500 text-xl">★★★★★</p>
 
               <p className="text-gray-500">
-                Based on {propertyReviews.length} verified{" "}
+                Based on {propertyReviews.length} total{" "}
                 {propertyReviews.length === 1 ? "review" : "reviews"}
               </p>
             </div>

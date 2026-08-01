@@ -8,9 +8,9 @@ import AuthHeader from "../shared/AuthHeader";
 import AuthCard from "../shared/AuthCard";
 import InputField from "../shared/InputField";
 
-export default function LoginForm() {
+export default function LoginForm({ nextPath, callbackError }: { nextPath?: string; callbackError?: string }) {
   const [message, setMessage] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(callbackError ?? null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleEmailLogin = async (event: FormEvent<HTMLFormElement>) => {
@@ -22,7 +22,7 @@ export default function LoginForm() {
     const email = String(formData.get("email") || "").trim();
     const { error: authError } = await createClient().auth.signInWithOtp({
       email,
-      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+      options: { emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath?.startsWith("/") && !nextPath.startsWith("//") ? nextPath : "/")}` },
     });
     setIsSubmitting(false);
     if (authError) {
@@ -36,7 +36,7 @@ export default function LoginForm() {
     setError(null);
     const { error: authError } = await createClient().auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
+      options: { redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath?.startsWith("/") && !nextPath.startsWith("//") ? nextPath : "/")}` },
     });
     if (authError) setError(authError.message);
   };

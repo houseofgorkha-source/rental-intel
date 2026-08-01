@@ -8,7 +8,7 @@ import AuthHeader from "../shared/AuthHeader";
 import AuthCard from "../shared/AuthCard";
 import InputField from "../shared/InputField";
 
-export default function SignupForm() {
+export default function SignupForm({ nextPath }: { nextPath?: string }) {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -22,7 +22,7 @@ export default function SignupForm() {
     const { error: authError } = await createClient().auth.signInWithOtp({
       email: String(formData.get("email") || "").trim(),
       options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath?.startsWith("/") && !nextPath.startsWith("//") ? nextPath : "/")}`,
         data: { full_name: String(formData.get("fullName") || "").trim() },
       },
     });
@@ -38,7 +38,7 @@ export default function SignupForm() {
     setError(null);
     const { error: authError } = await createClient().auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
+      options: { redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath?.startsWith("/") && !nextPath.startsWith("//") ? nextPath : "/")}` },
     });
     if (authError) setError(authError.message);
   };
