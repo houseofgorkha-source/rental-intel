@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
 import Link from "next/link";
+import { useMemo, useState } from "react";
 import ReviewCard, { type Review } from "@/components/property/ReviewCard";
 
 type Props = {
@@ -12,12 +12,7 @@ type Props = {
   canWriteReview: boolean;
 };
 
-const sortOptions = [
-  "Newest",
-  "Highest Rated",
-  "Lowest Rated",
-] as const;
-
+const sortOptions = ["Newest", "Highest Rated", "Lowest Rated"] as const;
 const filterOptions = [
   "All",
   "Verified",
@@ -35,28 +30,23 @@ export default function ReviewSection({
 }: Props) {
   const [filter, setFilter] =
     useState<(typeof filterOptions)[number]>("All");
-
-  const [sort, setSort] =
-    useState<(typeof sortOptions)[number]>("Newest");
+  const [sort, setSort] = useState<(typeof sortOptions)[number]>("Newest");
 
   const displayedReviews = useMemo(() => {
     let data = [...propertyReviews];
 
     switch (filter) {
       case "Verified":
-        data = data.filter((r) => r.verified);
+        data = data.filter((review) => review.verified);
         break;
-
       case "Recommended":
-        data = data.filter((r) => r.wouldRecommend);
+        data = data.filter((review) => review.wouldRecommend);
         break;
-
       case "Not Recommended":
-        data = data.filter((r) => !r.wouldRecommend);
+        data = data.filter((review) => !review.wouldRecommend);
         break;
-
       case "5 Stars":
-        data = data.filter((r) => r.rating === 5);
+        data = data.filter((review) => review.rating === 5);
         break;
     }
 
@@ -64,157 +54,143 @@ export default function ReviewSection({
       case "Highest Rated":
         data.sort((a, b) => b.rating - a.rating);
         break;
-
       case "Lowest Rated":
         data.sort((a, b) => a.rating - b.rating);
         break;
-
       case "Newest":
       default:
         data.sort(
-          (a, b) =>
-            new Date(b.date).getTime() -
-            new Date(a.date).getTime()
+          (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
         );
     }
-    
+
     return data;
-  }, [filter, sort, propertyReviews]);
+  }, [filter, propertyReviews, sort]);
 
   const ratingCounts = {
-  5: propertyReviews.filter((r) => r.rating === 5).length,
-  4: propertyReviews.filter((r) => r.rating === 4).length,
-  3: propertyReviews.filter((r) => r.rating === 3).length,
-  2: propertyReviews.filter((r) => r.rating === 2).length,
-  1: propertyReviews.filter((r) => r.rating === 1).length,
-};
-
-const maxCount = Math.max(...Object.values(ratingCounts), 1);
+    5: propertyReviews.filter((review) => review.rating === 5).length,
+    4: propertyReviews.filter((review) => review.rating === 4).length,
+    3: propertyReviews.filter((review) => review.rating === 3).length,
+    2: propertyReviews.filter((review) => review.rating === 2).length,
+    1: propertyReviews.filter((review) => review.rating === 1).length,
+  };
+  const maxCount = Math.max(...Object.values(ratingCounts), 1);
 
   return (
     <div className="mt-10">
+      <div className="flex flex-col gap-7">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
+              Community reviews
+            </p>
+            <h2 className="mt-3 text-3xl font-medium tracking-[-0.035em] text-slate-950">
+              Reviews ({displayedReviews.length})
+            </h2>
+          </div>
 
-      <div className="flex flex-col gap-6">
+          {canWriteReview ? (
+            <Link
+              href={`/property/${propertySlug}/review`}
+              className="inline-flex items-center justify-center rounded-xl bg-slate-950 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800"
+            >
+              Write Review
+            </Link>
+          ) : (
+            <p className="text-sm font-medium text-slate-600">Pending approval</p>
+          )}
+        </div>
 
-        <p className="text-3xl font-bold text-green-600">
-  {recommendationPercentage}% Recommend
-</p>
+        <div className="grid gap-7 rounded-2xl border border-slate-200 bg-white p-6 sm:grid-cols-[minmax(0,1fr)_minmax(14rem,0.8fr)]">
+          <div>
+            <p className="text-4xl font-medium tracking-[-0.04em] text-slate-950">
+              {recommendationPercentage}%
+            </p>
+            <p className="mt-2 text-sm font-medium text-slate-900">
+              recommend this property
+            </p>
+            <p className="mt-2 text-sm leading-6 text-slate-500">
+              {recommendedCount} of {propertyReviews.length}{" "}
+              {propertyReviews.length === 1 ? "reviewer recommends" : "reviewers recommend"}{" "}
+              this property.
+            </p>
+          </div>
 
-<p className="mt-2 text-gray-600">
-  👍 {recommendedCount} of {propertyReviews.length}{" "}
-  {propertyReviews.length === 1
-    ? "reviewer recommends"
-    : "reviewers recommend"}{" "}
-  this property.
-</p>
+          <div className="space-y-2.5">
+            {[5, 4, 3, 2, 1].map((star) => (
+              <div key={star} className="flex items-center gap-3">
+                <span className="w-8 text-sm font-medium text-slate-700">
+                  {star} ★
+                </span>
+                <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-100">
+                  <div
+                    className="h-full rounded-full bg-slate-900"
+                    style={{
+                      width: `${
+                        (ratingCounts[star as keyof typeof ratingCounts] /
+                          maxCount) *
+                        100
+                      }%`,
+                    }}
+                  />
+                </div>
+                <span className="w-5 text-right text-sm text-slate-500">
+                  {ratingCounts[star as keyof typeof ratingCounts]}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
 
-<div className="mt-6 space-y-3">
-  {[5, 4, 3, 2, 1].map((star) => (
-    <div key={star} className="flex items-center gap-3">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-wrap gap-2">
+            {filterOptions.map((option) => (
+              <button
+                key={option}
+                type="button"
+                onClick={() => setFilter(option)}
+                className={`rounded-full px-3.5 py-2 text-sm font-medium transition ${
+                  filter === option
+                    ? "bg-slate-950 text-white"
+                    : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                }`}
+              >
+                {option}
+              </button>
+            ))}
+          </div>
 
-      <span className="w-10 text-sm font-medium text-gray-700">
-        {star} ★
-      </span>
-
-      <div className="h-2 flex-1 overflow-hidden rounded-full bg-gray-200">
-
-        <div
-          className="h-full rounded-full bg-yellow-400"
-          style={{
-            width: `${
-              (ratingCounts[star as keyof typeof ratingCounts] /
-                maxCount) *
-              100
-            }%`,
-          }}
-        />
-
-      </div>
-
-      <span className="w-6 text-right text-sm text-gray-600">
-        {ratingCounts[star as keyof typeof ratingCounts]}
-      </span>
-
-    </div>
-  ))}
-</div>
-
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-
-          <h2 className="text-3xl font-bold text-gray-900">
-            Reviews ({displayedReviews.length})
-          </h2>
-
-          <div className="flex flex-wrap items-center gap-3">
-
+          <label className="flex items-center gap-2 text-sm text-slate-600">
+            <span className="sr-only">Sort reviews</span>
             <select
               value={sort}
-              onChange={(e) =>
-                setSort(
-                  e.target.value as (typeof sortOptions)[number]
-                )
+              onChange={(event) =>
+                setSort(event.target.value as (typeof sortOptions)[number])
               }
-              className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900"
+              className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-900 outline-none transition focus:border-slate-500"
             >
               {sortOptions.map((option) => (
-                <option key={option} className="bg-white text-gray-900">
+                <option key={option} className="bg-white text-slate-900">
                   {option}
                 </option>
               ))}
             </select>
-
-            {canWriteReview ? <Link
-              href={`/property/${propertySlug}/review`}
-              className="rounded-lg bg-blue-600 px-6 py-3 text-sm font-semibold text-white hover:bg-blue-700"
-            >
-              ✍️ Write Review
-            </Link> : <p className="text-sm font-medium text-gray-600">Pending approval</p>}
-
-          </div>
-
+          </label>
         </div>
-
-        <div className="flex flex-wrap gap-2">
-          {filterOptions.map((option) => (
-            <button
-              key={option}
-              onClick={() => setFilter(option)}
-              className={`rounded-full px-4 py-2 text-sm font-medium transition ${
-                filter === option
-                  ? "bg-blue-600 text-white"
-                  : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-100"
-              }`}
-            >
-              {option}
-            </button>
-          ))}
-        </div>
-
       </div>
 
-      <div className="mt-6 space-y-6">
-
+      <div className="mt-7 space-y-5">
         {displayedReviews.length > 0 ? (
           displayedReviews.map((review) => (
-            <ReviewCard
-              key={review.id}
-              review={review}
-            />
+            <ReviewCard key={review.id} review={review} />
           ))
         ) : (
-          <div className="rounded-2xl border border-gray-200 bg-white p-8 text-center">
-            <h3 className="text-xl font-semibold">
-              No reviews found
-            </h3>
-
-            <p className="mt-2 text-gray-600">
-              Try another filter.
-            </p>
+          <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center">
+            <h3 className="text-lg font-medium text-slate-950">No reviews found</h3>
+            <p className="mt-2 text-sm text-slate-500">Try another filter.</p>
           </div>
         )}
-
       </div>
-
     </div>
   );
 }

@@ -19,16 +19,16 @@ export default function PropertyGallery({ images }: PropertyGalleryProps) {
   }
 
   return (
-    <section aria-label="Property gallery" className="mt-8">
-      <div className="overflow-hidden rounded-2xl border border-gray-200 bg-gray-50">
+    <section aria-label="Property gallery" className="mt-10">
+      <div className="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-slate-100 shadow-[0_24px_60px_-45px_rgba(15,23,42,0.45)]">
         <img
           src={selectedImage.src}
           alt={selectedImage.alt}
-          className="aspect-[16/9] w-full object-cover"
+          className="aspect-[16/10] w-full object-cover"
         />
       </div>
 
-      <div className="mt-4 flex gap-3 overflow-x-auto pb-1">
+      <div className="mt-4 flex gap-3 overflow-x-auto pb-1 sm:mt-5">
         {images.map((image) => {
           const isSelected = image.src === selectedImage.src;
 
@@ -39,16 +39,16 @@ export default function PropertyGallery({ images }: PropertyGalleryProps) {
               onClick={() => setSelectedImage(image)}
               aria-label={`View ${image.alt}`}
               aria-pressed={isSelected}
-              className={`shrink-0 overflow-hidden rounded-xl border-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 ${
+              className={`shrink-0 overflow-hidden rounded-xl border-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 ${
                 isSelected
-                  ? "border-blue-600"
-                  : "border-transparent hover:border-gray-300"
+                  ? "border-slate-950"
+                  : "border-transparent opacity-70 hover:border-slate-300 hover:opacity-100"
               }`}
             >
               <img
                 src={image.src}
                 alt=""
-                className="h-20 w-28 object-cover sm:h-24 sm:w-36"
+                className="h-20 w-28 object-cover sm:h-24 sm:w-40"
               />
             </button>
           );
