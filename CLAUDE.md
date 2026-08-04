@@ -78,6 +78,9 @@ Supabase (Postgres + Auth + Storage), authorization enforced via Row Level Secur
 - Authorization is enforced primarily at the database level via Postgres Row Level Security policies, not in application code. The app layer generally trusts RLS to filter what a query can see or write.
 - Session cookies are refreshed on every request by `proxy.ts` (Next.js 16's renamed `middleware.ts` convention), which calls `supabase.auth.getUser()` and re-sets cookies.
 - One data-access helper exists outside of a page: `lib/property-discovery.ts`, used by the homepage and `/property` listing.
+- A second `lib/` helper, `lib/cities.ts`, is the single source of truth for city/locality data (`DEFAULT_CITY`, `CITIES` with a per-city `available` flag, `LOCALITIES_BY_CITY`) — built to make the UI multi-city-ready without actually implementing other cities yet. `CitySelector`, the homepage, and `/property` all import from it rather than keeping their own copies.
+
+**[Verified Fact — known gap]** `getDiscoveryProperties()` accepts a `city` parameter but does **not** filter the query on it. `properties.city` is free-text in the current data and inconsistently cased (`"Bengaluru"`, `"BENGALURU"` — never `"Bangalore"`, which is what `lib/cities.ts` uses as the canonical name). An `.eq("city", city)` filter was tried and reverted after it silently returned zero properties. Real city filtering needs the `city` column normalized (or constrained) first — see §13.
 
 **[Current Working Assumption]** Business logic embedded directly inside `page.tsx` files (notably `app/property/[slug]/page.tsx`, which does row-shaping, rating aggregation, and date formatting inline) is not yet extracted to `lib/`, unlike `property-discovery.ts`. Whether this should be refactored, or is acceptable as-is for current scale, is unresolved — see §12/§16 (extend, don't refactor, without approval).
 
@@ -95,17 +98,18 @@ app/
   layout.tsx, page.tsx, globals.css
 
 components/
-  property/         PropertyDiscovery, PropertyGallery, ReviewSection, ReviewCard, PropertyShareButton
+  property/         PropertyDiscovery.tsx (PropertyToolbar, PropertyList, filterPropertiesByArea, default PropertyDiscovery page shell), AreaSelector, PropertyGallery, ReviewSection, ReviewCard, PropertyShareButton
   review/           ReviewForm, VerifyStayForm, StarRating, reviewCategories.ts
   add-property/     PropertyForm, InfoCard, SectionTitle
   login/            LoginForm, SignupForm
-  shared/           Button, InputField, TextAreaField, AuthCard, AuthHeader, AuthLayout, AccountMenu, TrustBadge
+  shared/           Button, InputField, TextAreaField, AuthCard, AuthHeader, AuthLayout, AccountMenu, TrustBadge, Logo
   SearchBar.tsx, CitySelector.tsx   (top-level; not currently in shared/ — see §13)
 
 lib/
   supabase/client.ts   browser Supabase client
   supabase/server.ts   server Supabase client (cookie-aware)
   property-discovery.ts  aggregation query for property listings
+  cities.ts               city/locality single source of truth (see §4)
 
 supabase/migrations/   hand-written, timestamped SQL migrations (schema + RLS)
 docs/                  product/architecture documentation (see §0 for accuracy caveats)
@@ -132,7 +136,7 @@ public/                static assets
 
 **[Verified Fact]**, from `supabase/migrations/`:
 
-**Core tables**: `profiles` (mirrors `auth.users`, auto-created via `handle_new_user` trigger), `properties` (status enum: `pending` / `published` / `rejected`), `property_images`, `reviews` (verification_status enum: `unverified` / `pending` / `verified` / `rejected`; recommendation enum: `yes` / `maybe` / `no`), `review_categories` (static, seeded), `review_category_ratings`, `review_issues` (tagged issue types), `wishlists`, `review_verifications`, `verification_documents`.
+**Core tables**: `profiles` (mirrors `auth.users`, auto-created via `handle_new_user` trigger), `properties` (status enum: `pending` / `published` / `rejected`; `is_available boolean not null default true` as of the 4th migration below), `property_images`, `reviews` (verification_status enum: `unverified` / `pending` / `verified` / `rejected`; recommendation enum: `yes` / `maybe` / `no`), `review_categories` (static, seeded), `review_category_ratings`, `review_issues` (tagged issue types), `wishlists`, `review_verifications`, `verification_documents`.
 
 **Storage buckets**: `property-images` (public, 5MB/file, jpeg/png/webp), `verification-documents` (private, 5MB/file, pdf/jpeg/png, folder-scoped RLS by user id).
 
@@ -140,6 +144,7 @@ public/                static assets
 1. `20260724000000_initial_schema.sql` — full base schema, enums, triggers, RLS policies, storage buckets.
 2. `20260801000000_allow_property_image_submissions.sql` — lets property creators insert/upload their own image records; widens image read policy to include the owner's own (not-yet-published) properties.
 3. `20260801000001_add_upload_cleanup_policies.sql` — lets creators delete failed image uploads and remove their own still-pending properties/verification requests.
+4. `20260805000000_add_property_availability.sql` — adds `properties.is_available boolean not null default true`, powering the "Available for rent" card badge. No RLS change needed (no column-level security in this schema — a new column on an already-visible row is covered by the existing row-level policy). There is still no UI for anyone to actually set this to `false` — every property shows as available until that's built.
 
 **[Verified Fact]** RLS is enabled on every `public` table. Public (anon) reads are generally scoped to `status = 'published'` (properties) or to records whose parent property is published; write access is scoped to `auth.uid()` matching the relevant owner/author column.
 
@@ -177,7 +182,11 @@ public/                static assets
 
 **[Documented Product Decision]** Brand colors per `RentalIntel_Master_Context_v1.md`: background white (#FFFFFF), text black (#111827), accent blue (#2563EB). Normal actions are white/outlined buttons that go blue on hover; high-impact actions are solid blue buttons.
 
-**[Current Working Assumption]** The slate-based palette used on the newer discovery/property pages does not match the documented blue-accent brand spec above. Whether the documented spec or the newer slate direction is now the intended target is unresolved (same open question as §9).
+**[Current Working Assumption]** The slate-based palette used on the newer discovery/property pages does not match the documented blue-accent brand spec above. Whether the documented spec or the newer slate direction is now the intended target is unresolved (same open question as §9) — **though see the note directly below: recent work has started deliberately layering the documented `#2563EB` blue back on top of the slate base as an interactive accent, which may be trending toward an answer without yet being confirmed as final.**
+
+**[Current Working Assumption]** As of this session, the homepage hero and property cards use `blue-600` (`#2563EB`, matching the documented brand spec) as a restrained interactive/status accent on top of the slate base — the headline's last word, the `Filters`/`Area` toolbar chips' active state, the search bar's focus ring, and card link hover states are blue; structural chrome (cards, panels, dividers) stays slate. The "Available for rent" badge deliberately uses emerald instead, so status color doesn't compete with the interactive blue. This is a deliberate design choice made this session, not yet explicitly ratified by the product owner as the final answer to the §9/§10 palette question — flagged here rather than silently promoted to settled.
+
+**[Documented Product Decision — stated directly by the product owner in conversation]** The homepage hero's current two-column pattern (a `rounded-2xl`, subtly tinted panel — `#f6f6f4` against the page's `#fbfbfa`, no borders, pixel-aligned to the opposite column's text) is intended to be the template for additional homepage sections built below it in the future, mirrored left/right per section (i.e. alternating which side carries the tinted panel vs. the plain-background content). Not yet built — noted here so future sections start from this stated intent rather than inventing a new layout language.
 
 ## 11. Coding standards
 
@@ -212,6 +221,9 @@ This list is a proposal, not a settled rule — see Open Questions.
 - No automated tests anywhere in the repository.
 - `data/` and `.agents/` directories are empty and appear to be unused fossils.
 - `SearchBar.tsx` / `CitySelector.tsx` live outside `components/shared/` despite being shared, reusable components.
+- `properties.city` is free-text and inconsistently cased (`"Bengaluru"`, `"BENGALURU"`) — never matches `lib/cities.ts`'s canonical `"Bangalore"`. Blocks real city-based query filtering; see §4.
+- `/property`'s "Locality explorer" sidebar keeps its own small hardcoded 6-item locality list, separate from the fuller `LOCALITIES_BY_CITY` lookup (`lib/cities.ts`) that now powers the `AreaSelector` dropdown on the same page. Known, disclosed duplication — not reconciled yet.
+- The homepage panel's scroll cap (`PropertyList`'s `lg:max-h-[21.75rem]`) and its pixel-for-pixel alignment to the left column's heading top / CTA-underline bottom are hand-calibrated fixed values tied to the current left-column copy length, not dynamically synced. If that copy changes materially, the two columns' alignment will need recalibrating — there's no JS-based height sync in place.
 
 ## 14. Current sprint
 
@@ -255,7 +267,7 @@ These require product-owner confirmation before Claude should treat any related 
 
 1. Is property/review approval currently happening manually (e.g. Supabase dashboard), or is there a planned admin surface not yet built?
 2. Is the data loss in `ReviewForm` (quick ratings, owner traits, deposit details never submitted) an intentional stub, or a bug to fix?
-3. Which visual palette is the intended brand target — the slate/minimal system or the documented blue-accent (#2563EB) system — so the in-progress brand migration has a clear destination?
+3. Which visual palette is the intended brand target — the slate/minimal system or the documented blue-accent (#2563EB) system — so the in-progress brand migration has a clear destination? (Partial signal since this was last written: the homepage/property pages now use slate as the structural base with `blue-600` as a restrained interactive accent — see §10. Not yet confirmed as the final answer.)
 4. Is the "current sprint" described in `RentalIntel_Master_Context_v1.md` (Brand migration, UI polish, Shared components) still accurate, or superseded by the Supabase/auth/verification work already shipped?
 5. Should the §12 "changes requiring approval" list be adopted as-is, adjusted, or replaced?
 6. Should `docs/Architecture.md`, `docs/PROJECT_STRUCTURE.md`, `docs/RentalIntel-Blueprint.md`, and `RentalIntel_Transition_v1.md` be updated to match current reality, or kept as historical record with this file as the current source of truth?
