@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(netstat -ano)",
+      "Bash(taskkill //PID 10600 //F)",
+      "Bash(git add *)",
+      "Bash(ls -la \"/c/Users/nikhi/.claude/projects/c--Projects-rental-intel/memory/\")",
+      "Read(//c/Users/nikhi/.claude/projects/c--Projects-rental-intel/**)",
+      "Bash(node shot-zoom.mjs)",
+      "Bash(node shot-logos.mjs)",
+      "Bash(node scratch-check-city.mjs)",
+      "Bash(node verify-property-page.mjs)",
+      "Bash(taskkill //PID 19828 //F)",
+      "Bash(node measure-panel-parts.mjs)",
+      "Bash(node verify-panel.mjs)",
+      "Bash(node -e ' *)",
+      "Bash(node shot-calibrated.mjs)",
+      "Bash(node final-checks.mjs)",
+      "Bash(taskkill //PID 11128 //F)",
+      "Bash(node measure-targets.mjs)",
+      "Bash(taskkill //PID 23104 //F)",
+      "Bash(node verify-bleed.mjs)",
+      "Bash(node zoom-corner.mjs)",
+      "Bash(taskkill //PID 18376 //F)",
+      "Bash(git commit *)"
+    ]
+  }
+}
