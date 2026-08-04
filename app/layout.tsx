@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Geist, Geist_Mono } from "next/font/google";
 import AccountMenu from "@/components/shared/AccountMenu";
+import Logo from "@/components/shared/Logo";
 import { createClient } from "@/lib/supabase/server";
 import "./globals.css";
 
@@ -37,7 +38,8 @@ export default async function RootLayout({
     >
       <body className="relative min-h-full flex flex-col">
         <header className="pointer-events-none absolute inset-x-0 top-0 z-20 px-6 py-5">
-          <div className="mx-auto flex max-w-6xl justify-end">
+          <div className="mx-auto flex max-w-6xl items-center justify-between">
+            <Logo className="pointer-events-auto" />
             {user ? (
               <AccountMenu email={user.email ?? "RentalIntel member"} />
             ) : (
