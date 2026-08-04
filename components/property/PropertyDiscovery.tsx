@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import SearchBar from "@/components/SearchBar";
+import AreaSelector from "@/components/property/AreaSelector";
+import { DEFAULT_CITY, LOCALITIES_BY_CITY } from "@/lib/cities";
 
 export type DiscoveryProperty = {
   slug: string;
@@ -13,6 +15,7 @@ export type DiscoveryProperty = {
   image: { src: string; alt: string } | null;
   averageRating: number | null;
   reviewCount: number;
+  isAvailable: boolean;
 };
 
 type PropertyDiscoveryProps = {
@@ -25,8 +28,17 @@ type PropertyListProps = {
   showToolbar?: boolean;
   compact?: boolean;
   scrollable?: boolean;
+  areas?: string[];
 };
 
+type PropertyToolbarProps = {
+  areas: string[];
+  selectedArea: string | null;
+  onAreaChange: (area: string | null) => void;
+};
+
+// Known gap: this stays a small, hand-picked subset for the sidebar below,
+// separate from the full LOCALITIES_BY_CITY list used by the Area selector.
 const localities = [
   "Koramangala",
   "HSR Layout",
@@ -36,10 +48,21 @@ const localities = [
   "JP Nagar",
 ];
 
-const staticFilterLabels = ["Area", "BHK", "Rent"];
+const staticFilterLabels = ["BHK", "Rent"];
 
 const fieldInputClass =
   "min-w-0 flex-1 cursor-not-allowed rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500 placeholder:text-slate-400";
+
+export function filterPropertiesByArea(
+  properties: DiscoveryProperty[],
+  area: string | null,
+): DiscoveryProperty[] {
+  if (!area) return properties;
+
+  return properties.filter((property) =>
+    property.area.toLocaleLowerCase().includes(area.toLocaleLowerCase()),
+  );
+}
 
 function formatRent(rent: number | null) {
   return rent === null
@@ -191,7 +214,7 @@ function FiltersPanel({ onClose }: { onClose: () => void }) {
   );
 }
 
-export function PropertyToolbar() {
+export function PropertyToolbar({ areas, selectedArea, onAreaChange }: PropertyToolbarProps) {
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const filtersRef = useRef<HTMLDivElement>(null);
 
@@ -210,6 +233,8 @@ export function PropertyToolbar() {
 
   return (
     <div className="flex flex-wrap gap-2.5">
+      <AreaSelector areas={areas} value={selectedArea} onChange={onAreaChange} />
+
       {staticFilterLabels.map((label) => (
         <button
           key={label}
@@ -251,15 +276,28 @@ export function PropertyList({
   showToolbar = false,
   compact = false,
   scrollable = false,
+  areas = [],
 }: PropertyListProps) {
+  const [selectedArea, setSelectedArea] = useState<string | null>(null);
+  const visibleProperties = useMemo(
+    () => filterPropertiesByArea(properties, selectedArea),
+    [properties, selectedArea],
+  );
+
   const grid = (
-    <div className={`grid gap-5 sm:grid-cols-2 ${compact ? "" : "xl:grid-cols-3"}`}>
-      {properties.map((property) => (
+    <div className={`grid gap-4 sm:grid-cols-2 ${compact ? "" : "xl:grid-cols-3"}`}>
+      {visibleProperties.map((property) => (
         <article
           key={property.slug}
           className="overflow-hidden rounded-2xl border border-slate-200 bg-white transition hover:border-slate-300 hover:shadow-[0_18px_45px_-30px_rgba(15,23,42,0.45)]"
         >
-          <div className="aspect-[4/3] bg-slate-100">
+          <div className="relative aspect-[2/1] bg-slate-100">
+            {property.isAvailable && (
+              <span className="absolute right-2.5 top-2.5 z-10 inline-flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-medium text-emerald-700 shadow-sm ring-1 ring-inset ring-emerald-600/20">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                Available for rent
+              </span>
+            )}
             {property.image ? (
               // The bucket accepts user uploads, so its public URLs are intentionally rendered directly.
               // eslint-disable-next-line @next/next/no-img-element
@@ -276,14 +314,14 @@ export function PropertyList({
               </div>
             )}
           </div>
-          <div className="p-5">
+          <div className="p-4">
             <p className="text-xs font-medium uppercase tracking-[0.13em] text-slate-500">
               {property.area}, {property.city}
             </p>
-            <h3 className="mt-2 line-clamp-2 text-lg font-medium tracking-[-0.02em] text-slate-950">
+            <h3 className="mt-1.5 line-clamp-2 text-base font-medium tracking-[-0.02em] text-slate-950">
               {property.name}
             </h3>
-            <div className="mt-4 flex items-center justify-between gap-3 text-sm">
+            <div className="mt-3 flex items-center justify-between gap-3 text-sm">
               <span className="font-medium text-slate-900">
                 {property.averageRating === null
                   ? "New"
@@ -294,12 +332,12 @@ export function PropertyList({
                 {property.reviewCount === 1 ? "review" : "reviews"}
               </span>
             </div>
-            <p className="mt-3 text-sm font-medium text-slate-900">
+            <p className="mt-2.5 text-sm font-medium text-slate-900">
               {formatRent(property.askingRent)}
             </p>
             <Link
               href={`/property/${property.slug}`}
-              className="mt-5 inline-flex text-sm font-medium text-slate-900 underline decoration-slate-300 underline-offset-4 transition hover:text-blue-600 hover:decoration-slate-900"
+              className="mt-3.5 inline-flex text-sm font-medium text-slate-900 underline decoration-slate-300 underline-offset-4 transition hover:text-blue-600 hover:decoration-slate-900"
             >
               View Property
             </Link>
@@ -311,7 +349,13 @@ export function PropertyList({
 
   return (
     <section aria-labelledby="property-results-heading">
-      {showToolbar && <PropertyToolbar />}
+      {showToolbar && (
+        <PropertyToolbar
+          areas={areas}
+          selectedArea={selectedArea}
+          onAreaChange={setSelectedArea}
+        />
+      )}
 
       <div
         className={`flex items-end justify-between gap-4 ${
@@ -326,12 +370,12 @@ export function PropertyList({
             {heading}
           </h2>
           <p className="mt-1 text-sm text-slate-500">
-            {properties.length} {properties.length === 1 ? "property" : "properties"}
+            {visibleProperties.length} {visibleProperties.length === 1 ? "property" : "properties"}
           </p>
         </div>
       </div>
 
-      {properties.length === 0 ? (
+      {visibleProperties.length === 0 ? (
         <div className="mt-6 rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
           <p className="font-medium text-slate-900">No properties found here yet.</p>
           <p className="mt-2 text-sm text-slate-500">
@@ -339,8 +383,8 @@ export function PropertyList({
           </p>
         </div>
       ) : scrollable ? (
-        <div className="mt-6 lg:max-h-[36rem] lg:overflow-y-auto lg:overscroll-contain lg:pr-1">
-          {grid}
+        <div className="scroll-thin mt-6 lg:-mb-8 lg:-mr-8 lg:max-h-[21.75rem] lg:overflow-y-auto">
+          <div className="lg:pr-8">{grid}</div>
         </div>
       ) : (
         <div className="mt-6">{grid}</div>
@@ -352,17 +396,13 @@ export function PropertyList({
 export default function PropertyDiscovery({
   properties,
 }: PropertyDiscoveryProps) {
+  const city = DEFAULT_CITY;
   const [selectedLocality, setSelectedLocality] = useState<string | null>(null);
 
-  const visibleProperties = useMemo(() => {
-    if (!selectedLocality) return properties;
-
-    return properties.filter((property) =>
-      property.area
-        .toLocaleLowerCase()
-        .includes(selectedLocality.toLocaleLowerCase()),
-    );
-  }, [properties, selectedLocality]);
+  const visibleProperties = useMemo(
+    () => filterPropertiesByArea(properties, selectedLocality),
+    [properties, selectedLocality],
+  );
 
   const searchProperties = properties.map((property) => ({
     slug: property.slug,
@@ -390,7 +430,11 @@ export default function PropertyDiscovery({
         </div>
 
         <div className="mt-5">
-          <PropertyToolbar />
+          <PropertyToolbar
+            areas={LOCALITIES_BY_CITY[city] ?? []}
+            selectedArea={selectedLocality}
+            onAreaChange={setSelectedLocality}
+          />
         </div>
 
         <div className="mt-12 grid gap-10 lg:grid-cols-[minmax(13rem,1fr)_minmax(0,3fr)] lg:gap-14">
@@ -408,7 +452,7 @@ export default function PropertyDiscovery({
                     : "text-slate-700 hover:bg-slate-50"
                 }`}
               >
-                All Bangalore
+                All {city}
               </button>
               {localities.map((locality) => (
                 <button
@@ -429,7 +473,7 @@ export default function PropertyDiscovery({
 
           <PropertyList
             properties={visibleProperties}
-            heading={selectedLocality ?? "Bangalore properties"}
+            heading={selectedLocality ?? `${city} properties`}
           />
         </div>
       </div>

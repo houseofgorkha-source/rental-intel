@@ -1,5 +1,6 @@
 import type { DiscoveryProperty } from "@/components/property/PropertyDiscovery";
 import { createClient } from "@/lib/supabase/server";
+import { DEFAULT_CITY } from "@/lib/cities";
 
 type PropertyRow = {
   id: string;
@@ -21,7 +22,21 @@ type ReviewRow = {
   overall_rating: number;
 };
 
-export async function getDiscoveryProperties(): Promise<DiscoveryProperty[]> {
+type AvailabilityRow = {
+  id: string;
+  is_available: boolean;
+};
+
+export async function getDiscoveryProperties(
+  // Accepted for forward-compatibility (multi-city callers already pass this),
+  // but not yet applied to the query below: existing `properties.city` values
+  // are free text ("Bengaluru", "BENGALURU", ...), not the canonical city
+  // names in lib/cities.ts, so filtering on it today would silently drop
+  // every real property. Wire this up once city values are normalized.
+  city: string = DEFAULT_CITY,
+): Promise<DiscoveryProperty[]> {
+  void city;
+
   if (
     !process.env.NEXT_PUBLIC_SUPABASE_URL ||
     !process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
@@ -38,7 +53,7 @@ export async function getDiscoveryProperties(): Promise<DiscoveryProperty[]> {
 
   const properties = (propertyRows ?? []) as PropertyRow[];
   const propertyIds = properties.map((property) => property.id);
-  const [imagesResult, reviewsResult] = propertyIds.length
+  const [imagesResult, reviewsResult, availabilityResult] = propertyIds.length
     ? await Promise.all([
         supabase
           .from("property_images")
@@ -49,8 +64,16 @@ export async function getDiscoveryProperties(): Promise<DiscoveryProperty[]> {
           .from("reviews")
           .select("property_id, overall_rating")
           .in("property_id", propertyIds),
+        // Queried separately from the main properties fetch: is_available may
+        // not exist yet on every environment (pending migration). A failure
+        // here must never affect the properties list itself — every property
+        // just falls back to "available" below.
+        supabase
+          .from("properties")
+          .select("id, is_available")
+          .in("id", propertyIds),
       ])
-    : [{ data: [] }, { data: [] }];
+    : [{ data: [] }, { data: [] }, { data: null, error: null }];
 
   const firstImageByProperty = new Map<string, ImageRow>();
   ((imagesResult.data ?? []) as ImageRow[]).forEach((image) => {
@@ -65,6 +88,13 @@ export async function getDiscoveryProperties(): Promise<DiscoveryProperty[]> {
     reviews.push(review);
     reviewsByProperty.set(review.property_id, reviews);
   });
+
+  const availabilityByProperty = new Map<string, boolean>();
+  if (!availabilityResult.error) {
+    ((availabilityResult.data ?? []) as AvailabilityRow[]).forEach((row) => {
+      availabilityByProperty.set(row.id, row.is_available);
+    });
+  }
 
   return properties.map((property) => {
     const image = firstImageByProperty.get(property.id);
@@ -90,6 +120,7 @@ export async function getDiscoveryProperties(): Promise<DiscoveryProperty[]> {
         : null,
       averageRating,
       reviewCount: reviews.length,
+      isAvailable: availabilityByProperty.get(property.id) ?? true,
     };
   });
 }

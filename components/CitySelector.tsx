@@ -1,10 +1,18 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { CITIES, DEFAULT_CITY } from "@/lib/cities";
 
-const cities = ["Bangalore", "Hyderabad", "Pune", "Chennai"];
+type CitySelectorProps = {
+  value?: string;
+  onChange?: (city: string) => void;
+};
 
-export default function CitySelector() {
+export default function CitySelector({ value, onChange }: CitySelectorProps) {
+  const [internalCity, setInternalCity] = useState(DEFAULT_CITY);
+  const city = value ?? internalCity;
+  const setCity = onChange ?? setInternalCity;
+
   const [isOpen, setIsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const selectorRef = useRef<HTMLDivElement>(null);
@@ -32,6 +40,11 @@ export default function CitySelector() {
     setActiveIndex(0);
   }
 
+  function selectCity(name: string) {
+    setCity(name);
+    closeMenu();
+  }
+
   function handleKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
     if (event.key === "Escape") {
       closeMenu();
@@ -41,20 +54,21 @@ export default function CitySelector() {
     if (event.key === "ArrowDown") {
       event.preventDefault();
       setIsOpen(true);
-      setActiveIndex((index) => (index + 1) % cities.length);
+      setActiveIndex((index) => (index + 1) % CITIES.length);
       return;
     }
 
     if (event.key === "ArrowUp") {
       event.preventDefault();
       setIsOpen(true);
-      setActiveIndex((index) => (index - 1 + cities.length) % cities.length);
+      setActiveIndex((index) => (index - 1 + CITIES.length) % CITIES.length);
       return;
     }
 
     if (event.key === "Enter" && isOpen) {
       event.preventDefault();
-      if (activeIndex === 0) closeMenu();
+      const option = CITIES[activeIndex];
+      if (option?.available) selectCity(option.name);
     }
   }
 
@@ -74,7 +88,7 @@ export default function CitySelector() {
         aria-controls="city-options"
         className="flex h-full min-h-16 items-center rounded-l-[0.9375rem] border-r border-slate-200 bg-slate-50 px-4 text-sm font-medium text-slate-700 transition hover:bg-blue-50"
       >
-        Bangalore
+        {city}
       </button>
 
       {isOpen && (
@@ -83,28 +97,27 @@ export default function CitySelector() {
           role="menu"
           className="absolute left-0 z-30 mt-3 max-h-64 w-56 overflow-y-auto overscroll-contain rounded-2xl border border-slate-200 bg-white p-2 shadow-xl"
         >
-          {cities.map((city, index) => {
-            const available = city === "Bangalore";
+          {CITIES.map((option, index) => {
             const isActive = activeIndex === index;
 
             return (
               <button
-                key={city}
+                key={option.name}
                 ref={(element) => {
                   optionRefs.current[index] = element;
                 }}
                 type="button"
                 role="menuitem"
-                disabled={!available}
-                onClick={() => available && closeMenu()}
+                disabled={!option.available}
+                onClick={() => option.available && selectCity(option.name)}
                 className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm ${
-                  available
+                  option.available
                     ? "font-medium text-slate-900 hover:bg-blue-50"
                     : "cursor-not-allowed text-slate-400"
                 } ${isActive ? "bg-slate-50" : ""}`}
               >
-                {city}
-                {!available && <span className="text-xs">Coming Soon</span>}
+                {option.name}
+                {!option.available && <span className="text-xs">Coming Soon</span>}
               </button>
             );
           })}
