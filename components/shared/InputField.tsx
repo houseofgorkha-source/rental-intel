@@ -8,6 +8,10 @@ type InputFieldProps = {
   accept?: string;
   multiple?: boolean;
   onChange?: ChangeEventHandler<HTMLInputElement>;
+  // Optional — omitted by existing callers, which keeps the field
+  // uncontrolled exactly as before. Passing it (with onChange) opts a
+  // specific field into controlled mode, e.g. to prefill it programmatically.
+  value?: string;
 };
 
 export default function InputField({
@@ -20,6 +24,7 @@ export default function InputField({
   accept,
   multiple = false,
   onChange,
+  value,
 }: InputFieldProps) {
   return (
     <div className="space-y-2">
@@ -35,6 +40,7 @@ export default function InputField({
         accept={accept}
         multiple={multiple}
         onChange={onChange}
+        value={value}
         placeholder={placeholder}
         className="
           w-full

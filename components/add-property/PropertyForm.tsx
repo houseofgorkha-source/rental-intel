@@ -8,6 +8,8 @@ import TextAreaField from "../shared/TextAreaField";
 import SectionTitle from "./SectionTitle";
 import InfoCard from "./InfoCard";
 import Button from "../shared/Button";
+import UseMyLocationButton from "../shared/UseMyLocationButton";
+import { findNearestArea, findNearestCity, type Coordinates } from "@/lib/area-coordinates";
 
 const maxFileSize = 5 * 1024 * 1024;
 const maxFileCount = 5;
@@ -24,7 +26,20 @@ function getImageError(files: File[]) {
 export default function PropertyForm() {
   const [submissionError, setSubmissionError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [city, setCity] = useState("");
+  const [area, setArea] = useState("");
   const router = useRouter();
+
+  // Suggests city/area from the user's location — never stores the
+  // coordinates themselves; only the resulting text values, which the user
+  // can still edit before submitting. Reuses the same nearest-city/area
+  // lookup the homepage's location button uses, not a separate lookup.
+  function handleLocated(coordinates: Coordinates) {
+    const nearestCity = findNearestCity(coordinates);
+    if (nearestCity) setCity(nearestCity);
+    const nearestArea = nearestCity ? findNearestArea(coordinates, nearestCity) : null;
+    if (nearestArea) setArea(nearestArea);
+  }
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -108,10 +123,14 @@ export default function PropertyForm() {
             name="addressLine2"
           />
 
+          <UseMyLocationButton onLocated={handleLocated} compact />
+
           <InputField
             label="Area / Locality"
             placeholder="Ejipura"
             name="area"
+            value={area}
+            onChange={(event) => setArea(event.target.value)}
             required
           />
 
@@ -121,6 +140,8 @@ export default function PropertyForm() {
               label="City"
               placeholder="Bengaluru"
               name="city"
+              value={city}
+              onChange={(event) => setCity(event.target.value)}
               required
             />
 

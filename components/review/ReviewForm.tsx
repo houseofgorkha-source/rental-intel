@@ -3,6 +3,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createReview } from "@/app/actions/review";
 import StarRating from "./StarRating";
+import UseMyLocationButton from "../shared/UseMyLocationButton";
+import { isNearArea, type Coordinates } from "@/lib/area-coordinates";
 import {
   negativeOwnerTraits,
   positiveOwnerTraits,
@@ -44,9 +46,14 @@ function YesNoField({ label, value, onChange }: YesNoFieldProps) {
 
 type ReviewFormProps = {
   propertyId: string;
+  propertyArea: string;
 };
 
-export default function ReviewForm({ propertyId }: ReviewFormProps) {
+export default function ReviewForm({ propertyId, propertyArea }: ReviewFormProps) {
+  // A UI trust signal only — never blocks or affects review submission, and
+  // the coordinates used to compute it are never sent to createReview or
+  // stored anywhere.
+  const [isNearProperty, setIsNearProperty] = useState<boolean | null>(null);
   const [overallRating, setOverallRating] = useState(0);
   const [wouldRecommend, setWouldRecommend] = useState<YesNoValue>(null);
   const [wouldRentAgain, setWouldRentAgain] = useState<RentAgainOption | null>(
@@ -131,6 +138,21 @@ export default function ReviewForm({ propertyId }: ReviewFormProps) {
           </h2>
 
           <div className="mt-6 space-y-6">
+            <div>
+              <UseMyLocationButton
+                label="Confirm you're near this property"
+                compact
+                onLocated={(coordinates: Coordinates) =>
+                  setIsNearProperty(isNearArea(coordinates, propertyArea))
+                }
+              />
+              {isNearProperty && (
+                <p className="mt-1.5 text-sm font-medium text-emerald-700">
+                  ✓ You&apos;re currently near this property.
+                </p>
+              )}
+            </div>
+
             <StarRating
               label="Overall Rating"
               value={overallRating}

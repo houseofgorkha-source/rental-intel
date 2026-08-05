@@ -1,3 +1,5 @@
+import { CITIES, LOCALITIES_BY_CITY } from "@/lib/cities";
+
 export type Coordinates = { lat: number; lng: number };
 
 // Approximate center point per city — used as the map's default view when no
@@ -72,4 +74,66 @@ export function getAreaCoordinates(area: string): Coordinates | null {
 
 export function getCityCoordinates(city: string): Coordinates {
   return CITY_COORDINATES[city] ?? CITY_COORDINATES.Bengaluru;
+}
+
+// Great-circle distance in kilometers — good enough for "which city/area is
+// closest" at this scale; no need for anything more precise.
+function distanceKm(a: Coordinates, b: Coordinates): number {
+  const R = 6371;
+  const dLat = ((b.lat - a.lat) * Math.PI) / 180;
+  const dLng = ((b.lng - a.lng) * Math.PI) / 180;
+  const lat1 = (a.lat * Math.PI) / 180;
+  const lat2 = (b.lat * Math.PI) / 180;
+  const h =
+    Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+
+// Nearest-neighbor lookup against the same coordinate data already used for
+// map centering — deliberately not a reverse-geocoding API call (Nominatim,
+// Google, or otherwise): every city/area we support already has an
+// approximate coordinate here, so there's nothing an external service would
+// tell us that this lookup can't, and it keeps a user's location from ever
+// leaving their browser.
+export function findNearestCity(point: Coordinates): string | null {
+  let nearest: string | null = null;
+  let nearestDistance = Infinity;
+
+  for (const city of CITIES) {
+    const coordinates = CITY_COORDINATES[city.name];
+    if (!coordinates) continue;
+    const distance = distanceKm(point, coordinates);
+    if (distance < nearestDistance) {
+      nearestDistance = distance;
+      nearest = city.name;
+    }
+  }
+
+  return nearest;
+}
+
+export function findNearestArea(point: Coordinates, city: string): string | null {
+  const areas = LOCALITIES_BY_CITY[city] ?? [];
+  let nearest: string | null = null;
+  let nearestDistance = Infinity;
+
+  for (const area of areas) {
+    const coordinates = AREA_COORDINATES[area];
+    if (!coordinates) continue;
+    const distance = distanceKm(point, coordinates);
+    if (distance < nearestDistance) {
+      nearestDistance = distance;
+      nearest = area;
+    }
+  }
+
+  return nearest;
+}
+
+// Used by the review flow's "you're currently near this property" trust
+// signal — a coarse yes/no, not a precise proximity check.
+export function isNearArea(point: Coordinates, area: string, thresholdKm = 5): boolean {
+  const coordinates = AREA_COORDINATES[area];
+  if (!coordinates) return false;
+  return distanceKm(point, coordinates) <= thresholdKm;
 }

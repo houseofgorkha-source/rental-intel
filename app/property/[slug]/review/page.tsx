@@ -20,7 +20,7 @@ export default async function ReviewPage({
 
   const { data: property, error } = await supabase
     .from("properties")
-    .select("id, name, slug")
+    .select("id, name, slug, area")
     .eq("slug", slug)
     .eq("status", "published")
     .single();
@@ -56,7 +56,7 @@ export default async function ReviewPage({
         </div>
 
         <div className="mt-8">
-          <ReviewForm propertyId={property.id} />
+          <ReviewForm propertyId={property.id} propertyArea={property.area} />
         </div>
 
       </div>

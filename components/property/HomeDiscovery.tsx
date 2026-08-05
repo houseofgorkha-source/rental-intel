@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useMemo, useRef, useState } from "react";
 import SearchBar from "@/components/SearchBar";
 import PropertyMap from "@/components/property/PropertyMap";
+import UseMyLocationButton from "@/components/shared/UseMyLocationButton";
 import {
   PropertyList,
   RENT_MIN,
@@ -12,7 +13,13 @@ import {
   type OnlyShowFilters,
 } from "@/components/property/PropertyDiscovery";
 import { DEFAULT_CITY, LOCALITIES_BY_CITY, cityMatches } from "@/lib/cities";
-import { getAreaCoordinates, getCityCoordinates, type Coordinates } from "@/lib/area-coordinates";
+import {
+  findNearestArea,
+  findNearestCity,
+  getAreaCoordinates,
+  getCityCoordinates,
+  type Coordinates,
+} from "@/lib/area-coordinates";
 import type { DiscoveryProperty } from "@/lib/property-discovery";
 
 type HomeDiscoveryProps = {
@@ -101,6 +108,19 @@ export default function HomeDiscovery({ properties }: HomeDiscoveryProps) {
     lastUserMapView.current = view;
   }, []);
 
+  // Reuses the exact same city/area-change handlers a dropdown selection
+  // would trigger — no separate "located" code path for city/map/list state.
+  const handleLocated = useCallback(
+    (coordinates: Coordinates) => {
+      const nearestCity = findNearestCity(coordinates);
+      if (!nearestCity) return;
+      handleCityChange(nearestCity);
+      const nearestArea = findNearestArea(coordinates, nearestCity);
+      if (nearestArea) handleAreaChange(nearestArea);
+    },
+    [handleCityChange, handleAreaChange],
+  );
+
   return (
     <main className="min-h-screen min-w-0 bg-[#fbfbfa]">
       <div className="mx-auto grid max-w-[1600px] lg:grid-cols-2 lg:items-start">
@@ -129,9 +149,10 @@ export default function HomeDiscovery({ properties }: HomeDiscoveryProps) {
                     : `${selectedCity} is coming soon. Try ${DEFAULT_CITY} for now.`}
                 </p>
               )}
+              <UseMyLocationButton onLocated={handleLocated} className="mt-4" />
             </div>
 
-            <div className="mt-10 h-[22rem] max-w-xl sm:h-[26rem]">
+            <div className="mt-6 h-[22rem] max-w-xl sm:h-[26rem]">
               <PropertyMap
                 properties={visibleProperties}
                 center={mapView.center}
