@@ -145,7 +145,7 @@ export default function HomeDiscovery({ properties }: HomeDiscoveryProps) {
               the toolbar, the map, and the property list. */}
           <section className="min-w-0" aria-label="Property discovery">
             <div className="overflow-hidden rounded-2xl bg-[#f6f6f4] shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-              <div className="flex flex-wrap items-start justify-between gap-4 p-5 sm:p-6">
+              <div className="flex flex-wrap items-center justify-between gap-4 p-5 sm:p-6">
                 <UseMyLocationButton onLocated={handleLocated} compact />
 
                 <div className="flex flex-1 flex-wrap items-start justify-end gap-3">

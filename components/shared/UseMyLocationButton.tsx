@@ -42,8 +42,21 @@ export default function UseMyLocationButton({
     setStatus(result.status === "error" ? "error" : result.status);
   }
 
+  const message =
+    status === "denied"
+      ? "Location permission was denied — no problem, you can keep using the city and area dropdowns instead."
+      : status === "unsupported"
+        ? "Your browser doesn't support location detection here — use the dropdowns instead."
+        : status === "error"
+          ? "We couldn't detect your location. Please use the dropdowns instead."
+          : null;
+
   return (
-    <div className={className}>
+    // `relative` + absolutely-positioned message/note below: neither one is
+    // ever in normal document flow, so this component's own height never
+    // changes as status changes — it can't push sibling toolbar items
+    // (search bar, filters) up or down regardless of how long the message is.
+    <div className={`relative ${className}`}>
       <button
         type="button"
         onClick={handleClick}
@@ -56,24 +69,15 @@ export default function UseMyLocationButton({
         {status === "loading" ? "Finding your location…" : label}
       </button>
 
-      {status === "denied" && (
-        <p className="mt-1.5 text-sm text-slate-500">
-          Location permission was denied — no problem, you can keep using the city and area
-          dropdowns instead.
+      {message && (
+        <p className="absolute left-0 top-full z-10 mt-1.5 w-64 rounded-lg bg-white px-2.5 py-1.5 text-sm text-slate-500 shadow-md">
+          {message}
         </p>
       )}
-      {status === "unsupported" && (
-        <p className="mt-1.5 text-sm text-slate-500">
-          Your browser doesn&apos;t support location detection here — use the dropdowns instead.
+      {!compact && !message && (
+        <p className="absolute left-0 top-full mt-1.5 w-64 text-xs text-slate-400">
+          {DEFAULT_PRIVACY_NOTE}
         </p>
-      )}
-      {status === "error" && (
-        <p className="mt-1.5 text-sm text-slate-500">
-          We couldn&apos;t detect your location. Please use the dropdowns instead.
-        </p>
-      )}
-      {!compact && (
-        <p className="mt-1.5 text-xs text-slate-400">{DEFAULT_PRIVACY_NOTE}</p>
       )}
     </div>
   );
