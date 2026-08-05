@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { requestCurrentLocation } from "@/lib/geolocation";
 import type { Coordinates } from "@/lib/area-coordinates";
 
@@ -28,6 +28,7 @@ export default function UseMyLocationButton({
   const [status, setStatus] = useState<"idle" | "loading" | "denied" | "unsupported" | "error">(
     "idle",
   );
+  const containerRef = useRef<HTMLDivElement>(null);
 
   async function handleClick() {
     setStatus("loading");
@@ -42,9 +43,24 @@ export default function UseMyLocationButton({
     setStatus(result.status === "error" ? "error" : result.status);
   }
 
+  // The message stays open until the user dismisses it by clicking
+  // elsewhere — it doesn't disappear on its own.
+  useEffect(() => {
+    if (status === "idle" || status === "loading") return;
+
+    const dismiss = (event: MouseEvent) => {
+      if (!containerRef.current?.contains(event.target as Node)) {
+        setStatus("idle");
+      }
+    };
+
+    document.addEventListener("mousedown", dismiss);
+    return () => document.removeEventListener("mousedown", dismiss);
+  }, [status]);
+
   const message =
     status === "denied"
-      ? "Location permission was denied — no problem, you can keep using the city and area dropdowns instead."
+      ? "Location access is blocked for this site. To use it, turn it on in your browser: click the lock/site-settings icon next to the address bar, allow Location, then try again."
       : status === "unsupported"
         ? "Your browser doesn't support location detection here — use the dropdowns instead."
         : status === "error"
@@ -56,7 +72,7 @@ export default function UseMyLocationButton({
     // ever in normal document flow, so this component's own height never
     // changes as status changes — it can't push sibling toolbar items
     // (search bar, filters) up or down regardless of how long the message is.
-    <div className={`relative ${className}`}>
+    <div ref={containerRef} className={`relative ${className}`}>
       <button
         type="button"
         onClick={handleClick}
@@ -70,9 +86,18 @@ export default function UseMyLocationButton({
       </button>
 
       {message && (
-        <p className="absolute left-0 top-full z-10 mt-1.5 w-64 rounded-lg bg-white px-2.5 py-1.5 text-sm text-slate-500 shadow-md">
-          {message}
-        </p>
+        <div className="absolute left-0 top-full z-10 mt-1.5 w-72 rounded-lg bg-white p-2.5 shadow-md">
+          <p className="text-sm text-slate-500">{message}</p>
+          {status !== "unsupported" && (
+            <button
+              type="button"
+              onClick={handleClick}
+              className="mt-1.5 text-sm font-medium text-blue-600 hover:text-blue-700"
+            >
+              Try again
+            </button>
+          )}
+        </div>
       )}
       {!compact && !message && (
         <p className="absolute left-0 top-full mt-1.5 w-64 text-xs text-slate-400">
