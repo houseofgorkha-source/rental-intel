@@ -88,6 +88,8 @@ export default function HomeDiscovery({ properties }: HomeDiscoveryProps) {
               compact
               scrollable
               areas={LOCALITIES_BY_CITY[selectedCity] ?? []}
+              city={selectedCity}
+              onCityChange={setSelectedCity}
             />
           </div>
         </section>

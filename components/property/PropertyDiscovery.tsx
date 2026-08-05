@@ -4,6 +4,7 @@ import Link from "next/link";
 import { createPortal } from "react-dom";
 import { useEffect, useMemo, useRef, useState } from "react";
 import SearchBar from "@/components/SearchBar";
+import CitySelector from "@/components/CitySelector";
 import AreaSelector from "@/components/property/AreaSelector";
 import DualRangeSlider from "@/components/property/DualRangeSlider";
 import { DEFAULT_CITY, LOCALITIES_BY_CITY } from "@/lib/cities";
@@ -21,6 +22,8 @@ type PropertyListProps = {
   compact?: boolean;
   scrollable?: boolean;
   areas?: string[];
+  city?: string;
+  onCityChange?: (city: string) => void;
 };
 
 export type OnlyShowFilters = {
@@ -36,6 +39,8 @@ type PropertyToolbarProps = {
   onRentRangeChange: (range: [number, number]) => void;
   onlyShow: OnlyShowFilters;
   onOnlyShowChange: (filters: OnlyShowFilters) => void;
+  city?: string;
+  onCityChange?: (city: string) => void;
 };
 
 // Known gap: this stays a small, hand-picked subset for the sidebar below,
@@ -214,7 +219,10 @@ function FiltersPanel({
   const [propertyTypes, togglePropertyType] = useToggleSet();
   const [furnishing, toggleFurnishing] = useToggleSet();
   const [amenities, toggleAmenity] = useToggleSet();
-  const [postedBy, togglePostedBy] = useToggleSet();
+  // Defaults to "Tenant": properties on RentalIntel are submitted by past
+  // tenants, not owners/brokers listing vacancies, so that's the
+  // product-accurate starting selection rather than nothing selected.
+  const [postedBy, togglePostedBy] = useToggleSet(["Tenant"]);
   const [verifiedOnly, setVerifiedOnly] = useState(false);
 
   if (!position) return null;
@@ -359,6 +367,8 @@ export function PropertyToolbar({
   onRentRangeChange,
   onlyShow,
   onOnlyShowChange,
+  city,
+  onCityChange,
 }: PropertyToolbarProps) {
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [position, setPosition] = useState<{ top: number; right: number; width: number } | null>(null);
@@ -403,8 +413,13 @@ export function PropertyToolbar({
   }, [isFiltersOpen]);
 
   return (
-    <div className="flex flex-wrap gap-2.5">
-      <AreaSelector areas={areas} value={selectedArea} onChange={onAreaChange} />
+    <div className="flex flex-wrap items-center justify-between gap-2.5">
+      <div className="flex flex-wrap items-center gap-2.5">
+        {city && onCityChange && (
+          <CitySelector value={city} onChange={onCityChange} variant="pill" />
+        )}
+        <AreaSelector areas={areas} value={selectedArea} onChange={onAreaChange} />
+      </div>
 
       <button
         ref={filtersButtonRef}
@@ -412,12 +427,15 @@ export function PropertyToolbar({
         onClick={() => setIsFiltersOpen((open) => !open)}
         aria-expanded={isFiltersOpen}
         aria-controls="filters-panel"
-        className={`inline-flex items-center rounded-full border px-4 py-2 text-sm font-medium transition ${
+        className={`inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-sm font-medium transition ${
           isFiltersOpen
             ? "border-blue-600 bg-blue-600 text-white shadow-[0_8px_20px_-8px_rgba(37,99,235,0.45)]"
             : "border-slate-200 bg-white text-slate-700 shadow-[0_1px_2px_rgba(15,23,42,0.04)] hover:border-blue-200 hover:text-blue-600"
         }`}
       >
+        <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4 fill-none stroke-current stroke-[1.8]">
+          <path d="M4 5h16l-6.5 8v5.5L10.5 21v-8L4 5z" strokeLinejoin="round" />
+        </svg>
         Filters
       </button>
       {isFiltersOpen && (
@@ -443,6 +461,8 @@ export function PropertyList({
   compact = false,
   scrollable = false,
   areas = [],
+  city,
+  onCityChange,
 }: PropertyListProps) {
   const [selectedArea, setSelectedArea] = useState<string | null>(null);
   const [rentRange, setRentRange] = useState<[number, number]>([RENT_MIN, RENT_MAX]);
@@ -530,6 +550,8 @@ export function PropertyList({
           onRentRangeChange={setRentRange}
           onlyShow={onlyShow}
           onOnlyShowChange={setOnlyShow}
+          city={city}
+          onCityChange={onCityChange}
         />
       )}
 

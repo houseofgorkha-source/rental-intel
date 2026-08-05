@@ -14,8 +14,11 @@ export const CITIES = [
   { name: "Mumbai", available: false },
   { name: "Delhi", available: false },
   { name: "Gurgaon", available: false },
+  { name: "Noida", available: false },
   { name: "Pune", available: false },
   { name: "Chennai", available: false },
+  { name: "Kolkata", available: false },
+  { name: "Ahmedabad", available: false },
 ] as const;
 
 // Reverse lookup built from CITY_NAME_ALIASES + CITIES: every known alias or
@@ -70,5 +73,44 @@ export const LOCALITIES_BY_CITY: Record<string, string[]> = {
     "Hoodi", "Nagawara", "Thanisandra", "Kadubeesanahalli", "Domlur",
     "Richmond Town", "Ulsoor", "RT Nagar", "Hennur", "Kammanahalli",
     "Bannerghatta Road", "Kanakapura Road", "Peenya", "Bommanahalli", "Silk Board",
+  ],
+  // Not yet browsable (see CITIES' `available` flag) — populated ahead of
+  // launch so the Area selector has real content the day each city opens,
+  // rather than shipping empty until someone remembers to add it.
+  Hyderabad: [
+    "Gachibowli", "HITEC City", "Kondapur", "Madhapur", "Banjara Hills",
+    "Jubilee Hills", "Kukatpally", "Miyapur", "Secunderabad", "Begumpet",
+  ],
+  Mumbai: [
+    "Andheri", "Powai", "Bandra", "Malad", "Goregaon",
+    "Borivali", "Thane", "Navi Mumbai", "Chembur", "Worli",
+  ],
+  Delhi: [
+    "Dwarka", "Rohini", "Saket", "Vasant Kunj", "Karol Bagh",
+    "Lajpat Nagar", "Janakpuri", "Pitampura", "Mayur Vihar", "Connaught Place",
+  ],
+  Gurgaon: [
+    "DLF Phase 1", "DLF Phase 2", "DLF Phase 3", "Sohna Road", "Golf Course Road",
+    "MG Road", "Sector 29", "Sector 56", "Cyber City", "Palam Vihar",
+  ],
+  Noida: [
+    "Sector 18", "Sector 62", "Sector 137", "Sector 150", "Greater Noida West",
+    "Sector 76", "Sector 50", "Sector 41", "Sector 15", "Sector 128",
+  ],
+  Pune: [
+    "Koregaon Park", "Baner", "Hinjewadi", "Kothrud", "Viman Nagar",
+    "Wakad", "Hadapsar", "Aundh", "Kharadi", "Magarpatta",
+  ],
+  Chennai: [
+    "Adyar", "Anna Nagar", "T Nagar", "Velachery", "OMR",
+    "Porur", "Nungambakkam", "Mylapore", "Tambaram", "Perungudi",
+  ],
+  Kolkata: [
+    "Salt Lake", "New Town", "Ballygunge", "Park Street", "Behala",
+    "Howrah", "Rajarhat", "Garia", "Alipore", "Dum Dum",
+  ],
+  Ahmedabad: [
+    "Satellite", "Vastrapur", "Bodakdev", "Prahlad Nagar", "Navrangpura",
+    "Maninagar", "Bopal", "SG Highway", "Thaltej", "Chandkheda",
   ],
 };

@@ -6,9 +6,13 @@ import { CITIES, DEFAULT_CITY } from "@/lib/cities";
 type CitySelectorProps = {
   value?: string;
   onChange?: (city: string) => void;
+  // "embedded" (default) sits flush as SearchBar's leftmost segment.
+  // "pill" is a standalone rounded chip, matching AreaSelector/Filters in a
+  // toolbar context.
+  variant?: "embedded" | "pill";
 };
 
-export default function CitySelector({ value, onChange }: CitySelectorProps) {
+export default function CitySelector({ value, onChange, variant = "embedded" }: CitySelectorProps) {
   const [internalCity, setInternalCity] = useState(DEFAULT_CITY);
   const city = value ?? internalCity;
   const setCity = onChange ?? setInternalCity;
@@ -75,7 +79,7 @@ export default function CitySelector({ value, onChange }: CitySelectorProps) {
   return (
     <div
       ref={selectorRef}
-      className="relative h-full shrink-0"
+      className={variant === "embedded" ? "relative h-full shrink-0" : "relative"}
       onKeyDown={handleKeyDown}
     >
       <button
@@ -87,7 +91,11 @@ export default function CitySelector({ value, onChange }: CitySelectorProps) {
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         aria-controls="city-options"
-        className="flex h-full min-h-16 items-center rounded-l-[0.9375rem] border-r border-slate-200 bg-slate-50 px-4 text-sm font-medium text-slate-700 transition hover:bg-blue-50"
+        className={
+          variant === "embedded"
+            ? "flex h-full min-h-16 items-center rounded-l-[0.9375rem] border-r border-slate-200 bg-slate-50 px-4 text-sm font-medium text-slate-700 transition hover:bg-blue-50"
+            : "inline-flex items-center rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition hover:border-blue-200 hover:text-blue-600"
+        }
       >
         {city}
       </button>
