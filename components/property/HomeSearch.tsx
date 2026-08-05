@@ -23,8 +23,9 @@ type HomeSearchProps = {
 
 // The homepage's single search entry point: City, Area, and free-text
 // search rendered as flush segments of ONE thin bar (via SearchBar's
-// leadingContent + compact props), not as separate pills beside it.
-// Selected areas appear as removable chips below the whole bar.
+// leadingContent + compact props), not as separate pills beside it. The
+// Area segment's own removable chip list lives inside its dropdown, so
+// this bar stays a fixed height no matter how many areas are selected.
 export default function HomeSearch({
   properties,
   city,
@@ -55,27 +56,6 @@ export default function HomeSearch({
           </>
         }
       />
-
-      {selectedAreas.length > 0 && (
-        <div className="mt-2 flex flex-wrap gap-1.5">
-          {selectedAreas.map((area) => (
-            <span
-              key={area}
-              className="inline-flex items-center gap-1 rounded-full bg-slate-100 py-1 pl-3 pr-2 text-xs font-medium text-slate-700"
-            >
-              {area}
-              <button
-                type="button"
-                onClick={() => onAreasChange(selectedAreas.filter((item) => item !== area))}
-                aria-label={`Remove ${area}`}
-                className="rounded-full p-0.5 text-slate-500 transition hover:bg-slate-200 hover:text-slate-900"
-              >
-                ×
-              </button>
-            </span>
-          ))}
-        </div>
-      )}
     </div>
   );
 }

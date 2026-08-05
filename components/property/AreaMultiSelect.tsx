@@ -14,11 +14,19 @@ type AreaMultiSelectProps = {
 
 // Same dropdown/keyboard-nav shape as AreaSelector (open/close, arrow-key
 // index, search-to-filter) but toggles multiple selections instead of
-// replacing a single one, and renders the current selection as removable
-// chips below the trigger rather than as the trigger's own label. Kept as a
-// separate component rather than reworking AreaSelector in place, since
-// /property page depends on AreaSelector's existing single-value contract —
-// disclosed as added dropdown-scaffolding duplication, not hidden.
+// replacing a single one. The trigger shows a truncated summary of the
+// selection ("Whitefield +3") rather than a bare count, and the removable
+// chip list lives inside the open dropdown panel — the trigger's own box
+// never grows with the selection, so the bar it sits in stays a fixed
+// height no matter how many areas are picked. Kept as a separate component
+// rather than reworking AreaSelector in place, since /property page depends
+// on AreaSelector's existing single-value contract — disclosed as added
+// dropdown-scaffolding duplication, not hidden.
+function summarizeSelection(value: string[]): string {
+  if (value.length === 0) return "Area";
+  if (value.length === 1) return value[0];
+  return `${value[0]} +${value.length - 1}`;
+}
 export default function AreaMultiSelect({
   areas,
   value,
@@ -123,11 +131,32 @@ export default function AreaMultiSelect({
               }`
         }
       >
-        {value.length === 0 ? "Area" : `Area · ${value.length}`}
+        <span className="max-w-[9rem] truncate">{summarizeSelection(value)}</span>
       </button>
 
       {isOpen && (
         <div className="absolute left-0 z-30 mt-3 w-64 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl">
+          {value.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 border-b border-slate-100 p-3">
+              {value.map((area) => (
+                <span
+                  key={area}
+                  className="inline-flex items-center gap-1 rounded-full bg-slate-100 py-1 pl-3 pr-2 text-xs font-medium text-slate-700"
+                >
+                  {area}
+                  <button
+                    type="button"
+                    onClick={() => removeArea(area)}
+                    aria-label={`Remove ${area}`}
+                    className="rounded-full p-0.5 text-slate-500 transition hover:bg-slate-200 hover:text-slate-900"
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+
           <div className="border-b border-slate-100 p-2">
             <input
               ref={inputRef}
@@ -183,27 +212,6 @@ export default function AreaMultiSelect({
               <p className="px-3 py-4 text-center text-sm text-slate-500">No matching areas</p>
             )}
           </div>
-        </div>
-      )}
-
-      {variant === "pill" && value.length > 0 && (
-        <div className="mt-2 flex flex-wrap gap-1.5">
-          {value.map((area) => (
-            <span
-              key={area}
-              className="inline-flex items-center gap-1 rounded-full bg-slate-100 py-1 pl-3 pr-2 text-xs font-medium text-slate-700"
-            >
-              {area}
-              <button
-                type="button"
-                onClick={() => removeArea(area)}
-                aria-label={`Remove ${area}`}
-                className="rounded-full p-0.5 text-slate-500 transition hover:bg-slate-200 hover:text-slate-900"
-              >
-                ×
-              </button>
-            </span>
-          ))}
         </div>
       )}
     </div>
