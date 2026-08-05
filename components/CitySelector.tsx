@@ -93,7 +93,7 @@ export default function CitySelector({ value, onChange, variant = "embedded" }: 
         aria-controls="city-options"
         className={
           variant === "embedded"
-            ? "flex h-full min-h-16 items-center rounded-l-[0.9375rem] border-r border-slate-200 bg-slate-50 px-4 text-sm font-medium text-slate-700 transition hover:bg-blue-50"
+            ? "flex h-full items-center rounded-l-[0.9375rem] border-r border-slate-200 bg-slate-50 px-4 text-sm font-medium text-slate-700 transition hover:bg-blue-50"
             : "inline-flex items-center rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition hover:border-blue-200 hover:text-blue-600"
         }
       >

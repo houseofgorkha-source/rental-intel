@@ -6,6 +6,10 @@ type AreaMultiSelectProps = {
   areas: string[];
   value: string[];
   onChange: (areas: string[]) => void;
+  // "pill" (default): standalone rounded chip. "embedded-middle": flush
+  // segment with no rounding, sitting between two other bar segments (e.g.
+  // City and the search input) — used by HomeSearch's unified bar.
+  variant?: "pill" | "embedded-middle";
 };
 
 // Same dropdown/keyboard-nav shape as AreaSelector (open/close, arrow-key
@@ -15,7 +19,12 @@ type AreaMultiSelectProps = {
 // separate component rather than reworking AreaSelector in place, since
 // /property page depends on AreaSelector's existing single-value contract —
 // disclosed as added dropdown-scaffolding duplication, not hidden.
-export default function AreaMultiSelect({ areas, value, onChange }: AreaMultiSelectProps) {
+export default function AreaMultiSelect({
+  areas,
+  value,
+  onChange,
+  variant = "pill",
+}: AreaMultiSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
@@ -92,18 +101,27 @@ export default function AreaMultiSelect({ areas, value, onChange }: AreaMultiSel
   }
 
   return (
-    <div ref={selectorRef} className="relative">
+    <div
+      ref={selectorRef}
+      className={variant === "embedded-middle" ? "relative h-full shrink-0" : "relative"}
+    >
       <button
         type="button"
         onClick={() => setIsOpen((open) => !open)}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         aria-controls="area-multi-options"
-        className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition ${
-          value.length > 0
-            ? "border-blue-600 bg-blue-600 text-white shadow-[0_8px_20px_-8px_rgba(37,99,235,0.45)]"
-            : "border-slate-200 bg-white text-slate-700 shadow-[0_1px_2px_rgba(15,23,42,0.04)] hover:border-blue-200 hover:text-blue-600"
-        }`}
+        className={
+          variant === "embedded-middle"
+            ? `flex h-full items-center gap-1.5 border-r border-slate-200 px-4 text-sm font-medium transition ${
+                value.length > 0 ? "text-blue-600" : "text-slate-700 hover:bg-blue-50"
+              }`
+            : `inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition ${
+                value.length > 0
+                  ? "border-blue-600 bg-blue-600 text-white shadow-[0_8px_20px_-8px_rgba(37,99,235,0.45)]"
+                  : "border-slate-200 bg-white text-slate-700 shadow-[0_1px_2px_rgba(15,23,42,0.04)] hover:border-blue-200 hover:text-blue-600"
+              }`
+        }
       >
         {value.length === 0 ? "Area" : `Area · ${value.length}`}
       </button>
@@ -168,7 +186,7 @@ export default function AreaMultiSelect({ areas, value, onChange }: AreaMultiSel
         </div>
       )}
 
-      {value.length > 0 && (
+      {variant === "pill" && value.length > 0 && (
         <div className="mt-2 flex flex-wrap gap-1.5">
           {value.map((area) => (
             <span

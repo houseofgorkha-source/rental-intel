@@ -21,11 +21,10 @@ type HomeSearchProps = {
   onQueryChange: (query: string) => void;
 };
 
-// The homepage's single search entry point: city, multi-area chips, and
-// free-text search combined into one unit — composed from the same three
-// pieces that used to be separate toolbar controls (CitySelector,
-// AreaSelector's multi-select sibling, and SearchBar's text input), not
-// rebuilt from scratch.
+// The homepage's single search entry point: City, Area, and free-text
+// search rendered as flush segments of ONE thin bar (via SearchBar's
+// leadingContent + compact props), not as separate pills beside it.
+// Selected areas appear as removable chips below the whole bar.
 export default function HomeSearch({
   properties,
   city,
@@ -37,17 +36,46 @@ export default function HomeSearch({
   onQueryChange,
 }: HomeSearchProps) {
   return (
-    <div className="flex flex-1 flex-wrap items-start gap-2.5">
-      <CitySelector value={city} onChange={onCityChange} variant="pill" />
-      <AreaMultiSelect areas={areas} value={selectedAreas} onChange={onAreasChange} />
-      <div className="min-w-[12rem] flex-1">
-        <SearchBar
-          properties={properties}
-          query={query}
-          onQueryChange={onQueryChange}
-          showCityPicker={false}
-        />
-      </div>
+    <div className="min-w-[18rem] flex-1">
+      <SearchBar
+        properties={properties}
+        query={query}
+        onQueryChange={onQueryChange}
+        showCityPicker={false}
+        compact
+        leadingContent={
+          <>
+            <CitySelector value={city} onChange={onCityChange} />
+            <AreaMultiSelect
+              areas={areas}
+              value={selectedAreas}
+              onChange={onAreasChange}
+              variant="embedded-middle"
+            />
+          </>
+        }
+      />
+
+      {selectedAreas.length > 0 && (
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {selectedAreas.map((area) => (
+            <span
+              key={area}
+              className="inline-flex items-center gap-1 rounded-full bg-slate-100 py-1 pl-3 pr-2 text-xs font-medium text-slate-700"
+            >
+              {area}
+              <button
+                type="button"
+                onClick={() => onAreasChange(selectedAreas.filter((item) => item !== area))}
+                aria-label={`Remove ${area}`}
+                className="rounded-full p-0.5 text-slate-500 transition hover:bg-slate-200 hover:text-slate-900"
+              >
+                ×
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

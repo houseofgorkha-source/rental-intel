@@ -25,6 +25,14 @@ type SearchBarProps = {
   // HomeSearch, which supplies its own city control alongside area chips.
   // Defaults to true so every existing caller is unaffected.
   showCityPicker?: boolean;
+  // Rendered as the bar's leading flush segment(s), before the text input —
+  // used by HomeSearch to place City + Area selectors inside the same bar
+  // instead of as separate pills beside it. Ignored when showCityPicker is
+  // true (that slot is CitySelector's).
+  leadingContent?: React.ReactNode;
+  // Slimmer bar (used by HomeSearch's unified search) instead of the
+  // default 68px height. Defaults to false so existing callers are unaffected.
+  compact?: boolean;
 };
 
 type DropdownPosition = {
@@ -41,6 +49,8 @@ export default function SearchBar({
   query: externalQuery,
   onQueryChange,
   showCityPicker = true,
+  leadingContent,
+  compact = false,
 }: SearchBarProps) {
   const [internalSearch, setInternalSearch] = useState("");
   const search = externalQuery ?? internalSearch;
@@ -205,8 +215,12 @@ export default function SearchBar({
 
   return (
     <div ref={searchRef} className="w-full">
-      <div className="flex h-[68px] overflow-visible rounded-2xl border border-slate-300 bg-white shadow-[0_16px_35px_-20px_rgba(15,23,42,0.3)] transition focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-100">
-        {showCityPicker && <CitySelector value={city} onChange={onCityChange} />}
+      <div
+        className={`flex overflow-visible rounded-2xl border border-slate-300 bg-white shadow-[0_16px_35px_-20px_rgba(15,23,42,0.3)] transition focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-100 ${
+          compact ? "h-11" : "h-[68px]"
+        }`}
+      >
+        {showCityPicker ? <CitySelector value={city} onChange={onCityChange} /> : leadingContent}
         <input
           type="text"
           value={search}
@@ -225,18 +239,22 @@ export default function SearchBar({
           aria-activedescendant={
             highlightedIndex >= 0 ? `search-option-${highlightedIndex}` : undefined
           }
-          className="min-w-0 flex-1 bg-transparent px-5 text-[15px] text-slate-900 placeholder:text-slate-400 outline-none"
+          className={`min-w-0 flex-1 bg-transparent text-slate-900 placeholder:text-slate-400 outline-none ${
+            compact ? "px-3.5 text-sm" : "px-5 text-[15px]"
+          }`}
         />
         <button
           type="button"
           onClick={performSearch}
           aria-label="Search properties"
-          className="m-2 flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-slate-700 transition hover:bg-blue-50 hover:text-blue-600"
+          className={`flex shrink-0 items-center justify-center rounded-xl text-slate-700 transition hover:bg-blue-50 hover:text-blue-600 ${
+            compact ? "m-1 h-9 w-9" : "m-2 h-12 w-12"
+          }`}
         >
           <svg
             viewBox="0 0 24 24"
             aria-hidden="true"
-            className="h-5 w-5 fill-none stroke-current stroke-[1.8]"
+            className={compact ? "h-4 w-4 fill-none stroke-current stroke-[1.8]" : "h-5 w-5 fill-none stroke-current stroke-[1.8]"}
           >
             <circle cx="11" cy="11" r="6" />
             <path d="m16 16 4 4" />
