@@ -2,7 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/auth";
-import { cleanUpFailedUpload, validateUploadFiles } from "@/lib/uploads";
+import { cleanUpFailedUpload, getFileExtension, validateUploadFiles, verifyFileSignature } from "@/lib/uploads";
 
 const documentFields = [
   "rental_agreement",
@@ -47,6 +47,13 @@ export async function createVerification(
   );
   if (validationError) return { error: validationError };
 
+  const signaturesValid = await Promise.all(
+    documents.map((document) => verifyFileSignature(document.file)),
+  );
+  if (signaturesValid.some((valid) => !valid)) {
+    return { error: "Documents must be PDF, JPG, or PNG files up to 5 MB." };
+  }
+
   const supabase = await createClient();
   const { user, error: authFailure } = await requireUser(
     supabase,
@@ -79,8 +86,7 @@ export async function createVerification(
     });
 
   for (const { documentType, file } of documents) {
-    const extension = file.name.split(".").pop()?.toLowerCase() || "file";
-    const path = `review-verifications/${user.id}/${verification.id}/${documentType}-${crypto.randomUUID()}.${extension}`;
+    const path = `review-verifications/${user.id}/${verification.id}/${documentType}-${crypto.randomUUID()}.${getFileExtension(file)}`;
     const { error: uploadError } = await supabase.storage
       .from("verification-documents")
       .upload(path, file, { contentType: file.type });

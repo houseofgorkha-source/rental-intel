@@ -89,6 +89,14 @@ export default function SearchBar({ properties }: SearchBarProps) {
     router.push(`/property/${property.slug}`);
   }
 
+  // Runs the same search a click on a suggestion would: prefer the
+  // highlighted suggestion if the user has arrowed to one, otherwise fall
+  // back to the top-ranked match for the current query.
+  function performSearch() {
+    const property = filteredResults[highlightedIndex >= 0 ? highlightedIndex : 0];
+    if (property) selectProperty(property);
+  }
+
   function handleKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
     if (event.key === "Escape") {
       setIsDropdownOpen(false);
@@ -114,9 +122,9 @@ export default function SearchBar({ properties }: SearchBarProps) {
       return;
     }
 
-    if (event.key === "Enter" && highlightedIndex >= 0) {
+    if (event.key === "Enter") {
       event.preventDefault();
-      selectProperty(filteredResults[highlightedIndex]);
+      performSearch();
     }
   }
 
@@ -134,6 +142,7 @@ export default function SearchBar({ properties }: SearchBarProps) {
           maxHeight: dropdownPosition.maxHeight,
         }}
         className="fixed z-30 overflow-y-auto overscroll-contain rounded-2xl border border-slate-200 bg-white shadow-2xl touch-pan-y"
+        role="listbox"
       >
         {filteredResults.length > 0 ? (
           <>
@@ -143,10 +152,13 @@ export default function SearchBar({ properties }: SearchBarProps) {
             {filteredResults.map((property, index) => (
               <div
                 key={property.slug}
+                id={`search-option-${index}`}
                 ref={(element) => {
                   resultRefs.current[index] = element;
                 }}
                 onClick={() => selectProperty(property)}
+                role="option"
+                aria-selected={highlightedIndex === index}
                 className={`cursor-pointer border-b border-slate-100 px-5 py-4 transition hover:bg-slate-50 last:border-b-0 ${
                   highlightedIndex === index ? "bg-slate-50" : ""
                 }`}
@@ -189,10 +201,14 @@ export default function SearchBar({ properties }: SearchBarProps) {
           aria-autocomplete="list"
           aria-expanded={shouldShowDropdown}
           aria-controls="property-search-results"
+          aria-activedescendant={
+            highlightedIndex >= 0 ? `search-option-${highlightedIndex}` : undefined
+          }
           className="min-w-0 flex-1 bg-transparent px-5 text-[15px] text-slate-900 placeholder:text-slate-400 outline-none"
         />
         <button
           type="button"
+          onClick={performSearch}
           aria-label="Search properties"
           className="m-2 flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-slate-700 transition hover:bg-blue-50 hover:text-blue-600"
         >

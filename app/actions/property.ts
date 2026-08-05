@@ -2,7 +2,8 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/auth";
-import { cleanUpFailedUpload, validateUploadFiles } from "@/lib/uploads";
+import { cleanUpFailedUpload, getFileExtension, validateUploadFiles, verifyFileSignature } from "@/lib/uploads";
+import { normalizeCityName } from "@/lib/cities";
 
 type CreatePropertyResult = {
   error?: string;
@@ -36,21 +37,21 @@ function createSlug(name: string) {
   return `${baseSlug || "property"}-${crypto.randomUUID().slice(0, 8)}`;
 }
 
-function getFileExtension(file: File) {
-  const extension = file.name.split(".").pop()?.toLowerCase();
-  return extension && /^[a-z0-9]+$/.test(extension) ? extension : "jpg";
-}
-
 export async function createProperty(
   formData: FormData,
 ): Promise<CreatePropertyResult> {
   const name = getTextValue(formData, "name");
   const addressLine1 = getTextValue(formData, "addressLine1");
   const area = getTextValue(formData, "area");
-  const city = getTextValue(formData, "city");
+  const rawCity = getTextValue(formData, "city");
   const state = getTextValue(formData, "state");
 
-  if (!name || !addressLine1 || !area || !city || !state) {
+  if (!name || !addressLine1 || !area || !rawCity || !state) {
+    return { error: "Please complete all required property details." };
+  }
+
+  const city = normalizeCityName(rawCity);
+  if (!city) {
     return { error: "Please complete all required property details." };
   }
 
@@ -68,6 +69,11 @@ export async function createProperty(
     },
   );
   if (validationError) return { error: validationError };
+
+  const signaturesValid = await Promise.all(imageFiles.map(verifyFileSignature));
+  if (signaturesValid.some((valid) => !valid)) {
+    return { error: "Images must be JPG, PNG, or WebP files up to 5 MB each." };
+  }
 
   const supabase = await createClient();
   const { user, error: authFailure } = await requireUser(

@@ -84,6 +84,7 @@ export default function CitySelector({ value, onChange }: CitySelectorProps) {
           setIsOpen((open) => !open);
           setActiveIndex(0);
         }}
+        aria-haspopup="listbox"
         aria-expanded={isOpen}
         aria-controls="city-options"
         className="flex h-full min-h-16 items-center rounded-l-[0.9375rem] border-r border-slate-200 bg-slate-50 px-4 text-sm font-medium text-slate-700 transition hover:bg-blue-50"
@@ -94,7 +95,7 @@ export default function CitySelector({ value, onChange }: CitySelectorProps) {
       {isOpen && (
         <div
           id="city-options"
-          role="menu"
+          role="listbox"
           className="absolute left-0 z-30 mt-3 max-h-64 w-56 overflow-y-auto overscroll-contain rounded-2xl border border-slate-200 bg-white p-2 shadow-xl"
         >
           {CITIES.map((option, index) => {
@@ -103,11 +104,13 @@ export default function CitySelector({ value, onChange }: CitySelectorProps) {
             return (
               <button
                 key={option.name}
+                id={`city-option-${index}`}
                 ref={(element) => {
                   optionRefs.current[index] = element;
                 }}
                 type="button"
-                role="menuitem"
+                role="option"
+                aria-selected={city === option.name}
                 disabled={!option.available}
                 onClick={() => option.available && selectCity(option.name)}
                 className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm ${

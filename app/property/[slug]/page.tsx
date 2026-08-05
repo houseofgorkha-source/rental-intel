@@ -5,6 +5,7 @@ import ReviewSection from "@/components/property/ReviewSection";
 import PropertyShareButton from "@/components/property/PropertyShareButton";
 import type { Review } from "@/components/property/ReviewCard";
 import { createClient } from "@/lib/supabase/server";
+import { calculateAverageRating, formatINRPerMonth, getPropertyImageUrl } from "@/lib/property-format";
 
 type PropertyPageProps = {
   params: Promise<{ slug: string }>;
@@ -48,7 +49,7 @@ function formatDate(date: string) {
 }
 
 function formatRent(rent: number | null) {
-  return rent === null ? "Not available" : `₹${rent.toLocaleString("en-IN")}/month`;
+  return rent === null ? "Not available" : formatINRPerMonth(rent);
 }
 
 export default async function PropertyPage({
@@ -67,27 +68,26 @@ export default async function PropertyPage({
 
   if (error || !property) notFound();
 
-  const { data: propertyImages } = await supabase
-    .from("property_images")
-    .select("storage_path, alt_text")
-    .eq("property_id", property.id)
-    .order("sort_order");
+  const [{ data: propertyImages }, { data: reviewRows }] = await Promise.all([
+    supabase
+      .from("property_images")
+      .select("storage_path, alt_text")
+      .eq("property_id", property.id)
+      .order("sort_order"),
+    supabase
+      .from("reviews")
+      .select(
+        "id, title, body, overall_rating, recommendation, verification_status, stay_start_date, stay_end_date, created_at, is_anonymous, author:profiles!reviews_author_id_fkey(display_name)",
+      )
+      .eq("property_id", property.id)
+      .order("created_at", { ascending: false }),
+  ]);
 
   const images =
     propertyImages?.map((image) => ({
-      src: supabase.storage
-        .from("property-images")
-        .getPublicUrl(image.storage_path).data.publicUrl,
+      src: getPropertyImageUrl(supabase, image.storage_path),
       alt: image.alt_text ?? property.name,
     })) ?? [];
-
-  const { data: reviewRows } = await supabase
-    .from("reviews")
-    .select(
-      "id, title, body, overall_rating, recommendation, verification_status, stay_start_date, stay_end_date, created_at, is_anonymous, author:profiles!reviews_author_id_fkey(display_name)",
-    )
-    .eq("property_id", property.id)
-    .order("created_at", { ascending: false });
 
   const propertyReviews: Review[] = ((reviewRows ?? []) as ReviewRow[]).map(
     (review) => ({
@@ -112,10 +112,9 @@ export default async function PropertyPage({
     propertyReviews.length === 0
       ? 0
       : Math.round((recommendedCount / propertyReviews.length) * 100);
-  const overallRating = propertyReviews.length
-    ? propertyReviews.reduce((total, review) => total + review.rating, 0) /
-      propertyReviews.length
-    : null;
+  const overallRating = calculateAverageRating(
+    propertyReviews.map((review) => review.rating),
+  );
   const latestReview = propertyReviews[0];
 
   const facts = [

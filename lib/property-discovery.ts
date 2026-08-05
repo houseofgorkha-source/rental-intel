@@ -1,6 +1,18 @@
-import type { DiscoveryProperty } from "@/components/property/PropertyDiscovery";
 import { createClient } from "@/lib/supabase/server";
 import { CITY_NAME_ALIASES, DEFAULT_CITY } from "@/lib/cities";
+import { calculateAverageRating, getPropertyImageUrl } from "@/lib/property-format";
+
+export type DiscoveryProperty = {
+  slug: string;
+  name: string;
+  area: string;
+  city: string;
+  askingRent: number | null;
+  image: { src: string; alt: string } | null;
+  averageRating: number | null;
+  reviewCount: number;
+  isAvailable: boolean;
+};
 
 type PropertyRow = {
   id: string;
@@ -100,10 +112,9 @@ export async function getDiscoveryProperties(
   return properties.map((property) => {
     const image = firstImageByProperty.get(property.id);
     const reviews = reviewsByProperty.get(property.id) ?? [];
-    const averageRating = reviews.length
-      ? reviews.reduce((total, review) => total + review.overall_rating, 0) /
-        reviews.length
-      : null;
+    const averageRating = calculateAverageRating(
+      reviews.map((review) => review.overall_rating),
+    );
 
     return {
       slug: property.slug,
@@ -113,9 +124,7 @@ export async function getDiscoveryProperties(
       askingRent: property.asking_rent,
       image: image
         ? {
-            src: supabase.storage
-              .from("property-images")
-              .getPublicUrl(image.storage_path).data.publicUrl,
+            src: getPropertyImageUrl(supabase, image.storage_path),
             alt: image.alt_text || property.name,
           }
         : null,

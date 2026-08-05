@@ -148,7 +148,14 @@ public/                static assets
 
 **[Verified Fact]** RLS is enabled on every `public` table. Public (anon) reads are generally scoped to `status = 'published'` (properties) or to records whose parent property is published; write access is scoped to `auth.uid()` matching the relevant owner/author column.
 
-**[Current Working Assumption]** There is no visible mechanism anywhere in this repo (no admin route, no admin Server Action, no moderation UI) for transitioning a property from `pending` to `published`, or a review verification from `pending` to `verified`/`rejected`. This strongly suggests that step happens manually today (e.g. directly in the Supabase dashboard), but this is inferred, not confirmed — see Open Questions below.
+**[Documented Product Decision — stated directly by the product owner in conversation, Phase 4]** There is no admin route, admin Server Action, or moderation UI anywhere in this repo, and none is planned for MVP. Approving a property (`pending` → `published`) or a review verification (`pending` → `verified`/`rejected`) is a deliberately manual process for launch, performed directly by a trusted operator via the Supabase Dashboard:
+
+1. Open the Supabase Dashboard for this project → **Table Editor**.
+2. **To approve a property**: open the `properties` table, find the row with `status = 'pending'`, review its details (and any linked `property_images` rows), then edit `status` to `'published'` (or `'rejected'`).
+3. **To verify a review**: open the `review_verifications` table, find the row with `status = 'pending'`, open its linked `verification_documents` rows (via `verification_id`) in **Storage** → `verification-documents` bucket to inspect the uploaded evidence, then edit the `review_verifications` row's `status` to `'verified'` or `'rejected'`. The `review_verifications_sync_status` trigger (see migration 1) automatically propagates this to the linked `reviews.verification_status`.
+4. This requires Dashboard access (a Supabase project owner/admin), not just the `service_role` API key — no in-app credential is needed or should be used for this.
+
+This is intentionally not built as in-app tooling for MVP — RLS has no UPDATE policy on either table specifically so this can't happen through the app or its API, by design (see §12). An in-app admin surface (using a service-role-backed Server Action gated by an admin allow-list) was scoped and explicitly deferred post-launch, to be revisited once real moderation volume makes the Dashboard workflow impractical.
 
 ## 8. Authentication flow
 
@@ -265,7 +272,7 @@ This list is a proposal, not a settled rule — see Open Questions.
 
 These require product-owner confirmation before Claude should treat any related assumption as settled:
 
-1. Is property/review approval currently happening manually (e.g. Supabase dashboard), or is there a planned admin surface not yet built?
+1. ~~Is property/review approval currently happening manually (e.g. Supabase dashboard), or is there a planned admin surface not yet built?~~ **Resolved, Phase 4**: manual via Supabase Dashboard is the deliberate MVP process — see §7.
 2. Is the data loss in `ReviewForm` (quick ratings, owner traits, deposit details never submitted) an intentional stub, or a bug to fix?
 3. Which visual palette is the intended brand target — the slate/minimal system or the documented blue-accent (#2563EB) system — so the in-progress brand migration has a clear destination? (Partial signal since this was last written: the homepage/property pages now use slate as the structural base with `blue-600` as a restrained interactive accent — see §10. Not yet confirmed as the final answer.)
 4. Is the "current sprint" described in `RentalIntel_Master_Context_v1.md` (Brand migration, UI polish, Shared components) still accurate, or superseded by the Supabase/auth/verification work already shipped?

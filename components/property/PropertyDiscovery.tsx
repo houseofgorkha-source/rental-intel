@@ -5,18 +5,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import SearchBar from "@/components/SearchBar";
 import AreaSelector from "@/components/property/AreaSelector";
 import { DEFAULT_CITY, LOCALITIES_BY_CITY } from "@/lib/cities";
-
-export type DiscoveryProperty = {
-  slug: string;
-  name: string;
-  area: string;
-  city: string;
-  askingRent: number | null;
-  image: { src: string; alt: string } | null;
-  averageRating: number | null;
-  reviewCount: number;
-  isAvailable: boolean;
-};
+import { formatINRPerMonth } from "@/lib/property-format";
+import type { DiscoveryProperty } from "@/lib/property-discovery";
 
 type PropertyDiscoveryProps = {
   properties: DiscoveryProperty[];
@@ -65,9 +55,7 @@ export function filterPropertiesByArea(
 }
 
 function formatRent(rent: number | null) {
-  return rent === null
-    ? "Rent on request"
-    : `₹${rent.toLocaleString("en-IN")}/month`;
+  return rent === null ? "Rent on request" : formatINRPerMonth(rent);
 }
 
 function FilterField({

@@ -15,6 +15,40 @@ export const CITIES = [
   { name: "Chennai", available: false },
 ] as const;
 
+// Reverse lookup built from CITY_NAME_ALIASES + CITIES: every known alias or
+// canonical name (lowercased) maps to its canonical form.
+const CANONICAL_CITY_BY_ALIAS: Record<string, string> = {};
+for (const city of CITIES) {
+  CANONICAL_CITY_BY_ALIAS[city.name.toLowerCase()] = city.name;
+}
+for (const [canonical, aliases] of Object.entries(CITY_NAME_ALIASES)) {
+  for (const alias of aliases) {
+    CANONICAL_CITY_BY_ALIAS[alias.toLowerCase()] = canonical;
+  }
+}
+
+function toTitleCase(value: string): string {
+  return value
+    .toLowerCase()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((word) => word[0].toUpperCase() + word.slice(1))
+    .join(" ");
+}
+
+// Normalizes a user-submitted city name for storage: known aliases resolve
+// to their canonical name (e.g. "Bengaluru" -> "Bangalore"); anything else is
+// title-cased and stored as-is rather than rejected, since the supported
+// city list is still Bangalore-only and stricter validation isn't needed
+// until that expands. Returns null only for empty/whitespace input.
+export function normalizeCityName(input: string): string | null {
+  const trimmed = input.trim();
+  if (!trimmed) return null;
+
+  const canonical = CANONICAL_CITY_BY_ALIAS[trimmed.toLowerCase()];
+  return canonical ?? toTitleCase(trimmed);
+}
+
 export const LOCALITIES_BY_CITY: Record<string, string[]> = {
   Bangalore: [
     "Whitefield", "Marathahalli", "Bellandur", "HSR Layout", "Koramangala",

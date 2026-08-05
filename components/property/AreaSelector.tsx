@@ -89,6 +89,7 @@ export default function AreaSelector({ areas, value, onChange }: AreaSelectorPro
       <button
         type="button"
         onClick={() => setIsOpen((open) => !open)}
+        aria-haspopup="listbox"
         aria-expanded={isOpen}
         aria-controls="area-options"
         className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition ${
@@ -102,8 +103,6 @@ export default function AreaSelector({ areas, value, onChange }: AreaSelectorPro
 
       {isOpen && (
         <div
-          id="area-options"
-          role="menu"
           className="absolute left-0 z-30 mt-3 w-64 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl"
         >
           <div className="border-b border-slate-100 p-2">
@@ -121,17 +120,20 @@ export default function AreaSelector({ areas, value, onChange }: AreaSelectorPro
               aria-autocomplete="list"
               aria-expanded={isOpen}
               aria-controls="area-options"
+              aria-activedescendant={`area-option-${activeIndex}`}
               className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-blue-500"
             />
           </div>
 
-          <div className="max-h-64 overflow-y-auto overscroll-contain p-2">
+          <div id="area-options" role="listbox" className="max-h-64 overflow-y-auto overscroll-contain p-2">
             <button
+              id="area-option-0"
               ref={(element) => {
                 optionRefs.current[0] = element;
               }}
               type="button"
-              role="menuitem"
+              role="option"
+              aria-selected={value === null}
               onClick={() => selectArea(null)}
               className={`w-full rounded-xl px-3 py-2.5 text-left text-sm font-medium text-slate-900 hover:bg-blue-50 ${
                 activeIndex === 0 ? "bg-slate-50" : ""
@@ -144,11 +146,13 @@ export default function AreaSelector({ areas, value, onChange }: AreaSelectorPro
               filteredAreas.map((area, index) => (
                 <button
                   key={area}
+                  id={`area-option-${index + 1}`}
                   ref={(element) => {
                     optionRefs.current[index + 1] = element;
                   }}
                   type="button"
-                  role="menuitem"
+                  role="option"
+                  aria-selected={value === area}
                   onClick={() => selectArea(area)}
                   className={`w-full rounded-xl px-3 py-2.5 text-left text-sm text-slate-700 hover:bg-blue-50 ${
                     activeIndex === index + 1 ? "bg-slate-50" : ""
