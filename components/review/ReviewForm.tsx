@@ -7,19 +7,11 @@ import {
   negativeOwnerTraits,
   positiveOwnerTraits,
   quickRatingCategories,
+  rentAgainOptions,
+  type RentAgainOption,
 } from "./reviewCategories";
 
 type YesNoValue = "yes" | "no" | null;
-
-const rentAgainOptions = [
-  "Definitely",
-  "Probably",
-  "Not Sure",
-  "Probably Not",
-  "Never Again",
-] as const;
-
-type RentAgainOption = (typeof rentAgainOptions)[number];
 
 type YesNoFieldProps = {
   label: string;
@@ -71,6 +63,9 @@ export default function ReviewForm({ propertyId }: ReviewFormProps) {
   const [returnedOnTime, setReturnedOnTime] = useState<YesNoValue>(null);
   const [additionalDeductions, setAdditionalDeductions] =
     useState<YesNoValue>(null);
+  const [depositMonths, setDepositMonths] = useState("");
+  const [deductionReason, setDeductionReason] = useState("");
+  const [deductionAmount, setDeductionAmount] = useState("");
   const [depositExperience, setDepositExperience] = useState(0);
   const [comment, setComment] = useState("");
   const [submissionError, setSubmissionError] = useState<string | null>(null);
@@ -91,10 +86,24 @@ export default function ReviewForm({ propertyId }: ReviewFormProps) {
       overallRating,
       recommendation: wouldRecommend,
       comment,
+      wouldRentAgain,
+      quickRatings,
+      ownerRating,
+      positiveTraits,
+      negativeTraits,
+      depositTaken,
+      depositMonths: depositMonths.trim() ? Number(depositMonths) : null,
+      depositMoreThanTwoMonths,
+      depositReturned,
+      depositReturnedOnTime: returnedOnTime,
+      depositAdditionalDeductions: additionalDeductions,
+      depositDeductionReason: deductionReason,
+      depositDeductionAmount: deductionAmount.trim() ? Number(deductionAmount) : null,
+      depositExperienceRating: depositExperience,
     });
 
-    if (result.error) {
-      setSubmissionError(result.error);
+    if (!result.reviewId) {
+      setSubmissionError(result.error ?? "Unable to publish your review. Please try again.");
       setIsSubmitting(false);
       return;
     }
@@ -275,6 +284,8 @@ export default function ReviewForm({ propertyId }: ReviewFormProps) {
                   type="number"
                   min="0"
                   step="0.5"
+                  value={depositMonths}
+                  onChange={(event) => setDepositMonths(event.target.value)}
                   placeholder="For example, 2"
                   className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none transition-colors focus:border-blue-600"
                 />
@@ -313,6 +324,8 @@ export default function ReviewForm({ propertyId }: ReviewFormProps) {
 
                     <input
                       type="text"
+                      value={deductionReason}
+                      onChange={(event) => setDeductionReason(event.target.value)}
                       placeholder="For example, repair charges"
                       className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none transition-colors focus:border-blue-600"
                     />
@@ -326,6 +339,8 @@ export default function ReviewForm({ propertyId }: ReviewFormProps) {
                     <input
                       type="number"
                       min="0"
+                      value={deductionAmount}
+                      onChange={(event) => setDeductionAmount(event.target.value)}
                       placeholder="Amount in ₹"
                       className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none transition-colors focus:border-blue-600"
                     />

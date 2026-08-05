@@ -1,6 +1,6 @@
 import type { DiscoveryProperty } from "@/components/property/PropertyDiscovery";
 import { createClient } from "@/lib/supabase/server";
-import { DEFAULT_CITY } from "@/lib/cities";
+import { CITY_NAME_ALIASES, DEFAULT_CITY } from "@/lib/cities";
 
 type PropertyRow = {
   id: string;
@@ -28,15 +28,8 @@ type AvailabilityRow = {
 };
 
 export async function getDiscoveryProperties(
-  // Accepted for forward-compatibility (multi-city callers already pass this),
-  // but not yet applied to the query below: existing `properties.city` values
-  // are free text ("Bengaluru", "BENGALURU", ...), not the canonical city
-  // names in lib/cities.ts, so filtering on it today would silently drop
-  // every real property. Wire this up once city values are normalized.
   city: string = DEFAULT_CITY,
 ): Promise<DiscoveryProperty[]> {
-  void city;
-
   if (
     !process.env.NEXT_PUBLIC_SUPABASE_URL ||
     !process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
@@ -45,10 +38,18 @@ export async function getDiscoveryProperties(
   }
 
   const supabase = await createClient();
+  // properties.city is free text (e.g. "Bengaluru"/"BENGALURU" rather than
+  // the app's canonical "Bangalore"), so match against every known alias,
+  // case-insensitively, instead of an exact .eq() that would silently drop
+  // every real property.
+  const cityAliases = CITY_NAME_ALIASES[city] ?? [city];
+  const cityFilter = cityAliases.map((alias) => `city.ilike.${alias}`).join(",");
+
   const { data: propertyRows } = await supabase
     .from("properties")
     .select("id, slug, name, area, city, asking_rent")
     .eq("status", "published")
+    .or(cityFilter)
     .order("name");
 
   const properties = (propertyRows ?? []) as PropertyRow[];

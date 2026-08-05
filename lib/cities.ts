@@ -1,5 +1,13 @@
 export const DEFAULT_CITY = "Bangalore";
 
+// properties.city is free text and doesn't always match the app's canonical
+// city name (e.g. stored as "Bengaluru"/"BENGALURU", never "Bangalore") —
+// this maps each canonical city to every name variant it should match when
+// filtering, so the query stays tolerant of that without rewriting any data.
+export const CITY_NAME_ALIASES: Record<string, string[]> = {
+  Bangalore: ["Bangalore", "Bengaluru"],
+};
+
 export const CITIES = [
   { name: "Bangalore", available: true },
   { name: "Hyderabad", available: false },
