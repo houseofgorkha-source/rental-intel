@@ -204,6 +204,7 @@ type FiltersPanelProps = {
   onlyShow: OnlyShowFilters;
   onOnlyShowChange: (filters: OnlyShowFilters) => void;
   position: { top: number; right: number; width: number } | null;
+  panelRef: React.RefObject<HTMLDivElement | null>;
 };
 
 function FiltersPanel({
@@ -213,6 +214,7 @@ function FiltersPanel({
   onlyShow,
   onOnlyShowChange,
   position,
+  panelRef,
 }: FiltersPanelProps) {
   const [depositRange, setDepositRange] = useState<[number, number]>([0, 2000000]);
   const [bedrooms, toggleBedroom] = useToggleSet();
@@ -229,6 +231,7 @@ function FiltersPanel({
 
   return createPortal(
     <div
+      ref={panelRef}
       id="filters-panel"
       role="dialog"
       aria-label="Filters"
@@ -439,16 +442,15 @@ export function PropertyToolbar({
         Filters
       </button>
       {isFiltersOpen && (
-        <div ref={panelRef}>
-          <FiltersPanel
-            onClose={() => setIsFiltersOpen(false)}
-            rentRange={rentRange}
-            onRentRangeChange={onRentRangeChange}
-            onlyShow={onlyShow}
-            onOnlyShowChange={onOnlyShowChange}
-            position={position}
-          />
-        </div>
+        <FiltersPanel
+          onClose={() => setIsFiltersOpen(false)}
+          rentRange={rentRange}
+          onRentRangeChange={onRentRangeChange}
+          onlyShow={onlyShow}
+          onOnlyShowChange={onOnlyShowChange}
+          position={position}
+          panelRef={panelRef}
+        />
       )}
     </div>
   );
@@ -477,15 +479,15 @@ export function PropertyList({
   );
 
   const grid = (
-    <div className={`grid gap-4 sm:grid-cols-2 ${compact ? "" : "xl:grid-cols-3"}`}>
+    <div className={`grid gap-3 sm:grid-cols-2 ${compact ? "" : "xl:grid-cols-3"}`}>
       {visibleProperties.map((property) => (
         <article
           key={property.slug}
-          className="overflow-hidden rounded-2xl border border-slate-200 bg-white transition hover:border-slate-300 hover:shadow-[0_18px_45px_-30px_rgba(15,23,42,0.45)]"
+          className="overflow-hidden rounded-xl border border-slate-200 bg-white transition hover:border-slate-300 hover:shadow-[0_18px_45px_-30px_rgba(15,23,42,0.45)]"
         >
-          <div className="relative aspect-[2/1] bg-slate-100">
+          <div className="relative aspect-[5/2] bg-slate-100">
             {property.isAvailable && (
-              <span className="absolute right-2.5 top-2.5 z-10 inline-flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-medium text-emerald-700 shadow-sm ring-1 ring-inset ring-emerald-600/20">
+              <span className="absolute right-2 top-2 z-10 inline-flex items-center gap-1 rounded-full bg-white/95 px-2 py-0.5 text-[10px] font-medium text-emerald-700 shadow-sm ring-1 ring-inset ring-emerald-600/20">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                 Available for rent
               </span>
@@ -499,21 +501,21 @@ export function PropertyList({
                 className="h-full w-full object-cover"
               />
             ) : (
-              <div className="flex h-full items-end bg-[linear-gradient(145deg,#e2e8f0,#f8fafc_58%,#dbeafe)] p-5">
-                <span className="text-sm font-medium text-slate-500">
+              <div className="flex h-full items-end bg-[linear-gradient(145deg,#e2e8f0,#f8fafc_58%,#dbeafe)] p-3">
+                <span className="text-xs font-medium text-slate-500">
                   Property image coming soon
                 </span>
               </div>
             )}
           </div>
-          <div className="p-4">
-            <p className="text-xs font-medium uppercase tracking-[0.13em] text-slate-500">
+          <div className="p-3">
+            <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-slate-500">
               {property.area}, {property.city}
             </p>
-            <h3 className="mt-1.5 line-clamp-2 text-base font-medium tracking-[-0.02em] text-slate-950">
+            <h3 className="mt-1 line-clamp-2 text-sm font-medium tracking-[-0.02em] text-slate-950">
               {property.name}
             </h3>
-            <div className="mt-3 flex items-center justify-between gap-3 text-sm">
+            <div className="mt-2 flex items-center justify-between gap-3 text-xs">
               <span className="font-medium text-slate-900">
                 {property.averageRating === null
                   ? "New"
@@ -524,12 +526,12 @@ export function PropertyList({
                 {property.reviewCount === 1 ? "review" : "reviews"}
               </span>
             </div>
-            <p className="mt-2.5 text-sm font-medium text-slate-900">
+            <p className="mt-2 text-sm font-medium text-slate-900">
               {formatRent(property.askingRent)}
             </p>
             <Link
               href={`/property/${property.slug}`}
-              className="mt-3.5 inline-flex text-sm font-medium text-slate-900 underline decoration-slate-300 underline-offset-4 transition hover:text-blue-600 hover:decoration-slate-900"
+              className="mt-2.5 inline-flex text-xs font-medium text-slate-900 underline decoration-slate-300 underline-offset-4 transition hover:text-blue-600 hover:decoration-slate-900"
             >
               View Property
             </Link>
