@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { useCallback, useMemo, useRef, useState } from "react";
-import SearchBar from "@/components/SearchBar";
 import PropertyMap from "@/components/property/PropertyMap";
+import HomeSearch from "@/components/property/HomeSearch";
 import UseMyLocationButton from "@/components/shared/UseMyLocationButton";
 import {
   PropertyList,
+  FiltersButton,
   RENT_MIN,
   RENT_MAX,
   filterProperties,
@@ -30,17 +31,17 @@ const CITY_ZOOM = 11;
 const AREA_ZOOM = 14;
 
 // Single source of truth for the homepage's search/filter/map state. The
-// hero's SearchBar, the property panel's toolbar, and the map are siblings
-// with no ancestor of their own — this is their nearest common ancestor, so
-// it owns city/area/query/filters/map view/selected property once, and every
-// view reads and writes through the same state rather than keeping its own
-// copy. `filterProperties` (from PropertyDiscovery.tsx) is called exactly
-// once, here, and the resulting array is handed to both the map and the
-// list — they can't disagree about what's visible because they're literally
-// looking at the same array reference.
+// unified Search (city + multi-area + text), the Filters panel, and the map
+// are siblings with no ancestor of their own — this is their nearest common
+// ancestor, so it owns city/areas/query/filters/map view/selected property
+// once, and every view reads and writes through the same state rather than
+// keeping its own copy. `filterProperties` (from PropertyDiscovery.tsx) is
+// called exactly once, here, and the resulting array is handed to both the
+// map and the list — they can't disagree about what's visible because
+// they're literally looking at the same array reference.
 export default function HomeDiscovery({ properties }: HomeDiscoveryProps) {
   const [selectedCity, setSelectedCity] = useState(DEFAULT_CITY);
-  const [selectedArea, setSelectedArea] = useState<string | null>(null);
+  const [selectedAreas, setSelectedAreas] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [rentRange, setRentRange] = useState<[number, number]>([RENT_MIN, RENT_MAX]);
   const [onlyShow, setOnlyShow] = useState<OnlyShowFilters>({
@@ -68,12 +69,12 @@ export default function HomeDiscovery({ properties }: HomeDiscoveryProps) {
   const visibleProperties = useMemo(
     () =>
       filterProperties(cityProperties, {
-        area: selectedArea,
+        areas: selectedAreas,
         rentRange,
         onlyShow,
         query: searchQuery,
       }),
-    [cityProperties, selectedArea, rentRange, onlyShow, searchQuery],
+    [cityProperties, selectedAreas, rentRange, onlyShow, searchQuery],
   );
 
   const searchProperties = cityProperties.map((property) => ({
@@ -84,17 +85,20 @@ export default function HomeDiscovery({ properties }: HomeDiscoveryProps) {
 
   const handleCityChange = useCallback((city: string) => {
     setSelectedCity(city);
-    // Clear any area selection that doesn't belong to the new city.
-    setSelectedArea(null);
+    // Clear any area selections that don't belong to the new city.
+    setSelectedAreas([]);
     setSelectedSlug(null);
     setMapView({ center: getCityCoordinates(city), zoom: CITY_ZOOM });
   }, []);
 
-  const handleAreaChange = useCallback(
-    (area: string | null) => {
-      setSelectedArea(area);
+  const handleAreasChange = useCallback(
+    (areas: string[]) => {
+      setSelectedAreas(areas);
       setSelectedSlug(null);
-      const areaCoordinates = area ? getAreaCoordinates(area) : null;
+      // Fly to the most recently added area, or back to the city view once
+      // the last one is removed.
+      const lastArea = areas[areas.length - 1];
+      const areaCoordinates = lastArea ? getAreaCoordinates(lastArea) : null;
       setMapView(
         areaCoordinates
           ? { center: areaCoordinates, zoom: AREA_ZOOM }
@@ -116,93 +120,107 @@ export default function HomeDiscovery({ properties }: HomeDiscoveryProps) {
       if (!nearestCity) return;
       handleCityChange(nearestCity);
       const nearestArea = findNearestArea(coordinates, nearestCity);
-      if (nearestArea) handleAreaChange(nearestArea);
+      if (nearestArea) handleAreasChange([nearestArea]);
     },
-    [handleCityChange, handleAreaChange],
+    [handleCityChange, handleAreasChange],
   );
 
   return (
-    <main className="min-h-screen min-w-0 bg-[#fbfbfa]">
-      <div className="mx-auto grid max-w-[1600px] lg:grid-cols-2 lg:items-start">
-        <section className="min-w-0 px-7 pb-16 pt-28 lg:px-12 xl:px-20">
-          <div className="max-w-xl">
-            <h1 className="text-[clamp(2.6rem,5vw,4.75rem)] font-medium leading-[0.98] tracking-[-0.055em] text-slate-950">
-              Know it before you <span className="text-blue-600">rent.</span>
-            </h1>
+    <main className="min-w-0 bg-[#fbfbfa]">
+      <div className="mx-auto max-w-[1600px] px-7 pb-16 pt-28 lg:px-12 xl:px-16">
+        <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] lg:items-stretch lg:gap-8">
+          {/* Left: hero copy only — no search controls here anymore. */}
+          <section className="flex min-w-0 flex-col justify-center py-4 lg:py-10">
+            <div className="max-w-md">
+              <h1 className="text-[clamp(2.4rem,4.2vw,3.75rem)] font-medium leading-[1.02] tracking-[-0.05em] text-slate-950">
+                Know it before you <span className="text-blue-600">rent.</span>
+              </h1>
+              <p className="mt-6 text-sm leading-6 text-slate-600 sm:text-base sm:leading-7">
+                Search properties with genuine tenant experiences before you rent.
+              </p>
+            </div>
+          </section>
 
-            <p className="mt-6 max-w-[31rem] text-sm leading-6 text-slate-600 sm:text-base sm:leading-7">
-              Search properties with genuine tenant experiences before you rent.
-            </p>
+          {/* Right: the unified discovery panel — one shared surface holding
+              the toolbar, the map, and the property list. */}
+          <section className="min-w-0" aria-label="Property discovery">
+            <div className="overflow-hidden rounded-2xl bg-[#f6f6f4] shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+              <div className="flex flex-wrap items-start justify-between gap-4 p-5 sm:p-6">
+                <UseMyLocationButton onLocated={handleLocated} compact />
 
-            <div className="mt-12 max-w-xl">
-              <SearchBar
-                properties={searchProperties}
-                city={selectedCity}
-                onCityChange={handleCityChange}
-                query={searchQuery}
-                onQueryChange={setSearchQuery}
-              />
+                <div className="flex flex-1 flex-wrap items-start justify-end gap-3">
+                  <HomeSearch
+                    properties={searchProperties}
+                    city={selectedCity}
+                    onCityChange={handleCityChange}
+                    areas={LOCALITIES_BY_CITY[selectedCity] ?? []}
+                    selectedAreas={selectedAreas}
+                    onAreasChange={handleAreasChange}
+                    query={searchQuery}
+                    onQueryChange={setSearchQuery}
+                  />
+                  <FiltersButton
+                    rentRange={rentRange}
+                    onRentRangeChange={setRentRange}
+                    onlyShow={onlyShow}
+                    onOnlyShowChange={setOnlyShow}
+                  />
+                </div>
+              </div>
+
               {cityProperties.length === 0 && (
-                <p className="mt-4 text-sm text-slate-500">
+                <p className="px-5 pb-2 text-sm text-slate-500 sm:px-6">
                   {selectedCity === DEFAULT_CITY
                     ? "No properties are available yet. Try adding the first one."
                     : `${selectedCity} is coming soon. Try ${DEFAULT_CITY} for now.`}
                 </p>
               )}
-              <UseMyLocationButton onLocated={handleLocated} className="mt-4" />
-            </div>
 
-            <div className="mt-6 h-[22rem] max-w-xl sm:h-[26rem]">
-              <PropertyMap
-                properties={visibleProperties}
-                center={mapView.center}
-                zoom={mapView.zoom}
-                selectedSlug={selectedSlug}
-                onSelectProperty={setSelectedSlug}
-                onMoveEnd={handleMoveEnd}
-              />
-            </div>
+              {/* Map and list touch — one divider, no gap, same height. */}
+              <div className="grid divide-slate-200 lg:h-[30rem] lg:grid-cols-[3fr_2fr] lg:divide-x">
+                <div className="h-[22rem] lg:h-full">
+                  <PropertyMap
+                    properties={visibleProperties}
+                    center={mapView.center}
+                    zoom={mapView.zoom}
+                    selectedSlug={selectedSlug}
+                    onSelectProperty={setSelectedSlug}
+                    onMoveEnd={handleMoveEnd}
+                  />
+                </div>
 
-            <div className="mt-12 max-w-[31rem] border-t border-slate-200 pt-8">
-              <p className="text-base font-semibold text-slate-900">
-                Be part of the community.
-              </p>
-              <p className="mt-2 text-sm leading-6 text-slate-600">
-                Share your experience about the place you call home today. Help
-                future renters make better decisions while building a more
-                transparent rental community.
-              </p>
-              <Link
-                href="/add-property"
-                className="mt-4 inline-flex text-sm font-medium text-blue-600 underline decoration-blue-200 underline-offset-4 transition hover:text-blue-700 hover:decoration-blue-400"
-              >
-                Review Your Current Stay
-              </Link>
+                <div className="scroll-thin overflow-y-auto p-5 sm:p-6 lg:h-full">
+                  <PropertyList
+                    properties={visibleProperties}
+                    heading={`${selectedCity} properties`}
+                    compact
+                    selectedSlug={selectedSlug}
+                    onSelectProperty={setSelectedSlug}
+                  />
+                </div>
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
+        </div>
 
-        <section className="min-w-0 px-7 pt-28 lg:px-12 xl:px-20" aria-label="Property discovery">
-          <div className="mx-auto max-w-5xl overflow-hidden rounded-2xl bg-[#f6f6f4] p-6 lg:p-8">
-            <PropertyList
-              properties={visibleProperties}
-              heading={`${selectedCity} properties`}
-              showToolbar
-              compact
-              scrollable
-              areas={LOCALITIES_BY_CITY[selectedCity] ?? []}
-              city={selectedCity}
-              onCityChange={handleCityChange}
-              selectedArea={selectedArea}
-              onAreaChange={handleAreaChange}
-              rentRange={rentRange}
-              onRentRangeChange={setRentRange}
-              onlyShow={onlyShow}
-              onOnlyShowChange={setOnlyShow}
-              searchQuery={searchQuery}
-              selectedSlug={selectedSlug}
-              onSelectProperty={setSelectedSlug}
-            />
+        {/* Community section — its own panel, separating the discovery
+            experience above from future homepage sections below. */}
+        <section className="mt-14 overflow-hidden rounded-2xl bg-gradient-to-br from-[#f6f6f4] to-white px-7 py-12 shadow-[0_1px_2px_rgba(15,23,42,0.04)] sm:px-10 sm:py-16 lg:px-16">
+          <div className="mx-auto max-w-2xl text-center">
+            <h2 className="text-3xl font-medium tracking-[-0.04em] text-slate-950 sm:text-4xl">
+              Be part of the community.
+            </h2>
+            <p className="mt-4 text-sm leading-6 text-slate-600 sm:text-base sm:leading-7">
+              Share your experience about the place you call home today. Help
+              future renters make better decisions while building a more
+              transparent rental community.
+            </p>
+            <Link
+              href="/add-property"
+              className="mt-8 inline-flex items-center rounded-full bg-slate-950 px-6 py-3 text-sm font-medium text-white transition hover:bg-slate-800"
+            >
+              Review Your Current Stay
+            </Link>
           </div>
         </section>
       </div>

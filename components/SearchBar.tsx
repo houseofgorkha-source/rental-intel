@@ -21,6 +21,10 @@ type SearchBarProps = {
   // exactly today's behavior.
   query?: string;
   onQueryChange?: (query: string) => void;
+  // When false, the embedded CitySelector isn't rendered — used by
+  // HomeSearch, which supplies its own city control alongside area chips.
+  // Defaults to true so every existing caller is unaffected.
+  showCityPicker?: boolean;
 };
 
 type DropdownPosition = {
@@ -36,6 +40,7 @@ export default function SearchBar({
   onCityChange,
   query: externalQuery,
   onQueryChange,
+  showCityPicker = true,
 }: SearchBarProps) {
   const [internalSearch, setInternalSearch] = useState("");
   const search = externalQuery ?? internalSearch;
@@ -201,7 +206,7 @@ export default function SearchBar({
   return (
     <div ref={searchRef} className="w-full">
       <div className="flex h-[68px] overflow-visible rounded-2xl border border-slate-300 bg-white shadow-[0_16px_35px_-20px_rgba(15,23,42,0.3)] transition focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-100">
-        <CitySelector value={city} onChange={onCityChange} />
+        {showCityPicker && <CitySelector value={city} onChange={onCityChange} />}
         <input
           type="text"
           value={search}

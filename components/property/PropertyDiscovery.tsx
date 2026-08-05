@@ -16,25 +16,16 @@ type PropertyDiscoveryProps = {
 };
 
 type PropertyListProps = {
+  // `properties` is expected to already be filtered (via filterProperties)
+  // by the caller — PropertyList itself no longer owns any filter state or
+  // renders a toolbar; it's purely a heading + scrollable grid. This keeps
+  // exactly one place (the caller) responsible for filtering, whether
+  // that's HomeDiscovery (homepage) or the default-exported PropertyDiscovery
+  // below (/property page).
   properties: DiscoveryProperty[];
   heading: string;
-  showToolbar?: boolean;
   compact?: boolean;
   scrollable?: boolean;
-  areas?: string[];
-  city?: string;
-  onCityChange?: (city: string) => void;
-  // Optional controlled filter state — when provided (by HomeDiscovery, so
-  // the map can share the exact same filters), PropertyList reads/writes
-  // through these instead of its own internal state. Uncontrolled by
-  // default so the /property page's standalone usage is unaffected.
-  selectedArea?: string | null;
-  onAreaChange?: (area: string | null) => void;
-  rentRange?: [number, number];
-  onRentRangeChange?: (range: [number, number]) => void;
-  onlyShow?: OnlyShowFilters;
-  onOnlyShowChange?: (filters: OnlyShowFilters) => void;
-  searchQuery?: string;
   // Marker <-> card sync: which property (by slug) is currently selected,
   // and the callback to fire when a card is clicked/focused.
   selectedSlug?: string | null;
@@ -44,6 +35,13 @@ type PropertyListProps = {
 export type OnlyShowFilters = {
   reviewsOnly: boolean;
   photosOnly: boolean;
+};
+
+type FiltersButtonProps = {
+  rentRange: [number, number];
+  onRentRangeChange: (range: [number, number]) => void;
+  onlyShow: OnlyShowFilters;
+  onOnlyShowChange: (filters: OnlyShowFilters) => void;
 };
 
 type PropertyToolbarProps = {
@@ -83,7 +81,9 @@ const fieldInputClass =
 export function filterProperties(
   properties: DiscoveryProperty[],
   filters: {
-    area: string | null;
+    // Empty array = no area filter. Non-empty = match ANY selected area
+    // (multi-select), not all of them.
+    areas: string[];
     rentRange: [number, number];
     onlyShow: OnlyShowFilters;
     query?: string;
@@ -91,11 +91,12 @@ export function filterProperties(
 ): DiscoveryProperty[] {
   const [rentMin, rentMax] = filters.rentRange;
   const query = filters.query?.trim().toLowerCase();
+  const areas = filters.areas.map((area) => area.toLocaleLowerCase());
 
   return properties.filter((property) => {
     if (
-      filters.area &&
-      !property.area.toLocaleLowerCase().includes(filters.area.toLocaleLowerCase())
+      areas.length > 0 &&
+      !areas.some((area) => property.area.toLocaleLowerCase().includes(area))
     ) {
       return false;
     }
@@ -405,17 +406,18 @@ function FiltersPanel({
   );
 }
 
-export function PropertyToolbar({
-  areas,
-  selectedArea,
-  onAreaChange,
+// Standalone Filters button + portal panel — extracted from PropertyToolbar
+// so the homepage's own toolbar row can place it directly (alongside
+// UseMyLocationButton and the unified Search) without also getting
+// PropertyToolbar's bundled City/Area selectors, which the homepage now
+// renders separately as part of Search. /property page still gets this via
+// PropertyToolbar below — same component, two call sites, no duplication.
+export function FiltersButton({
   rentRange,
   onRentRangeChange,
   onlyShow,
   onOnlyShowChange,
-  city,
-  onCityChange,
-}: PropertyToolbarProps) {
+}: FiltersButtonProps) {
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [position, setPosition] = useState<{
     top: number;
@@ -474,14 +476,7 @@ export function PropertyToolbar({
   }, [isFiltersOpen]);
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-2.5">
-      <div className="flex flex-wrap items-center gap-2.5">
-        {city && onCityChange && (
-          <CitySelector value={city} onChange={onCityChange} variant="pill" />
-        )}
-        <AreaSelector areas={areas} value={selectedArea} onChange={onAreaChange} />
-      </div>
-
+    <>
       <button
         ref={filtersButtonRef}
         type="button"
@@ -510,6 +505,36 @@ export function PropertyToolbar({
           panelRef={panelRef}
         />
       )}
+    </>
+  );
+}
+
+export function PropertyToolbar({
+  areas,
+  selectedArea,
+  onAreaChange,
+  rentRange,
+  onRentRangeChange,
+  onlyShow,
+  onOnlyShowChange,
+  city,
+  onCityChange,
+}: PropertyToolbarProps) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-2.5">
+      <div className="flex flex-wrap items-center gap-2.5">
+        {city && onCityChange && (
+          <CitySelector value={city} onChange={onCityChange} variant="pill" />
+        )}
+        <AreaSelector areas={areas} value={selectedArea} onChange={onAreaChange} />
+      </div>
+
+      <FiltersButton
+        rentRange={rentRange}
+        onRentRangeChange={onRentRangeChange}
+        onlyShow={onlyShow}
+        onOnlyShowChange={onOnlyShowChange}
+      />
     </div>
   );
 }
@@ -517,45 +542,16 @@ export function PropertyToolbar({
 export function PropertyList({
   properties,
   heading,
-  showToolbar = false,
   compact = false,
   scrollable = false,
-  areas = [],
-  city,
-  onCityChange,
-  selectedArea: externalArea,
-  onAreaChange: externalOnAreaChange,
-  rentRange: externalRentRange,
-  onRentRangeChange: externalOnRentRangeChange,
-  onlyShow: externalOnlyShow,
-  onOnlyShowChange: externalOnOnlyShowChange,
-  searchQuery = "",
   selectedSlug = null,
   onSelectProperty,
 }: PropertyListProps) {
-  const [internalArea, setInternalArea] = useState<string | null>(null);
-  const [internalRentRange, setInternalRentRange] = useState<[number, number]>([
-    RENT_MIN,
-    RENT_MAX,
-  ]);
-  const [internalOnlyShow, setInternalOnlyShow] = useState<OnlyShowFilters>({
-    reviewsOnly: false,
-    photosOnly: false,
-  });
-
-  const selectedArea = externalArea !== undefined ? externalArea : internalArea;
-  const setSelectedArea = externalOnAreaChange ?? setInternalArea;
-  const rentRange = externalRentRange ?? internalRentRange;
-  const setRentRange = externalOnRentRangeChange ?? setInternalRentRange;
-  const onlyShow = externalOnlyShow ?? internalOnlyShow;
-  const setOnlyShow = externalOnOnlyShowChange ?? setInternalOnlyShow;
-
   const cardRefs = useRef<Record<string, HTMLElement | null>>({});
 
-  const visibleProperties = useMemo(
-    () => filterProperties(properties, { area: selectedArea, rentRange, onlyShow, query: searchQuery }),
-    [properties, selectedArea, rentRange, onlyShow, searchQuery],
-  );
+  // `properties` is already filtered by the caller — this is the "visible"
+  // set as-is, not re-derived here. See the PropertyListProps comment.
+  const visibleProperties = properties;
 
   useEffect(() => {
     if (!selectedSlug) return;
@@ -637,25 +633,7 @@ export function PropertyList({
 
   return (
     <section aria-labelledby="property-results-heading">
-      {showToolbar && (
-        <PropertyToolbar
-          areas={areas}
-          selectedArea={selectedArea}
-          onAreaChange={setSelectedArea}
-          rentRange={rentRange}
-          onRentRangeChange={setRentRange}
-          onlyShow={onlyShow}
-          onOnlyShowChange={setOnlyShow}
-          city={city}
-          onCityChange={onCityChange}
-        />
-      )}
-
-      <div
-        className={`flex items-end justify-between gap-4 ${
-          showToolbar ? "mt-8" : ""
-        }`}
-      >
+      <div className="flex items-end justify-between gap-4">
         <div>
           <h2
             id="property-results-heading"
@@ -699,7 +677,12 @@ export default function PropertyDiscovery({
   });
 
   const visibleProperties = useMemo(
-    () => filterProperties(properties, { area: selectedLocality, rentRange, onlyShow }),
+    () =>
+      filterProperties(properties, {
+        areas: selectedLocality ? [selectedLocality] : [],
+        rentRange,
+        onlyShow,
+      }),
     [properties, selectedLocality, rentRange, onlyShow],
   );
 
