@@ -129,7 +129,8 @@ export default function HomeDiscovery({ properties }: HomeDiscoveryProps) {
     <main className="min-w-0 bg-[#fbfbfa]">
       <div className="mx-auto max-w-[1600px] px-7 pb-16 pt-28 lg:px-12 xl:px-16">
         <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] lg:items-stretch lg:gap-8">
-          {/* Left: hero copy only — no search controls here anymore. */}
+          {/* Left: hero copy + community copy form one continuous column,
+              no search controls here anymore. */}
           <section className="flex min-w-0 flex-col justify-center py-4 lg:py-10">
             <div className="max-w-md">
               <h1 className="text-[clamp(2.4rem,4.2vw,3.75rem)] font-medium leading-[1.02] tracking-[-0.05em] text-slate-950">
@@ -138,6 +139,23 @@ export default function HomeDiscovery({ properties }: HomeDiscoveryProps) {
               <p className="mt-6 text-sm leading-6 text-slate-600 sm:text-base sm:leading-7">
                 Search properties with genuine tenant experiences before you rent.
               </p>
+            </div>
+
+            <div className="mt-12 max-w-md sm:mt-16">
+              <h2 className="text-xl font-semibold tracking-[-0.02em] text-slate-950 sm:text-2xl">
+                Be part of the community.
+              </h2>
+              <p className="mt-3 text-sm leading-6 text-slate-600 sm:text-base sm:leading-7">
+                Share your experience about the place you call home today. Help
+                future renters make better decisions while building a more
+                transparent rental community.
+              </p>
+              <Link
+                href="/add-property"
+                className="mt-4 inline-flex text-sm font-medium text-blue-600 underline decoration-blue-200 underline-offset-4 transition hover:text-blue-700 hover:decoration-blue-400"
+              >
+                Review Your Current Stay
+              </Link>
             </div>
           </section>
 
@@ -202,27 +220,6 @@ export default function HomeDiscovery({ properties }: HomeDiscoveryProps) {
             </div>
           </section>
         </div>
-
-        {/* Community section — its own panel, separating the discovery
-            experience above from future homepage sections below. */}
-        <section className="mt-14 overflow-hidden rounded-2xl bg-gradient-to-br from-[#f6f6f4] to-white px-7 py-12 shadow-[0_1px_2px_rgba(15,23,42,0.04)] sm:px-10 sm:py-16 lg:px-16">
-          <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-3xl font-medium tracking-[-0.04em] text-slate-950 sm:text-4xl">
-              Be part of the community.
-            </h2>
-            <p className="mt-4 text-sm leading-6 text-slate-600 sm:text-base sm:leading-7">
-              Share your experience about the place you call home today. Help
-              future renters make better decisions while building a more
-              transparent rental community.
-            </p>
-            <Link
-              href="/add-property"
-              className="mt-8 inline-flex items-center rounded-full bg-slate-950 px-6 py-3 text-sm font-medium text-white transition hover:bg-slate-800"
-            >
-              Review Your Current Stay
-            </Link>
-          </div>
-        </section>
       </div>
     </main>
   );
