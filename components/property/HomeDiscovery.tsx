@@ -1,29 +1,72 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import SearchBar from "@/components/SearchBar";
-import { PropertyList } from "@/components/property/PropertyDiscovery";
+import PropertyMap from "@/components/property/PropertyMap";
+import {
+  PropertyList,
+  RENT_MIN,
+  RENT_MAX,
+  filterProperties,
+  type OnlyShowFilters,
+} from "@/components/property/PropertyDiscovery";
 import { DEFAULT_CITY, LOCALITIES_BY_CITY, cityMatches } from "@/lib/cities";
+import { getAreaCoordinates, getCityCoordinates, type Coordinates } from "@/lib/area-coordinates";
 import type { DiscoveryProperty } from "@/lib/property-discovery";
 
 type HomeDiscoveryProps = {
   properties: DiscoveryProperty[];
 };
 
-// Owns the selected city so the hero's SearchBar/CitySelector and the
-// property panel's toolbar/AreaSelector stay in sync — they're siblings in
-// the layout below, so this is their nearest common ancestor. `properties`
-// is fetched server-side for DEFAULT_CITY only (the one available city
-// today); switching to another city filters client-side rather than
-// refetching, which is correct since every other city has zero published
-// properties until it's rolled out.
+const CITY_ZOOM = 11;
+const AREA_ZOOM = 14;
+
+// Single source of truth for the homepage's search/filter/map state. The
+// hero's SearchBar, the property panel's toolbar, and the map are siblings
+// with no ancestor of their own — this is their nearest common ancestor, so
+// it owns city/area/query/filters/map view/selected property once, and every
+// view reads and writes through the same state rather than keeping its own
+// copy. `filterProperties` (from PropertyDiscovery.tsx) is called exactly
+// once, here, and the resulting array is handed to both the map and the
+// list — they can't disagree about what's visible because they're literally
+// looking at the same array reference.
 export default function HomeDiscovery({ properties }: HomeDiscoveryProps) {
   const [selectedCity, setSelectedCity] = useState(DEFAULT_CITY);
+  const [selectedArea, setSelectedArea] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [rentRange, setRentRange] = useState<[number, number]>([RENT_MIN, RENT_MAX]);
+  const [onlyShow, setOnlyShow] = useState<OnlyShowFilters>({
+    reviewsOnly: false,
+    photosOnly: false,
+  });
+  const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
+  const [mapView, setMapView] = useState<{ center: Coordinates; zoom: number }>({
+    center: getCityCoordinates(DEFAULT_CITY),
+    zoom: CITY_ZOOM,
+  });
+
+  // Reported after the user finishes dragging/zooming the map, kept separate
+  // from `mapView` (which only ever changes via city/area selection) so a
+  // drag never feeds back into a city/area change. Not read anywhere yet —
+  // this is exactly the state a future "Search this area" button would read
+  // from to run a query against the map's current bounds.
+  const lastUserMapView = useRef<{ center: Coordinates; zoom: number } | null>(null);
 
   const cityProperties = useMemo(
     () => properties.filter((property) => cityMatches(property.city, selectedCity)),
     [properties, selectedCity],
+  );
+
+  const visibleProperties = useMemo(
+    () =>
+      filterProperties(cityProperties, {
+        area: selectedArea,
+        rentRange,
+        onlyShow,
+        query: searchQuery,
+      }),
+    [cityProperties, selectedArea, rentRange, onlyShow, searchQuery],
   );
 
   const searchProperties = cityProperties.map((property) => ({
@@ -31,6 +74,32 @@ export default function HomeDiscovery({ properties }: HomeDiscoveryProps) {
     name: property.name,
     location: `${property.area}, ${property.city}`,
   }));
+
+  const handleCityChange = useCallback((city: string) => {
+    setSelectedCity(city);
+    // Clear any area selection that doesn't belong to the new city.
+    setSelectedArea(null);
+    setSelectedSlug(null);
+    setMapView({ center: getCityCoordinates(city), zoom: CITY_ZOOM });
+  }, []);
+
+  const handleAreaChange = useCallback(
+    (area: string | null) => {
+      setSelectedArea(area);
+      setSelectedSlug(null);
+      const areaCoordinates = area ? getAreaCoordinates(area) : null;
+      setMapView(
+        areaCoordinates
+          ? { center: areaCoordinates, zoom: AREA_ZOOM }
+          : { center: getCityCoordinates(selectedCity), zoom: CITY_ZOOM },
+      );
+    },
+    [selectedCity],
+  );
+
+  const handleMoveEnd = useCallback((view: { center: Coordinates; zoom: number }) => {
+    lastUserMapView.current = view;
+  }, []);
 
   return (
     <main className="min-h-screen min-w-0 bg-[#fbfbfa]">
@@ -49,7 +118,9 @@ export default function HomeDiscovery({ properties }: HomeDiscoveryProps) {
               <SearchBar
                 properties={searchProperties}
                 city={selectedCity}
-                onCityChange={setSelectedCity}
+                onCityChange={handleCityChange}
+                query={searchQuery}
+                onQueryChange={setSearchQuery}
               />
               {cityProperties.length === 0 && (
                 <p className="mt-4 text-sm text-slate-500">
@@ -58,6 +129,17 @@ export default function HomeDiscovery({ properties }: HomeDiscoveryProps) {
                     : `${selectedCity} is coming soon. Try ${DEFAULT_CITY} for now.`}
                 </p>
               )}
+            </div>
+
+            <div className="mt-10 h-[22rem] max-w-xl sm:h-[26rem]">
+              <PropertyMap
+                properties={visibleProperties}
+                center={mapView.center}
+                zoom={mapView.zoom}
+                selectedSlug={selectedSlug}
+                onSelectProperty={setSelectedSlug}
+                onMoveEnd={handleMoveEnd}
+              />
             </div>
 
             <div className="mt-12 max-w-[31rem] border-t border-slate-200 pt-8">
@@ -82,14 +164,23 @@ export default function HomeDiscovery({ properties }: HomeDiscoveryProps) {
         <section className="min-w-0 px-7 pt-28 lg:px-12 xl:px-20" aria-label="Property discovery">
           <div className="mx-auto max-w-5xl overflow-hidden rounded-2xl bg-[#f6f6f4] p-6 lg:p-8">
             <PropertyList
-              properties={cityProperties}
+              properties={visibleProperties}
               heading={`${selectedCity} properties`}
               showToolbar
               compact
               scrollable
               areas={LOCALITIES_BY_CITY[selectedCity] ?? []}
               city={selectedCity}
-              onCityChange={setSelectedCity}
+              onCityChange={handleCityChange}
+              selectedArea={selectedArea}
+              onAreaChange={handleAreaChange}
+              rentRange={rentRange}
+              onRentRangeChange={setRentRange}
+              onlyShow={onlyShow}
+              onOnlyShowChange={setOnlyShow}
+              searchQuery={searchQuery}
+              selectedSlug={selectedSlug}
+              onSelectProperty={setSelectedSlug}
             />
           </div>
         </section>

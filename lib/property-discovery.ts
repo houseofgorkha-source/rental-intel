@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { CITY_NAME_ALIASES, DEFAULT_CITY } from "@/lib/cities";
 import { calculateAverageRating, getPropertyImageUrl } from "@/lib/property-format";
+import { getAreaCoordinates, type Coordinates } from "@/lib/area-coordinates";
 
 export type DiscoveryProperty = {
   slug: string;
@@ -12,6 +13,9 @@ export type DiscoveryProperty = {
   averageRating: number | null;
   reviewCount: number;
   isAvailable: boolean;
+  // Approximate — the area's centroid, not the property's real address.
+  // See lib/area-coordinates.ts for why (no lat/lng column exists yet).
+  coordinates: Coordinates | null;
 };
 
 type PropertyRow = {
@@ -131,6 +135,7 @@ export async function getDiscoveryProperties(
       averageRating,
       reviewCount: reviews.length,
       isAvailable: availabilityByProperty.get(property.id) ?? true,
+      coordinates: getAreaCoordinates(property.area),
     };
   });
 }

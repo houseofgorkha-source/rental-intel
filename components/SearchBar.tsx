@@ -15,6 +15,12 @@ type SearchBarProps = {
   properties: SearchProperty[];
   city?: string;
   onCityChange?: (city: string) => void;
+  // Optional controlled search text, so a parent (HomeDiscovery) can use the
+  // same query to filter the property list/map, not just this dropdown.
+  // Uncontrolled by default — existing callers that don't pass these keep
+  // exactly today's behavior.
+  query?: string;
+  onQueryChange?: (query: string) => void;
 };
 
 type DropdownPosition = {
@@ -24,8 +30,16 @@ type DropdownPosition = {
   maxHeight: number;
 } | null;
 
-export default function SearchBar({ properties, city, onCityChange }: SearchBarProps) {
-  const [search, setSearch] = useState("");
+export default function SearchBar({
+  properties,
+  city,
+  onCityChange,
+  query: externalQuery,
+  onQueryChange,
+}: SearchBarProps) {
+  const [internalSearch, setInternalSearch] = useState("");
+  const search = externalQuery ?? internalSearch;
+  const setSearch = onQueryChange ?? setInternalSearch;
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const [dropdownPosition, setDropdownPosition] =

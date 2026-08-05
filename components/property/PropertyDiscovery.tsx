@@ -24,6 +24,21 @@ type PropertyListProps = {
   areas?: string[];
   city?: string;
   onCityChange?: (city: string) => void;
+  // Optional controlled filter state — when provided (by HomeDiscovery, so
+  // the map can share the exact same filters), PropertyList reads/writes
+  // through these instead of its own internal state. Uncontrolled by
+  // default so the /property page's standalone usage is unaffected.
+  selectedArea?: string | null;
+  onAreaChange?: (area: string | null) => void;
+  rentRange?: [number, number];
+  onRentRangeChange?: (range: [number, number]) => void;
+  onlyShow?: OnlyShowFilters;
+  onOnlyShowChange?: (filters: OnlyShowFilters) => void;
+  searchQuery?: string;
+  // Marker <-> card sync: which property (by slug) is currently selected,
+  // and the callback to fire when a card is clicked/focused.
+  selectedSlug?: string | null;
+  onSelectProperty?: (slug: string | null) => void;
 };
 
 export type OnlyShowFilters = {
@@ -61,20 +76,34 @@ const RENT_STEP = 1000;
 const fieldInputClass =
   "min-w-0 flex-1 cursor-not-allowed rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500 placeholder:text-slate-400";
 
+// The single filtering implementation shared by the property list and the
+// map — both must derive from calling this once with the same state, never
+// two separate filter passes, so they can never disagree about what counts
+// as "visible."
 export function filterProperties(
   properties: DiscoveryProperty[],
   filters: {
     area: string | null;
     rentRange: [number, number];
     onlyShow: OnlyShowFilters;
+    query?: string;
   },
 ): DiscoveryProperty[] {
   const [rentMin, rentMax] = filters.rentRange;
+  const query = filters.query?.trim().toLowerCase();
 
   return properties.filter((property) => {
     if (
       filters.area &&
       !property.area.toLocaleLowerCase().includes(filters.area.toLocaleLowerCase())
+    ) {
+      return false;
+    }
+
+    if (
+      query &&
+      !property.name.toLowerCase().includes(query) &&
+      !property.area.toLowerCase().includes(query)
     ) {
       return false;
     }
@@ -494,25 +523,61 @@ export function PropertyList({
   areas = [],
   city,
   onCityChange,
+  selectedArea: externalArea,
+  onAreaChange: externalOnAreaChange,
+  rentRange: externalRentRange,
+  onRentRangeChange: externalOnRentRangeChange,
+  onlyShow: externalOnlyShow,
+  onOnlyShowChange: externalOnOnlyShowChange,
+  searchQuery = "",
+  selectedSlug = null,
+  onSelectProperty,
 }: PropertyListProps) {
-  const [selectedArea, setSelectedArea] = useState<string | null>(null);
-  const [rentRange, setRentRange] = useState<[number, number]>([RENT_MIN, RENT_MAX]);
-  const [onlyShow, setOnlyShow] = useState<OnlyShowFilters>({
+  const [internalArea, setInternalArea] = useState<string | null>(null);
+  const [internalRentRange, setInternalRentRange] = useState<[number, number]>([
+    RENT_MIN,
+    RENT_MAX,
+  ]);
+  const [internalOnlyShow, setInternalOnlyShow] = useState<OnlyShowFilters>({
     reviewsOnly: false,
     photosOnly: false,
   });
 
+  const selectedArea = externalArea !== undefined ? externalArea : internalArea;
+  const setSelectedArea = externalOnAreaChange ?? setInternalArea;
+  const rentRange = externalRentRange ?? internalRentRange;
+  const setRentRange = externalOnRentRangeChange ?? setInternalRentRange;
+  const onlyShow = externalOnlyShow ?? internalOnlyShow;
+  const setOnlyShow = externalOnOnlyShowChange ?? setInternalOnlyShow;
+
+  const cardRefs = useRef<Record<string, HTMLElement | null>>({});
+
   const visibleProperties = useMemo(
-    () => filterProperties(properties, { area: selectedArea, rentRange, onlyShow }),
-    [properties, selectedArea, rentRange, onlyShow],
+    () => filterProperties(properties, { area: selectedArea, rentRange, onlyShow, query: searchQuery }),
+    [properties, selectedArea, rentRange, onlyShow, searchQuery],
   );
+
+  useEffect(() => {
+    if (!selectedSlug) return;
+    cardRefs.current[selectedSlug]?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, [selectedSlug]);
 
   const grid = (
     <div className={`grid gap-3 sm:grid-cols-2 ${compact ? "" : "xl:grid-cols-3"}`}>
       {visibleProperties.map((property) => (
         <article
           key={property.slug}
-          className="overflow-hidden rounded-xl border border-slate-200 bg-white transition hover:border-slate-300 hover:shadow-[0_18px_45px_-30px_rgba(15,23,42,0.45)]"
+          ref={(element) => {
+            cardRefs.current[property.slug] = element;
+          }}
+          onClick={() => onSelectProperty?.(property.slug)}
+          className={`overflow-hidden rounded-xl border bg-white transition hover:border-slate-300 hover:shadow-[0_18px_45px_-30px_rgba(15,23,42,0.45)] ${
+            onSelectProperty ? "cursor-pointer" : ""
+          } ${
+            selectedSlug === property.slug
+              ? "border-blue-500 ring-2 ring-blue-100"
+              : "border-slate-200"
+          }`}
         >
           <div className="relative aspect-[5/2] bg-slate-100">
             {property.isAvailable && (
