@@ -1,11 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { getSafeNextPath } from "@/lib/safe-next-path";
 
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");
   const next = requestUrl.searchParams.get("next") || "/";
-  const safeNext = next.startsWith("/") && !next.startsWith("//") ? next : "/";
+  const safeNext = getSafeNextPath(next);
 
   if (!code) {
     return NextResponse.redirect(new URL("/login?error=Authentication%20link%20is%20invalid%20or%20expired.", requestUrl.origin));

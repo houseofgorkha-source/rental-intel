@@ -3,9 +3,12 @@
 import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { getSafeNextPath } from "@/lib/safe-next-path";
+import { signInWithGoogle } from "@/lib/auth-client";
 import Button from "../shared/Button";
 import AuthHeader from "../shared/AuthHeader";
 import AuthCard from "../shared/AuthCard";
+import AuthDivider from "../shared/AuthDivider";
 import InputField from "../shared/InputField";
 
 export default function SignupForm({ nextPath }: { nextPath?: string }) {
@@ -22,7 +25,7 @@ export default function SignupForm({ nextPath }: { nextPath?: string }) {
     const { error: authError } = await createClient().auth.signInWithOtp({
       email: String(formData.get("email") || "").trim(),
       options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath?.startsWith("/") && !nextPath.startsWith("//") ? nextPath : "/")}`,
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(getSafeNextPath(nextPath))}`,
         data: { full_name: String(formData.get("fullName") || "").trim() },
       },
     });
@@ -36,11 +39,8 @@ export default function SignupForm({ nextPath }: { nextPath?: string }) {
 
   const handleGoogleSignup = async () => {
     setError(null);
-    const { error: authError } = await createClient().auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath?.startsWith("/") && !nextPath.startsWith("//") ? nextPath : "/")}` },
-    });
-    if (authError) setError(authError.message);
+    const { error: authError } = await signInWithGoogle(nextPath);
+    if (authError) setError(authError);
   };
 
   return (
@@ -59,13 +59,7 @@ export default function SignupForm({ nextPath }: { nextPath?: string }) {
 
       </div>
 
-      <div className="my-8 flex items-center">
-
-        <div className="h-px flex-1 bg-gray-200" />
-        <span className="px-4 text-sm text-gray-500">OR</span>
-        <div className="h-px flex-1 bg-gray-200" />
-
-      </div>
+      <AuthDivider />
 
       <form onSubmit={handleSignup} className="space-y-6">
 
