@@ -75,6 +75,13 @@ export default function PropertyMap({
   const mapRef = useRef<MapLibreMap | null>(null);
   const popupRef = useRef<Popup | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
+  // MapLibre requires WebGL2 and throws (synchronously from the constructor,
+  // or asynchronously via an "error" event) when it's unavailable —
+  // disabled/unsupported browsers, some sandboxed/virtualized environments,
+  // GPU access blocked, etc. This must never crash the whole homepage; the
+  // rest of the discovery panel (search, filters, property list) still
+  // works perfectly well without a map.
+  const [hasError, setHasError] = useState(false);
 
   // The init effect below registers its click/moveend handlers exactly once
   // and never re-registers them, so it must never call onSelectProperty/
@@ -94,15 +101,25 @@ export default function PropertyMap({
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
-    const map = new MapLibreMap({
-      container: containerRef.current,
-      style: OSM_STYLE,
-      center: [center.lng, center.lat],
-      zoom,
-      attributionControl: { compact: true },
-    });
+    let map: MapLibreMap;
+    try {
+      map = new MapLibreMap({
+        container: containerRef.current,
+        style: OSM_STYLE,
+        center: [center.lng, center.lat],
+        zoom,
+        attributionControl: { compact: true },
+      });
+    } catch {
+      queueMicrotask(() => setHasError(true));
+      return;
+    }
     map.addControl(new NavigationControl({ showCompass: false }), "top-right");
     mapRef.current = map;
+
+    // Some failures (e.g. WebGL context creation failing after construction
+    // succeeds) surface as an "error" event instead of a thrown exception.
+    map.on("error", () => setHasError(true));
 
     map.on("load", () => {
       map.addSource(SOURCE_ID, {
@@ -251,6 +268,18 @@ export default function PropertyMap({
   }, [selectedSlug, properties]);
 
   const hasVisibleMarkers = properties.some((property) => property.coordinates !== null);
+
+  if (hasError) {
+    return (
+      <div className="flex h-full w-full flex-col items-center justify-center gap-1 rounded-2xl border border-slate-200 bg-slate-100 px-6 text-center">
+        <p className="text-sm font-medium text-slate-700">Map unavailable in this browser</p>
+        <p className="text-xs text-slate-500">
+          This browser doesn&apos;t support the graphics required to show the map. The
+          property list below still works normally.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="relative h-full w-full overflow-hidden rounded-2xl border border-slate-200 bg-slate-100">
