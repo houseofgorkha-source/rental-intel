@@ -203,7 +203,7 @@ type FiltersPanelProps = {
   onRentRangeChange: (range: [number, number]) => void;
   onlyShow: OnlyShowFilters;
   onOnlyShowChange: (filters: OnlyShowFilters) => void;
-  position: { top: number; right: number; width: number } | null;
+  position: { top: number; right: number; width: number; maxHeight: number } | null;
   panelRef: React.RefObject<HTMLDivElement | null>;
 };
 
@@ -235,10 +235,15 @@ function FiltersPanel({
       id="filters-panel"
       role="dialog"
       aria-label="Filters"
-      style={{ top: position.top, right: position.right, width: position.width }}
-      className="fixed z-30 max-h-[calc(100vh-2rem)] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl"
+      style={{
+        top: position.top,
+        right: position.right,
+        width: position.width,
+        maxHeight: position.maxHeight,
+      }}
+      className="fixed z-30 flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl"
     >
-      <div className="max-h-[calc(100vh-9rem)] space-y-5 overflow-y-auto overscroll-contain p-6">
+      <div className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain p-6">
         <FilterField label="Monthly rent">
           <DualRangeSlider
             min={RENT_MIN}
@@ -345,17 +350,26 @@ function FiltersPanel({
           </div>
         </FilterField>
       </div>
-      <div className="flex items-center justify-between gap-4 border-t border-slate-100 p-4">
+      <div className="shrink-0 space-y-3 border-t border-slate-100 p-4">
         <p className="text-xs text-slate-500">
           Rent range and &quot;Only show&quot; filters apply live. Everything else previews what&apos;s coming.
         </p>
-        <button
-          type="button"
-          onClick={onClose}
-          className="shrink-0 text-sm font-medium text-slate-900 hover:text-blue-600"
-        >
-          Close
-        </button>
+        <div className="flex items-center justify-between gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-sm font-medium text-slate-600 hover:text-slate-900"
+          >
+            Close
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-xl bg-slate-950 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800"
+          >
+            Apply
+          </button>
+        </div>
       </div>
     </div>,
     document.body,
@@ -374,19 +388,34 @@ export function PropertyToolbar({
   onCityChange,
 }: PropertyToolbarProps) {
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
-  const [position, setPosition] = useState<{ top: number; right: number; width: number } | null>(null);
+  const [position, setPosition] = useState<{
+    top: number;
+    right: number;
+    width: number;
+    maxHeight: number;
+  } | null>(null);
   const filtersButtonRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
 
+  // Same anchored-dropdown technique as SearchBar's results panel: clamp the
+  // panel's height to whatever space is actually available below the button
+  // (or above it, if there's more room there), instead of a fixed max-height
+  // that assumes the button sits near the top of the viewport.
   function updatePosition() {
     const rect = filtersButtonRef.current?.getBoundingClientRect();
     if (!rect) return;
 
     const width = Math.min(window.innerWidth - 24, 384);
+    const spaceBelow = window.innerHeight - rect.bottom - 24;
+    const spaceAbove = rect.top - 24;
+    const openAbove = spaceBelow < 280 && spaceAbove > spaceBelow;
+    const maxHeight = Math.max(200, Math.min(560, openAbove ? spaceAbove : spaceBelow));
+
     setPosition({
-      top: rect.bottom + 12,
+      top: openAbove ? Math.max(12, rect.top - maxHeight - 12) : rect.bottom + 12,
       right: Math.max(12, window.innerWidth - rect.right),
       width,
+      maxHeight,
     });
   }
 
