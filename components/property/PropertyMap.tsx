@@ -43,6 +43,22 @@ const OSM_STYLE: StyleSpecification = {
 
 const SOURCE_ID = "properties";
 
+// Proactive check, ahead of even attempting to construct MapLibreMap — a
+// throwaway canvas that requests a webgl2 context. If the browser can't
+// grant one, there's no point constructing the map at all; we already know
+// it will fail. Kept separate from the try/catch around construction below
+// (defense in depth, not a replacement for it) since some environments can
+// pass this check yet still fail during actual map setup for other reasons
+// (driver bugs, context loss, etc).
+function isWebGL2Supported(): boolean {
+  try {
+    const canvas = document.createElement("canvas");
+    return canvas.getContext("webgl2") !== null;
+  } catch {
+    return false;
+  }
+}
+
 function toGeoJSON(properties: DiscoveryProperty[]): GeoJSON.FeatureCollection {
   return {
     type: "FeatureCollection",
@@ -101,6 +117,11 @@ export default function PropertyMap({
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
+    if (!isWebGL2Supported()) {
+      queueMicrotask(() => setHasError(true));
+      return;
+    }
+
     let map: MapLibreMap;
     try {
       map = new MapLibreMap({
@@ -122,6 +143,14 @@ export default function PropertyMap({
     map.on("error", () => setHasError(true));
 
     map.on("load", () => {
+      try {
+        setUpMapLayers(map);
+      } catch {
+        setHasError(true);
+      }
+    });
+
+    function setUpMapLayers(map: MapLibreMap) {
       map.addSource(SOURCE_ID, {
         type: "geojson",
         data: toGeoJSON([]),
@@ -226,7 +255,7 @@ export default function PropertyMap({
       });
 
       setIsLoaded(true);
-    });
+    }
 
     map.on("moveend", () => {
       if (!onMoveEndRef.current) return;
