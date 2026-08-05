@@ -12,6 +12,10 @@
 -- `review_category_ratings` (author_id = auth.uid(), property must be
 -- published, review must belong to the caller) apply exactly as they do
 -- today. No new grants or policy changes are required.
+--
+-- Unlike the previous migration, this one IS safe to re-run: CREATE OR
+-- REPLACE FUNCTION cleanly replaces the prior definition, and re-granting an
+-- already-granted EXECUTE privilege is a no-op rather than an error.
 
 create or replace function public.create_review(
   p_property_id uuid,

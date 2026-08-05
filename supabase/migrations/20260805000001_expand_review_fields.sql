@@ -2,6 +2,15 @@
 -- Security Deposit, and "would rent again" fields have somewhere to persist.
 -- Purely additive: new enum, new nullable/defaulted columns, new seed rows.
 -- No drops, renames, or changes to existing columns/rows/policies.
+--
+-- Intentionally one-time-only, consistent with every other migration in this
+-- project: the category INSERTs have no ON CONFLICT guard, CREATE TYPE has
+-- no IF NOT EXISTS (Postgres doesn't support that for types), and the ADD
+-- COLUMN statements aren't IF NOT EXISTS-guarded either. Re-running this file
+-- against a database it has already applied to will fail loudly (duplicate
+-- slug/type/column) rather than silently no-op — correct and expected under
+-- Supabase's migration-history tracking, which applies each file exactly
+-- once. Not a defect; do not add conditional guards to "fix" this.
 
 -- Quick Ratings collects 10 categories; only 5 existed. Add the missing 7 so
 -- all quick ratings can be saved via the existing review_category_ratings
