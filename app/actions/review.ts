@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { requireUser } from "@/lib/auth";
 
 type YesNo = "yes" | "no" | null;
 
@@ -72,13 +73,13 @@ export async function createReview({
   }
 
   const supabase = await createClient();
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
+  const { error: authFailure } = await requireUser(
+    supabase,
+    "Please sign in to publish a review.",
+  );
 
-  if (authError || !user) {
-    return { error: "Please sign in to publish a review." };
+  if (authFailure) {
+    return { error: authFailure };
   }
 
   // Quick ratings + the owner rating (reusing the existing 'owner_behavior'

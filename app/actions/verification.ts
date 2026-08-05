@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { requireUser } from "@/lib/auth";
 
 const documentFields = [
   "rental_agreement",
@@ -43,8 +44,11 @@ export async function createVerification(
   if (documents.reduce((total, { file }) => total + file.size, 0) > maxTotalSize) return { error: "Total document upload size must be 15 MB or less." };
 
   const supabase = await createClient();
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) return { error: "Please sign in to verify your stay." };
+  const { user, error: authFailure } = await requireUser(
+    supabase,
+    "Please sign in to verify your stay.",
+  );
+  if (!user) return { error: authFailure };
 
   const { data: verification, error: verificationError } = await supabase
     .from("review_verifications")

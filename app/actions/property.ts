@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { requireUser } from "@/lib/auth";
 
 type CreatePropertyResult = {
   error?: string;
@@ -63,13 +64,13 @@ export async function createProperty(
   if (imageFiles.reduce((total, file) => total + file.size, 0) > maxTotalSize) return { error: "Total image upload size must be 20 MB or less." };
 
   const supabase = await createClient();
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
+  const { user, error: authFailure } = await requireUser(
+    supabase,
+    "Please sign in to submit a property.",
+  );
 
-  if (authError || !user) {
-    return { error: "Please sign in to submit a property." };
+  if (!user) {
+    return { error: authFailure };
   }
 
   const slug = createSlug(name);
