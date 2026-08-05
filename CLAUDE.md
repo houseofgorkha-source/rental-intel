@@ -23,11 +23,11 @@ Where the repository's own `docs/` files conflict with the current code, this do
 
 ## 1. Product overview
 
-**[Documented Product Decision]** RentalIntel is a rental-intelligence platform, not a listings/marketplace site. It preserves rental history and tenant experience by attaching it permanently to the property rather than the tenant, so that knowledge doesn't disappear when someone moves out. Initial market focus is Bangalore rentals.
+**[Documented Product Decision]** RentalIntel is a rental-intelligence platform, not a listings/marketplace site. It preserves rental history and tenant experience by attaching it permanently to the property rather than the tenant, so that knowledge doesn't disappear when someone moves out. Initial market focus is Bangalore rentals. (Reproduced as originally documented — the app's canonical city name in code is now `"Bengaluru"`, a later session decision; see §4.)
 
 **[Documented Product Decision]** Mission: help tenants make informed rental decisions through community knowledge, verified reviews, and trustworthy property intelligence. Tagline: "Know it before you rent it."
 
-**[Verified Fact]** The current implementation supports: searching/browsing published properties, viewing a property's detail page with reviews and images, submitting a new property (pending manual approval), writing a review while signed in, and submitting stay-verification documents against a review.
+**[Verified Fact]** The current implementation supports: searching/browsing published properties on an interactive map or list, viewing a property's detail page with reviews and images, submitting a new property (pending manual approval), writing a review while signed in, submitting stay-verification documents against a review, and optionally using device location to suggest a city/area or confirm proximity to a property (see §4).
 
 ## 2. Product philosophy
 
@@ -80,7 +80,13 @@ Supabase (Postgres + Auth + Storage), authorization enforced via Row Level Secur
 - One data-access helper exists outside of a page: `lib/property-discovery.ts`, used by the homepage and `/property` listing.
 - A second `lib/` helper, `lib/cities.ts`, is the single source of truth for city/locality data (`DEFAULT_CITY`, `CITIES` with a per-city `available` flag, `LOCALITIES_BY_CITY`) — built to make the UI multi-city-ready without actually implementing other cities yet. `CitySelector`, the homepage, and `/property` all import from it rather than keeping their own copies.
 
-**[Verified Fact — known gap]** `getDiscoveryProperties()` accepts a `city` parameter but does **not** filter the query on it. `properties.city` is free-text in the current data and inconsistently cased (`"Bengaluru"`, `"BENGALURU"` — never `"Bangalore"`, which is what `lib/cities.ts` uses as the canonical name). An `.eq("city", city)` filter was tried and reverted after it silently returned zero properties. Real city filtering needs the `city` column normalized (or constrained) first — see §13.
+**[Verified Fact — resolved since first written]** `getDiscoveryProperties()` now genuinely filters by city, via a case-insensitive `.or()` match against every known alias for the requested city (`CITY_NAME_ALIASES` in `lib/cities.ts`), not a naive `.eq()` — the earlier version silently returned zero properties for exactly this reason. `lib/cities.ts`'s canonical city name is now **`"Bengaluru"`** (renamed from `"Bangalore"` in a later session; `"Bangalore"` is now the alias). New property submissions are normalized to the canonical name at write time via `normalizeCityName()` in `app/actions/property.ts` — known aliases resolve to their canonical form, anything unrecognized is title-cased and stored as-is rather than rejected. Existing rows written before this normalized are untouched.
+
+**[Verified Fact]** The homepage (`HomeDiscovery.tsx`) is the single owner of homepage search/filter/map state (city, area, search query, rent range, only-show filters, selected property, map center/zoom) — the hero's `SearchBar`, the property panel's toolbar, and `PropertyMap` are all siblings that read/write through it rather than keeping independent copies. `filterProperties()` (exported from `PropertyDiscovery.tsx`) is the single filtering implementation; it's called once per render in `HomeDiscovery` and the resulting array is handed to both the map and the list.
+
+**[Verified Fact]** The homepage includes an interactive map (`components/property/PropertyMap.tsx`) using **MapLibre GL JS with OpenStreetMap raster tiles** — no Mapbox, no Google Maps, no API key. Property markers are positioned by **approximate area centroid**, not real per-property geocoding — there are no latitude/longitude columns anywhere in the schema (`properties` only has a free-text `maps_url` link) and no geocoding pipeline exists. `lib/area-coordinates.ts` holds these approximate coordinates (populated for Bengaluru's real locality list; city-level centers for every city in `lib/cities.ts`) and the nearest-neighbor lookups (`findNearestCity`, `findNearestArea`, `isNearArea`) that also back the "Use My Location" feature below — this was a deliberate, disclosed MVP tradeoff, not an oversight.
+
+**[Verified Fact]** An optional "Use My Location" feature exists on the homepage, Add Property form, and Review form, via one reusable `components/shared/UseMyLocationButton.tsx` and `lib/geolocation.ts` (a thin Promise wrapper around `navigator.geolocation`). Location is only ever requested on click, never automatically, and raw coordinates never reach a Server Action or Supabase call anywhere — only derived city/area strings (homepage, Add Property) or a boolean proximity flag (Review) do. No reverse-geocoding API (Nominatim, Google, or otherwise) is used — the nearest-city/area lookups reuse the same approximate coordinate data already in `lib/area-coordinates.ts`, so coordinates never leave the browser.
 
 **[Current Working Assumption]** Business logic embedded directly inside `page.tsx` files (notably `app/property/[slug]/page.tsx`, which does row-shaping, rating aggregation, and date formatting inline) is not yet extracted to `lib/`, unlike `property-discovery.ts`. Whether this should be refactored, or is acceptable as-is for current scale, is unresolved — see §12/§16 (extend, don't refactor, without approval).
 
@@ -98,23 +104,31 @@ app/
   layout.tsx, page.tsx, globals.css
 
 components/
-  property/         PropertyDiscovery.tsx (PropertyToolbar, PropertyList, filterPropertiesByArea, default PropertyDiscovery page shell), AreaSelector, PropertyGallery, ReviewSection, ReviewCard, PropertyShareButton
+  property/         PropertyDiscovery.tsx (PropertyToolbar, PropertyList, filterProperties, default PropertyDiscovery page shell), HomeDiscovery.tsx (homepage shared-state owner, see §4), PropertyMap.tsx (MapLibre + OSM), DualRangeSlider.tsx, AreaSelector, PropertyGallery, ReviewSection, ReviewCard, PropertyShareButton
   review/           ReviewForm, VerifyStayForm, StarRating, reviewCategories.ts
   add-property/     PropertyForm, InfoCard, SectionTitle
   login/            LoginForm, SignupForm
-  shared/           Button, InputField, TextAreaField, AuthCard, AuthHeader, AuthLayout, AccountMenu, TrustBadge, Logo
+  shared/           Button, InputField, TextAreaField, AuthCard, AuthHeader, AuthLayout, AccountMenu, TrustBadge, Logo, AuthDivider, UseMyLocationButton
   SearchBar.tsx, CitySelector.tsx   (top-level; not currently in shared/ — see §13)
 
 lib/
   supabase/client.ts   browser Supabase client
   supabase/server.ts   server Supabase client (cookie-aware)
   property-discovery.ts  aggregation query for property listings
+  property-format.ts     shared image-URL/rating-average/currency-format helpers
   cities.ts               city/locality single source of truth (see §4)
+  area-coordinates.ts     approximate city/area coordinates + nearest-neighbor lookups (see §4)
+  geolocation.ts           browser geolocation Promise wrapper
+  auth.ts                  requireUser() shared auth-check helper
+  uploads.ts               validateUploadFiles/cleanUpFailedUpload/getFileExtension/verifyFileSignature
+  safe-next-path.ts        open-redirect guard for `next` params
+  auth-client.ts           shared Google OAuth kickoff (client-side)
 
-supabase/migrations/   hand-written, timestamped SQL migrations (schema + RLS)
+supabase/migrations/   hand-written, timestamped SQL migrations (schema + RLS + grants)
+supabase/config.toml    local Supabase CLI config, committed for reproducible local verification
 docs/                  product/architecture documentation (see §0 for accuracy caveats)
 data/                  empty — fossil from pre-Supabase mock-data era
-public/                static assets
+public/                static assets (currently empty — default create-next-app SVGs removed, unused)
 ```
 
 **[Current Working Assumption]** `data/` and the top-level `.agents/` directory are both empty and appear to be leftovers. Treated as intentional/inert unless the product owner says otherwise (per §16's "treat existing omissions as intentional").
@@ -127,9 +141,10 @@ public/                static assets
 - React 19.2.4 / React DOM 19.2.4
 - TypeScript 5.x, strict mode enabled (`tsconfig.json`)
 - Tailwind CSS 4.x (via `@tailwindcss/postcss`)
-- `@supabase/supabase-js` 2.110.8 and `@supabase/ssr` 0.12.3
+- `@supabase/supabase-js` 2.110.8 and `@supabase/ssr` 0.12.3 (`@supabase/supabase-js` is a required peer dependency of `@supabase/ssr`, not dead weight — kept even though nothing imports it directly)
+- `maplibre-gl` — the homepage's interactive map; OpenStreetMap raster tiles, no Mapbox/Google, no API key
 - ESLint 9.x with `eslint-config-next`
-- No test framework, no test files present anywhere in the repo.
+- Vitest — unit tests for `lib/` pure functions and the `review` Server Action's RPC mapping (mocked Supabase client); no integration/E2E test runner
 - Package manager: npm.
 
 ## 7. Database overview
@@ -145,6 +160,9 @@ public/                static assets
 2. `20260801000000_allow_property_image_submissions.sql` — lets property creators insert/upload their own image records; widens image read policy to include the owner's own (not-yet-published) properties.
 3. `20260801000001_add_upload_cleanup_policies.sql` — lets creators delete failed image uploads and remove their own still-pending properties/verification requests.
 4. `20260805000000_add_property_availability.sql` — adds `properties.is_available boolean not null default true`, powering the "Available for rent" card badge. No RLS change needed (no column-level security in this schema — a new column on an already-visible row is covered by the existing row-level policy). There is still no UI for anyone to actually set this to `false` — every property shows as available until that's built.
+5. `20260805000001_expand_review_fields.sql` — adds the deposit/owner-trait/would-rent-again columns `ReviewForm` collects, plus 7 new `review_categories` rows, so the review-submission data-loss bug (formerly listed in §13) has somewhere to land. Intentionally one-time-only, not idempotent (documented in the file itself) — matches this project's migration-history convention.
+6. `20260805000002_create_review_rpc.sql` — `public.create_review(...)`, `SECURITY INVOKER`, makes review + category-rating inserts atomic via a single RPC instead of two sequential client-side inserts. Safe to re-run (`CREATE OR REPLACE`).
+7. `20260805000003_grant_data_api_privileges.sql` — grants `SELECT/INSERT/UPDATE/DELETE`/sequence `USAGE` to `anon`/`authenticated`/`service_role`. **Fixes a real bug found via local verification**: tables created by hand-written migrations only got `TRUNCATE/REFERENCES/TRIGGER` by default (confirmed via `pg_default_acl` on a fresh Supabase CLI instance) — without this grant, a genuinely fresh database applies every migration without SQL error but silently denies all anon/authenticated requests, since Postgres checks table-level privileges before RLS. RLS remains the sole row-level authorization boundary; this only unblocks the table-level check it sits behind.
 
 **[Verified Fact]** RLS is enabled on every `public` table. Public (anon) reads are generally scoped to `status = 'published'` (properties) or to records whose parent property is published; write access is scoped to `auth.uid()` matching the relevant owner/author column.
 
@@ -220,17 +238,17 @@ This list is a proposal, not a settled rule — see Open Questions.
 
 **[Verified Fact]**
 
-- `ReviewForm.tsx` collects quick-category ratings, owner-trait tags, deposit amount/timeline/deduction details, and a "would rent again" answer via local component state, but `handleSubmit` only forwards `overallRating`, `recommendation`, and `comment` to `createReview`. All other collected fields are discarded on submit, despite the schema already having `review_category_ratings` and `review_issues` tables that appear built to receive exactly this data.
-- `app/layout.tsx` retains default Next.js metadata (`title: "Create Next App"`, generic description).
-- The `/login?next=...` redirect chain does not encode a nested query string, risking loss of `reviewId` on the verify-stay flow after a login round-trip (see §8).
-- Two coexisting visual design systems (see §9).
+- `app/layout.tsx` now has real title/description/OG/Twitter metadata (fixed) — the earlier default `create-next-app` metadata item is resolved.
+- The `/login?next=...` redirect chain does not encode a nested query string, risking loss of `reviewId` on the verify-stay flow after a login round-trip (see §8). Not yet fixed.
+- Two coexisting visual design systems (see §9). Not yet resolved.
 - Dark mode is declared in `globals.css` (`prefers-color-scheme: dark` CSS variables) but not actually implemented — nearly all components hardcode light-mode Tailwind classes instead of using the CSS variables.
-- No automated tests anywhere in the repository.
-- `data/` and `.agents/` directories are empty and appear to be unused fossils.
-- `SearchBar.tsx` / `CitySelector.tsx` live outside `components/shared/` despite being shared, reusable components.
-- `properties.city` is free-text and inconsistently cased (`"Bengaluru"`, `"BENGALURU"`) — never matches `lib/cities.ts`'s canonical `"Bangalore"`. Blocks real city-based query filtering; see §4.
-- `/property`'s "Locality explorer" sidebar keeps its own small hardcoded 6-item locality list, separate from the fuller `LOCALITIES_BY_CITY` lookup (`lib/cities.ts`) that now powers the `AreaSelector` dropdown on the same page. Known, disclosed duplication — not reconciled yet.
-- The homepage panel's scroll cap (`PropertyList`'s `lg:max-h-[21.75rem]`) and its pixel-for-pixel alignment to the left column's heading top / CTA-underline bottom are hand-calibrated fixed values tied to the current left-column copy length, not dynamically synced. If that copy changes materially, the two columns' alignment will need recalibrating — there's no JS-based height sync in place.
+- `data/` and `.agents/` directories are empty, untracked by git, and appear to be unused fossils.
+- `SearchBar.tsx` / `CitySelector.tsx` live outside `components/shared/` despite being shared, reusable components. Not yet moved.
+- `/property`'s "Locality explorer" sidebar keeps its own small hardcoded 6-item locality list, separate from the fuller `LOCALITIES_BY_CITY` lookup (`lib/cities.ts`). Known, disclosed duplication — not reconciled yet.
+- `CitySelector.tsx` and `AreaSelector.tsx` share near-identical dropdown open/close + keyboard-nav scaffolding, independently implemented in each. Confirmed via audit, not yet extracted into a shared hook.
+- **Map markers use approximate area-centroid coordinates, not real per-property geocoding** (see §4) — the honest fix is either manual lat/lng entry on the Add Property form or a geocoding API call against the address, both real scope additions, neither built.
+- **OpenStreetMap's public tile server** (`tile.openstreetmap.org`) powers the homepage map — fine for development/low traffic, but has a documented usage policy not meant for sustained high-volume production traffic. Should move to a dedicated tile provider (MapTiler, Stadia Maps, self-hosted) before real launch traffic.
+- The homepage panel's scroll cap (`PropertyList`'s `lg:max-h-[21.75rem]`) and its pixel-for-pixel alignment to the left column are hand-calibrated fixed values, not dynamically synced. If that copy changes materially, realignment will be needed — no JS-based height sync exists.
 
 ## 14. Current sprint
 
@@ -273,7 +291,7 @@ This list is a proposal, not a settled rule — see Open Questions.
 These require product-owner confirmation before Claude should treat any related assumption as settled:
 
 1. ~~Is property/review approval currently happening manually (e.g. Supabase dashboard), or is there a planned admin surface not yet built?~~ **Resolved, Phase 4**: manual via Supabase Dashboard is the deliberate MVP process — see §7.
-2. Is the data loss in `ReviewForm` (quick ratings, owner traits, deposit details never submitted) an intentional stub, or a bug to fix?
+2. ~~Is the data loss in `ReviewForm` (quick ratings, owner traits, deposit details never submitted) an intentional stub, or a bug to fix?~~ **Resolved**: fixed — `createReview` now submits all collected fields atomically via the `create_review` RPC (migrations 5–6 in §7).
 3. Which visual palette is the intended brand target — the slate/minimal system or the documented blue-accent (#2563EB) system — so the in-progress brand migration has a clear destination? (Partial signal since this was last written: the homepage/property pages now use slate as the structural base with `blue-600` as a restrained interactive accent — see §10. Not yet confirmed as the final answer.)
 4. Is the "current sprint" described in `RentalIntel_Master_Context_v1.md` (Brand migration, UI polish, Shared components) still accurate, or superseded by the Supabase/auth/verification work already shipped?
 5. Should the §12 "changes requiring approval" list be adopted as-is, adjusted, or replaced?
