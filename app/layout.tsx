@@ -46,6 +46,37 @@ export default async function RootLayout({
     data: { user },
   } = await supabase.auth.getUser();
 
+  // Only queried when the dev nav flag is on — zero extra DB calls in
+  // production. Resolves real, clickable examples for the dynamic routes
+  // shown in the dev nav menu, rather than dead placeholder text.
+  const devNavEnabled = process.env.NEXT_PUBLIC_SHOW_DEV_NAV === "true";
+  let sampleProperty: { slug: string } | null = null;
+  let sampleReview: { slug: string; reviewId: string } | null = null;
+
+  if (devNavEnabled) {
+    const { data: property } = await supabase
+      .from("properties")
+      .select("slug")
+      .eq("status", "published")
+      .limit(1)
+      .maybeSingle();
+    sampleProperty = property;
+
+    if (user) {
+      const { data: review } = await supabase
+        .from("reviews")
+        .select("id, properties!inner(slug)")
+        .eq("author_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      const propertySlug = review?.properties?.[0]?.slug;
+      if (review && propertySlug) {
+        sampleReview = { slug: propertySlug, reviewId: review.id };
+      }
+    }
+  }
+
   return (
     <html
       lang="en"
@@ -56,7 +87,11 @@ export default async function RootLayout({
           <div className="mx-auto flex max-w-6xl items-center justify-between">
             <Logo className="pointer-events-auto" />
             {user ? (
-              <AccountMenu email={user.email ?? "RentalIntel member"} />
+              <AccountMenu
+                email={user.email ?? "RentalIntel member"}
+                sampleProperty={sampleProperty}
+                sampleReview={sampleReview}
+              />
             ) : (
               <nav className="pointer-events-auto flex items-center gap-4 text-sm font-medium">
                 <Link href="/login" className="text-gray-700 hover:text-blue-600">

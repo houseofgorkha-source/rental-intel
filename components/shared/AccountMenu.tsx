@@ -3,12 +3,24 @@
 import Link from "next/link";
 import { useEffect, useRef } from "react";
 import { signOut } from "@/app/actions/auth";
+import DeveloperNavigationMenu from "@/components/shared/DeveloperNavigationMenu";
 
 type AccountMenuProps = {
   email: string;
+  // Dev-nav-only — resolved server-side in app/layout.tsx, only when
+  // NEXT_PUBLIC_SHOW_DEV_NAV is set. Always null/undefined otherwise, so
+  // these props are inert in production.
+  sampleProperty?: { slug: string } | null;
+  sampleReview?: { slug: string; reviewId: string } | null;
 };
 
-export default function AccountMenu({ email }: AccountMenuProps) {
+const SHOW_DEV_NAV = process.env.NEXT_PUBLIC_SHOW_DEV_NAV === "true";
+
+export default function AccountMenu({
+  email,
+  sampleProperty = null,
+  sampleReview = null,
+}: AccountMenuProps) {
   const menuRef = useRef<HTMLDetailsElement>(null);
   const closeMenu = () => menuRef.current?.removeAttribute("open");
 
@@ -34,7 +46,11 @@ export default function AccountMenu({ email }: AccountMenuProps) {
         Account
       </summary>
 
-      <div className="absolute right-0 z-30 mt-3 w-52 rounded-xl border border-gray-200 bg-white p-2 shadow-lg">
+      <div
+        className={`absolute right-0 z-30 mt-3 max-h-[80vh] overflow-y-auto rounded-xl border border-gray-200 bg-white p-2 shadow-lg ${
+          SHOW_DEV_NAV ? "w-80" : "w-52"
+        }`}
+      >
         <p className="truncate px-3 py-2 text-xs text-gray-500">{email}</p>
         <button
           type="button"
@@ -58,6 +74,14 @@ export default function AccountMenu({ email }: AccountMenuProps) {
             Logout
           </button>
         </form>
+
+        {SHOW_DEV_NAV && (
+          <DeveloperNavigationMenu
+            sampleProperty={sampleProperty}
+            sampleReview={sampleReview}
+            onNavigate={closeMenu}
+          />
+        )}
       </div>
     </details>
   );
