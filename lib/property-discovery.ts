@@ -50,8 +50,8 @@ export async function getDiscoveryProperties(
   }
 
   const supabase = await createClient();
-  // properties.city is free text (e.g. "Bengaluru"/"BENGALURU" rather than
-  // the app's canonical "Bangalore"), so match against every known alias,
+  // properties.city is free text (e.g. "Bangalore"/"BANGALORE" rather than
+  // the app's canonical "Bengaluru"), so match against every known alias,
   // case-insensitively, instead of an exact .eq() that would silently drop
   // every real property.
   const cityAliases = CITY_NAME_ALIASES[city] ?? [city];

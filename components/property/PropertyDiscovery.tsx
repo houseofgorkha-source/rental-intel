@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { createPortal } from "react-dom";
 import { useEffect, useMemo, useRef, useState } from "react";
 import SearchBar from "@/components/SearchBar";
 import AreaSelector from "@/components/property/AreaSelector";
+import DualRangeSlider from "@/components/property/DualRangeSlider";
 import { DEFAULT_CITY, LOCALITIES_BY_CITY } from "@/lib/cities";
 import { formatINRPerMonth } from "@/lib/property-format";
 import type { DiscoveryProperty } from "@/lib/property-discovery";
@@ -21,10 +23,19 @@ type PropertyListProps = {
   areas?: string[];
 };
 
+export type OnlyShowFilters = {
+  reviewsOnly: boolean;
+  photosOnly: boolean;
+};
+
 type PropertyToolbarProps = {
   areas: string[];
   selectedArea: string | null;
   onAreaChange: (area: string | null) => void;
+  rentRange: [number, number];
+  onRentRangeChange: (range: [number, number]) => void;
+  onlyShow: OnlyShowFilters;
+  onOnlyShowChange: (filters: OnlyShowFilters) => void;
 };
 
 // Known gap: this stays a small, hand-picked subset for the sidebar below,
@@ -38,24 +49,53 @@ const localities = [
   "JP Nagar",
 ];
 
-const staticFilterLabels = ["BHK", "Rent"];
+export const RENT_MIN = 3000;
+export const RENT_MAX = 100000; // upper bound is treated as "no cap" (100,000+)
+const RENT_STEP = 1000;
 
 const fieldInputClass =
   "min-w-0 flex-1 cursor-not-allowed rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500 placeholder:text-slate-400";
 
-export function filterPropertiesByArea(
+export function filterProperties(
   properties: DiscoveryProperty[],
-  area: string | null,
+  filters: {
+    area: string | null;
+    rentRange: [number, number];
+    onlyShow: OnlyShowFilters;
+  },
 ): DiscoveryProperty[] {
-  if (!area) return properties;
+  const [rentMin, rentMax] = filters.rentRange;
 
-  return properties.filter((property) =>
-    property.area.toLocaleLowerCase().includes(area.toLocaleLowerCase()),
-  );
+  return properties.filter((property) => {
+    if (
+      filters.area &&
+      !property.area.toLocaleLowerCase().includes(filters.area.toLocaleLowerCase())
+    ) {
+      return false;
+    }
+
+    if (property.askingRent !== null) {
+      if (property.askingRent < rentMin) return false;
+      if (rentMax < RENT_MAX && property.askingRent > rentMax) return false;
+    }
+
+    if (filters.onlyShow.reviewsOnly && property.reviewCount === 0) return false;
+    if (filters.onlyShow.photosOnly && property.image === null) return false;
+
+    return true;
+  });
 }
 
 function formatRent(rent: number | null) {
   return rent === null ? "Rent on request" : formatINRPerMonth(rent);
+}
+
+function formatRentSliderValue(value: number) {
+  return value >= RENT_MAX ? `${formatINRPerMonth(value)}+` : formatINRPerMonth(value);
+}
+
+function formatDepositSliderValue(value: number) {
+  return value >= 2000000 ? `₹${(value / 100000).toFixed(0)}L+` : `₹${value.toLocaleString("en-IN")}`;
 }
 
 function FilterField({
@@ -75,54 +115,65 @@ function FilterField({
   );
 }
 
-function RangeRow({
-  minPlaceholder,
-  maxPlaceholder,
+// Interactive but not wired to real data: this project's schema has no
+// bedroom/furnishing/property-type/amenities/posted-by fields on
+// `properties` yet, so these toggle a purely local selected state (real UI
+// feedback) without filtering the result list. Filtering these once the
+// underlying columns exist is a follow-up, not a UI change.
+function ToggleGroup({
+  options,
+  selected,
+  onToggle,
 }: {
-  minPlaceholder: string;
-  maxPlaceholder: string;
+  options: string[];
+  selected: string[];
+  onToggle: (option: string) => void;
 }) {
   return (
-    <>
-      <div className="flex items-center gap-3">
-        <input type="text" disabled placeholder={minPlaceholder} className={fieldInputClass} />
-        <span className="text-slate-300">–</span>
-        <input type="text" disabled placeholder={maxPlaceholder} className={fieldInputClass} />
-      </div>
-      <input type="range" disabled className="mt-3 w-full accent-blue-600 opacity-40" />
-    </>
-  );
-}
-
-function PillGroup({ options }: { options: string[] }) {
-  return (
     <div className="flex flex-wrap gap-2">
-      {options.map((option) => (
-        <button
-          key={option}
-          type="button"
-          disabled
-          className="cursor-not-allowed rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-sm font-medium text-slate-500"
-        >
-          {option}
-        </button>
-      ))}
+      {options.map((option) => {
+        const isSelected = selected.includes(option);
+        return (
+          <button
+            key={option}
+            type="button"
+            onClick={() => onToggle(option)}
+            aria-pressed={isSelected}
+            className={`rounded-full border px-3.5 py-1.5 text-sm font-medium transition ${
+              isSelected
+                ? "border-blue-600 bg-blue-600 text-white"
+                : "border-slate-200 bg-white text-slate-700 hover:border-blue-200 hover:text-blue-600"
+            }`}
+          >
+            {option}
+          </button>
+        );
+      })}
     </div>
   );
 }
 
-function CheckboxGrid({
+function ToggleCheckboxGrid({
   options,
   columns,
+  selected,
+  onToggle,
 }: {
   options: string[];
   columns: 1 | 2;
+  selected: string[];
+  onToggle: (option: string) => void;
 }) {
   return (
     <div className={`grid gap-2.5 ${columns === 2 ? "grid-cols-2" : "grid-cols-1"}`}>
       {options.map((option) => (
-        <label key={option} className="flex cursor-not-allowed items-center gap-2 text-sm text-slate-600">
-          <input type="checkbox" disabled className="accent-blue-600" />
+        <label key={option} className="flex cursor-pointer items-center gap-2 text-sm text-slate-700">
+          <input
+            type="checkbox"
+            checked={selected.includes(option)}
+            onChange={() => onToggle(option)}
+            className="accent-blue-600"
+          />
           {option}
         </label>
       ))}
@@ -130,38 +181,102 @@ function CheckboxGrid({
   );
 }
 
-function FiltersPanel({ onClose }: { onClose: () => void }) {
-  return (
+function useToggleSet(initial: string[] = []) {
+  const [selected, setSelected] = useState<string[]>(initial);
+  const toggle = (option: string) =>
+    setSelected((current) =>
+      current.includes(option)
+        ? current.filter((item) => item !== option)
+        : [...current, option],
+    );
+  return [selected, toggle] as const;
+}
+
+type FiltersPanelProps = {
+  onClose: () => void;
+  rentRange: [number, number];
+  onRentRangeChange: (range: [number, number]) => void;
+  onlyShow: OnlyShowFilters;
+  onOnlyShowChange: (filters: OnlyShowFilters) => void;
+  position: { top: number; right: number; width: number } | null;
+};
+
+function FiltersPanel({
+  onClose,
+  rentRange,
+  onRentRangeChange,
+  onlyShow,
+  onOnlyShowChange,
+  position,
+}: FiltersPanelProps) {
+  const [depositRange, setDepositRange] = useState<[number, number]>([0, 2000000]);
+  const [bedrooms, toggleBedroom] = useToggleSet();
+  const [propertyTypes, togglePropertyType] = useToggleSet();
+  const [furnishing, toggleFurnishing] = useToggleSet();
+  const [amenities, toggleAmenity] = useToggleSet();
+  const [postedBy, togglePostedBy] = useToggleSet();
+  const [verifiedOnly, setVerifiedOnly] = useState(false);
+
+  if (!position) return null;
+
+  return createPortal(
     <div
       id="filters-panel"
       role="dialog"
       aria-label="Filters"
-      className="absolute right-0 z-30 mt-3 w-[min(90vw,26rem)] rounded-2xl border border-slate-200 bg-white p-6 shadow-xl"
+      style={{ top: position.top, right: position.right, width: position.width }}
+      className="fixed z-30 max-h-[calc(100vh-2rem)] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl"
     >
-      <div className="max-h-[28rem] space-y-5 overflow-y-auto overscroll-contain pr-1">
+      <div className="max-h-[calc(100vh-9rem)] space-y-5 overflow-y-auto overscroll-contain p-6">
         <FilterField label="Monthly rent">
-          <RangeRow minPlaceholder="₹3,000" maxPlaceholder="₹10,00,000+" />
+          <DualRangeSlider
+            min={RENT_MIN}
+            max={RENT_MAX}
+            step={RENT_STEP}
+            value={rentRange}
+            onChange={onRentRangeChange}
+            formatValue={formatRentSliderValue}
+          />
         </FilterField>
         <FilterField label="Security deposit">
-          <RangeRow minPlaceholder="Any" maxPlaceholder="₹20,40,000+" />
+          <DualRangeSlider
+            min={0}
+            max={2000000}
+            step={50000}
+            value={depositRange}
+            onChange={setDepositRange}
+            formatValue={formatDepositSliderValue}
+          />
           <p className="mt-2 text-xs text-slate-500">Deposit filtering is coming soon.</p>
         </FilterField>
         <FilterField label="Bedrooms">
-          <PillGroup options={["1 BHK", "2 BHK", "3 BHK", "4 BHK", "5+ BHK"]} />
+          <ToggleGroup
+            options={["1 BHK", "2 BHK", "3 BHK", "4 BHK", "5+ BHK"]}
+            selected={bedrooms}
+            onToggle={toggleBedroom}
+          />
         </FilterField>
         <FilterField label="Property type">
-          <CheckboxGrid
+          <ToggleCheckboxGrid
             options={["Apartment", "Independent house", "Villa", "PG / Co-living", "Studio"]}
             columns={2}
+            selected={propertyTypes}
+            onToggle={togglePropertyType}
           />
         </FilterField>
         <FilterField label="Furnishing">
-          <PillGroup options={["Unfurnished", "Semi-furnished", "Fully furnished"]} />
+          <ToggleGroup
+            options={["Unfurnished", "Semi-furnished", "Fully furnished"]}
+            selected={furnishing}
+            onToggle={toggleFurnishing}
+          />
         </FilterField>
         <FilterField label="Amenities">
-          <CheckboxGrid
+          <ToggleCheckboxGrid
             options={["Lift", "Power backup", "Parking", "Gym", "Swimming pool", "Security", "Park", "Clubhouse"]}
             columns={2}
+            selected={amenities}
+            onToggle={toggleAmenity}
           />
           <p className="mt-2 text-xs text-slate-500">Amenity details are coming soon.</p>
         </FilterField>
@@ -177,18 +292,51 @@ function FiltersPanel({ onClose }: { onClose: () => void }) {
           </select>
         </FilterField>
         <FilterField label="Posted by">
-          <PillGroup options={["Owner", "Broker", "Any"]} />
-        </FilterField>
-        <FilterField label="Only show">
-          <CheckboxGrid
-            options={["Verified properties", "Properties with reviews", "Properties with photos"]}
-            columns={1}
+          <ToggleGroup
+            options={["Owner", "Broker", "Tenant"]}
+            selected={postedBy}
+            onToggle={togglePostedBy}
           />
         </FilterField>
+        <FilterField label="Only show">
+          <div className="space-y-2.5">
+            <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-700">
+              <input
+                type="checkbox"
+                checked={verifiedOnly}
+                onChange={() => setVerifiedOnly((value) => !value)}
+                className="accent-blue-600"
+              />
+              Verified properties
+            </label>
+            <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-700">
+              <input
+                type="checkbox"
+                checked={onlyShow.reviewsOnly}
+                onChange={() =>
+                  onOnlyShowChange({ ...onlyShow, reviewsOnly: !onlyShow.reviewsOnly })
+                }
+                className="accent-blue-600"
+              />
+              Properties with reviews
+            </label>
+            <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-700">
+              <input
+                type="checkbox"
+                checked={onlyShow.photosOnly}
+                onChange={() =>
+                  onOnlyShowChange({ ...onlyShow, photosOnly: !onlyShow.photosOnly })
+                }
+                className="accent-blue-600"
+              />
+              Properties with photos
+            </label>
+          </div>
+        </FilterField>
       </div>
-      <div className="mt-5 flex items-center justify-between gap-4 border-t border-slate-100 pt-4">
+      <div className="flex items-center justify-between gap-4 border-t border-slate-100 p-4">
         <p className="text-xs text-slate-500">
-          Filtering isn&apos;t live yet — this is a preview of what&apos;s coming.
+          Rent range and &quot;Only show&quot; filters apply live. Everything else previews what&apos;s coming.
         </p>
         <button
           type="button"
@@ -198,62 +346,92 @@ function FiltersPanel({ onClose }: { onClose: () => void }) {
           Close
         </button>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
-export function PropertyToolbar({ areas, selectedArea, onAreaChange }: PropertyToolbarProps) {
+export function PropertyToolbar({
+  areas,
+  selectedArea,
+  onAreaChange,
+  rentRange,
+  onRentRangeChange,
+  onlyShow,
+  onOnlyShowChange,
+}: PropertyToolbarProps) {
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
-  const filtersRef = useRef<HTMLDivElement>(null);
+  const [position, setPosition] = useState<{ top: number; right: number; width: number } | null>(null);
+  const filtersButtonRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  function updatePosition() {
+    const rect = filtersButtonRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    const width = Math.min(window.innerWidth - 24, 384);
+    setPosition({
+      top: rect.bottom + 12,
+      right: Math.max(12, window.innerWidth - rect.right),
+      width,
+    });
+  }
 
   useEffect(() => {
     if (!isFiltersOpen) return;
 
+    updatePosition();
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
+
     const close = (event: MouseEvent) => {
-      if (!filtersRef.current?.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (
+        !filtersButtonRef.current?.contains(target) &&
+        !panelRef.current?.contains(target)
+      ) {
         setIsFiltersOpen(false);
       }
     };
-
     document.addEventListener("mousedown", close);
-    return () => document.removeEventListener("mousedown", close);
+
+    return () => {
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+      document.removeEventListener("mousedown", close);
+    };
   }, [isFiltersOpen]);
 
   return (
     <div className="flex flex-wrap gap-2.5">
       <AreaSelector areas={areas} value={selectedArea} onChange={onAreaChange} />
 
-      {staticFilterLabels.map((label) => (
-        <button
-          key={label}
-          type="button"
-          disabled
-          title="Coming soon"
-          className="inline-flex cursor-not-allowed items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-[0_1px_2px_rgba(15,23,42,0.04)]"
-        >
-          {label}
-          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.08em] text-slate-500">
-            Soon
-          </span>
-        </button>
-      ))}
-
-      <div ref={filtersRef} className="relative">
-        <button
-          type="button"
-          onClick={() => setIsFiltersOpen((open) => !open)}
-          aria-expanded={isFiltersOpen}
-          aria-controls="filters-panel"
-          className={`inline-flex items-center rounded-full border px-4 py-2 text-sm font-medium transition ${
-            isFiltersOpen
-              ? "border-blue-600 bg-blue-600 text-white shadow-[0_8px_20px_-8px_rgba(37,99,235,0.45)]"
-              : "border-slate-200 bg-white text-slate-700 shadow-[0_1px_2px_rgba(15,23,42,0.04)] hover:border-blue-200 hover:text-blue-600"
-          }`}
-        >
-          Filters
-        </button>
-        {isFiltersOpen && <FiltersPanel onClose={() => setIsFiltersOpen(false)} />}
-      </div>
+      <button
+        ref={filtersButtonRef}
+        type="button"
+        onClick={() => setIsFiltersOpen((open) => !open)}
+        aria-expanded={isFiltersOpen}
+        aria-controls="filters-panel"
+        className={`inline-flex items-center rounded-full border px-4 py-2 text-sm font-medium transition ${
+          isFiltersOpen
+            ? "border-blue-600 bg-blue-600 text-white shadow-[0_8px_20px_-8px_rgba(37,99,235,0.45)]"
+            : "border-slate-200 bg-white text-slate-700 shadow-[0_1px_2px_rgba(15,23,42,0.04)] hover:border-blue-200 hover:text-blue-600"
+        }`}
+      >
+        Filters
+      </button>
+      {isFiltersOpen && (
+        <div ref={panelRef}>
+          <FiltersPanel
+            onClose={() => setIsFiltersOpen(false)}
+            rentRange={rentRange}
+            onRentRangeChange={onRentRangeChange}
+            onlyShow={onlyShow}
+            onOnlyShowChange={onOnlyShowChange}
+            position={position}
+          />
+        </div>
+      )}
     </div>
   );
 }
@@ -267,9 +445,15 @@ export function PropertyList({
   areas = [],
 }: PropertyListProps) {
   const [selectedArea, setSelectedArea] = useState<string | null>(null);
+  const [rentRange, setRentRange] = useState<[number, number]>([RENT_MIN, RENT_MAX]);
+  const [onlyShow, setOnlyShow] = useState<OnlyShowFilters>({
+    reviewsOnly: false,
+    photosOnly: false,
+  });
+
   const visibleProperties = useMemo(
-    () => filterPropertiesByArea(properties, selectedArea),
-    [properties, selectedArea],
+    () => filterProperties(properties, { area: selectedArea, rentRange, onlyShow }),
+    [properties, selectedArea, rentRange, onlyShow],
   );
 
   const grid = (
@@ -342,6 +526,10 @@ export function PropertyList({
           areas={areas}
           selectedArea={selectedArea}
           onAreaChange={setSelectedArea}
+          rentRange={rentRange}
+          onRentRangeChange={setRentRange}
+          onlyShow={onlyShow}
+          onOnlyShowChange={setOnlyShow}
         />
       )}
 
@@ -386,10 +574,15 @@ export default function PropertyDiscovery({
 }: PropertyDiscoveryProps) {
   const city = DEFAULT_CITY;
   const [selectedLocality, setSelectedLocality] = useState<string | null>(null);
+  const [rentRange, setRentRange] = useState<[number, number]>([RENT_MIN, RENT_MAX]);
+  const [onlyShow, setOnlyShow] = useState<OnlyShowFilters>({
+    reviewsOnly: false,
+    photosOnly: false,
+  });
 
   const visibleProperties = useMemo(
-    () => filterPropertiesByArea(properties, selectedLocality),
-    [properties, selectedLocality],
+    () => filterProperties(properties, { area: selectedLocality, rentRange, onlyShow }),
+    [properties, selectedLocality, rentRange, onlyShow],
   );
 
   const searchProperties = properties.map((property) => ({
@@ -422,6 +615,10 @@ export default function PropertyDiscovery({
             areas={LOCALITIES_BY_CITY[city] ?? []}
             selectedArea={selectedLocality}
             onAreaChange={setSelectedLocality}
+            rentRange={rentRange}
+            onRentRangeChange={setRentRange}
+            onlyShow={onlyShow}
+            onOnlyShowChange={setOnlyShow}
           />
         </div>
 

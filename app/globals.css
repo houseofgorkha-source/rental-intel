@@ -47,3 +47,33 @@ body {
 .scroll-thin::-webkit-scrollbar-thumb:hover {
   background-color: rgb(148 163 184);
 }
+
+/* Two overlapping range inputs sharing one track (see DualRangeSlider):
+   the input itself ignores pointer events so the track underneath isn't
+   clickable, but each thumb re-enables them so only the thumb is draggable. */
+.range-thumb::-webkit-slider-thumb {
+  appearance: none;
+  pointer-events: auto;
+  width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  background: #fff;
+  border: 2px solid rgb(37 99 235);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.25);
+  cursor: pointer;
+}
+
+.range-thumb::-moz-range-thumb {
+  pointer-events: auto;
+  width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  background: #fff;
+  border: 2px solid rgb(37 99 235);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.25);
+  cursor: pointer;
+}
+
+.range-thumb::-moz-range-track {
+  background: transparent;
+}

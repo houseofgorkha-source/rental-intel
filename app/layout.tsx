@@ -49,7 +49,7 @@ export default async function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} scroll-thin h-full antialiased`}
     >
       <body className="relative min-h-full flex flex-col">
         <header className="pointer-events-none absolute inset-x-0 top-0 z-20 px-6 py-5">

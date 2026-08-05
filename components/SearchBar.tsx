@@ -13,6 +13,8 @@ type SearchProperty = {
 
 type SearchBarProps = {
   properties: SearchProperty[];
+  city?: string;
+  onCityChange?: (city: string) => void;
 };
 
 type DropdownPosition = {
@@ -22,7 +24,7 @@ type DropdownPosition = {
   maxHeight: number;
 } | null;
 
-export default function SearchBar({ properties }: SearchBarProps) {
+export default function SearchBar({ properties, city, onCityChange }: SearchBarProps) {
   const [search, setSearch] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
@@ -185,7 +187,7 @@ export default function SearchBar({ properties }: SearchBarProps) {
   return (
     <div ref={searchRef} className="w-full">
       <div className="flex h-[68px] overflow-visible rounded-2xl border border-slate-300 bg-white shadow-[0_16px_35px_-20px_rgba(15,23,42,0.3)] transition focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-100">
-        <CitySelector />
+        <CitySelector value={city} onChange={onCityChange} />
         <input
           type="text"
           value={search}
