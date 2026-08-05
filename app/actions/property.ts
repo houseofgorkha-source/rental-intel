@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/auth";
+import { cleanUpFailedUpload, validateUploadFiles } from "@/lib/uploads";
 
 type CreatePropertyResult = {
   error?: string;
@@ -57,11 +58,16 @@ export async function createProperty(
     .getAll("images")
     .filter((value): value is File => value instanceof File && value.size > 0);
 
-  if (imageFiles.length > maxFileCount) return { error: "You can upload up to 5 images." };
-  if (imageFiles.some((file) => !allowedImageTypes.includes(file.type) || file.size > maxFileSize)) {
-    return { error: "Images must be JPG, PNG, or WebP files up to 5 MB each." };
-  }
-  if (imageFiles.reduce((total, file) => total + file.size, 0) > maxTotalSize) return { error: "Total image upload size must be 20 MB or less." };
+  const validationError = validateUploadFiles(
+    imageFiles,
+    { maxFileCount, maxFileSize, maxTotalSize, allowedTypes: allowedImageTypes },
+    {
+      tooManyFiles: "You can upload up to 5 images.",
+      invalidFile: "Images must be JPG, PNG, or WebP files up to 5 MB each.",
+      totalTooLarge: "Total image upload size must be 20 MB or less.",
+    },
+  );
+  if (validationError) return { error: validationError };
 
   const supabase = await createClient();
   const { user, error: authFailure } = await requireUser(
@@ -100,10 +106,13 @@ export async function createProperty(
   const propertyImages: PropertyImageInsert[] = [];
   const uploadedPaths: string[] = [];
 
-  const cleanUp = async () => {
-    if (uploadedPaths.length) await supabase.storage.from("property-images").remove(uploadedPaths);
-    await supabase.from("properties").delete().eq("id", property.id);
-  };
+  const cleanUp = () =>
+    cleanUpFailedUpload(supabase, {
+      bucket: "property-images",
+      uploadedPaths,
+      table: "properties",
+      rowId: property.id,
+    });
 
   for (const [index, file] of imageFiles.entries()) {
     const storagePath = `properties/${user.id}/${property.id}/${index}-${crypto.randomUUID()}.${getFileExtension(file)}`;

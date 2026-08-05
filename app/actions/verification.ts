@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/auth";
+import { cleanUpFailedUpload, validateUploadFiles } from "@/lib/uploads";
 
 const documentFields = [
   "rental_agreement",
@@ -30,18 +31,21 @@ export async function createVerification(
     return { error: "Please choose at least one supporting document." };
   }
 
-  if (documents.length > maxFileCount) return { error: "You can upload up to 4 documents." };
-
-  if (
-    documents.some(
-      ({ file }) =>
-        !["application/pdf", "image/jpeg", "image/png"].includes(file.type) ||
-        file.size > maxFileSize,
-    )
-  ) {
-    return { error: "Documents must be PDF, JPG, or PNG files up to 5 MB." };
-  }
-  if (documents.reduce((total, { file }) => total + file.size, 0) > maxTotalSize) return { error: "Total document upload size must be 15 MB or less." };
+  const validationError = validateUploadFiles(
+    documents.map((document) => document.file),
+    {
+      maxFileCount,
+      maxFileSize,
+      maxTotalSize,
+      allowedTypes: ["application/pdf", "image/jpeg", "image/png"],
+    },
+    {
+      tooManyFiles: "You can upload up to 4 documents.",
+      invalidFile: "Documents must be PDF, JPG, or PNG files up to 5 MB.",
+      totalTooLarge: "Total document upload size must be 15 MB or less.",
+    },
+  );
+  if (validationError) return { error: validationError };
 
   const supabase = await createClient();
   const { user, error: authFailure } = await requireUser(
@@ -66,10 +70,13 @@ export async function createVerification(
     storage_path: string;
   }[];
   const uploadedPaths: string[] = [];
-  const cleanUp = async () => {
-    if (uploadedPaths.length) await supabase.storage.from("verification-documents").remove(uploadedPaths);
-    await supabase.from("review_verifications").delete().eq("id", verification.id);
-  };
+  const cleanUp = () =>
+    cleanUpFailedUpload(supabase, {
+      bucket: "verification-documents",
+      uploadedPaths,
+      table: "review_verifications",
+      rowId: verification.id,
+    });
 
   for (const { documentType, file } of documents) {
     const extension = file.name.split(".").pop()?.toLowerCase() || "file";
