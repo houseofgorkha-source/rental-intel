@@ -154,7 +154,7 @@ export default function HomeDiscovery({ properties }: HomeDiscoveryProps) {
                 href="/add-property"
                 className="mt-4 inline-flex text-sm font-medium text-blue-600 underline decoration-blue-200 underline-offset-4 transition hover:text-blue-700 hover:decoration-blue-400"
               >
-                Review Your Current Stay
+                Review Your Current Rental Property
               </Link>
             </div>
           </section>
