@@ -104,7 +104,7 @@ app/
   layout.tsx, page.tsx, globals.css
 
 components/
-  property/         PropertyDiscovery.tsx (PropertyToolbar, PropertyList, filterProperties, default PropertyDiscovery page shell), HomeDiscovery.tsx (homepage shared-state owner, see §4), PropertyMap.tsx (MapLibre + OSM), DualRangeSlider.tsx, AreaSelector, PropertyGallery, ReviewSection, ReviewCard, PropertyShareButton
+  property/         PropertyDiscovery.tsx (PropertyList, FiltersButton, filterProperties, default PropertyDiscovery page shell — the canonical search results page, §22), HomeDiscovery.tsx (homepage shared-state owner, see §4), HomeSearch.tsx (city+area+text search bar, reused by the homepage, /property, and DetailPageSearch — see §20), DetailPageSearch.tsx (Property Detail page's search widget, composes HomeSearch + FiltersButton, no logic of its own), RelatedProperties.tsx (Similar/Top Reviewed sections + "Continue Exploring", see §23), VerifyStayPrompt.tsx (modal prompting review-first when Verify Stay is clicked before a review exists), PropertyMap.tsx (MapLibre + OSM), DualRangeSlider.tsx, AreaMultiSelect.tsx, PropertyGallery, ReviewSection, ReviewCard, PropertyShareButton. `AreaSelector.tsx` (single-select) is no longer used anywhere — superseded by `AreaMultiSelect.tsx` — kept but inert, not deleted (see §16's "treat existing omissions as intentional").
   review/           ReviewForm, VerifyStayForm, StarRating, reviewCategories.ts
   add-property/     PropertyForm, InfoCard, SectionTitle
   login/            LoginForm, SignupForm
@@ -283,6 +283,61 @@ This list is a proposal, not a settled rule — see Open Questions.
 - Minimize changes — keep them minimal and architectural.
 - Challenge unnecessary complexity.
 - Treat existing omissions as intentional unless confirmed otherwise.
+
+---
+
+## 17. Product principle — a renter decision platform, not a review site
+
+**[Documented Product Decision — stated directly by the product owner in conversation.]** RentalIntel is no longer simply a property review website. It is a renter decision platform. Every feature should help renters make better decisions before signing a lease. If a proposed feature does not improve renter decision-making, transparency, or trust, challenge whether it belongs in the MVP. This sharpens (does not replace) the mission stated in §1 — "Know it before you rent it" — by naming the *decision*, not just the *knowledge*, as the product's unit of value.
+
+## 18. Homepage philosophy
+
+**[Documented Product Decision — stated directly by the product owner in conversation.]** The homepage is the landing experience. Its responsibilities are to introduce RentalIntel, allow immediate searching, display the live discovery experience (map + list), and encourage community participation. It should **not** become the primary property-browsing experience — that role belongs to the Property Detail page (§19) and the canonical search results page (§21). This is why the homepage was deliberately left unchanged across the sessions that reworked `/property` and `/property/[slug]` — see §16's "never modify unrelated files."
+
+## 19. Property Detail philosophy
+
+**[Documented Product Decision — stated directly by the product owner in conversation.]** The Property Detail page (`app/property/[slug]/page.tsx`) is the heart of RentalIntel. Its purpose is to help a renter decide whether they should rent a specific property. Each page should: present property information, surface tenant experiences (reviews), allow writing a review, encourage stay verification, and naturally keep the user exploring rather than dead-ending the session. The last of these is implemented today as the page's own "Continue Exploring" section (§22) — reused search + related-property sections — rather than forcing the user back to the homepage or `/property` to keep browsing.
+
+## 20. Search architecture — one implementation, one destination
+
+**[Documented Product Decision — stated directly by the product owner in conversation.]** RentalIntel has exactly one search implementation. `HomeSearch`, `FiltersButton`, and `PropertyList` (all in/around `components/property/PropertyDiscovery.tsx` and `components/property/HomeSearch.tsx`) are the only search, filter, and result-card building blocks in the app — the homepage, the Property Detail page's "Continue Exploring" search widget (`components/property/DetailPageSearch.tsx`), and `/property` itself all compose the same three pieces rather than each implementing their own. `PropertyDiscovery.tsx`'s exported `filterProperties()` is likewise the single filtering function shared by every page that filters a property list. **Never introduce a second search, filter, or property-card component** — extend these three instead (§16). Any search performed anywhere in the app that isn't an in-place filter (i.e., the homepage's own map+list, which filters without navigating) should resolve to the canonical search results page, `/property` (§21), via URL query parameters (`city`, `areas`, `q`, `rentMin`, `rentMax`, `reviewsOnly`, `photosOnly`) — see `app/property/page.tsx`'s `searchParams` seeding.
+
+## 21. Discovery flow
+
+**[Documented Product Decision — stated directly by the product owner in conversation.]** The intended user journey:
+
+```
+Homepage
+   ↓
+Property Detail
+   ↓
+Continue Exploring
+   ↓
+Search Results (/property)
+   ↓
+Property Detail
+   ↓
+Repeat
+```
+
+The goal is to keep users discovering properties without repeatedly funneling them back through the homepage. The homepage remains the entry point (§18), but once a user reaches a Property Detail page, further browsing should route through that page's own "Continue Exploring" section (§22) and the canonical search results page (§21 below this one — `/property`), not back to `/`.
+
+## 22. Search Results page (`/property`)
+
+**[Documented Product Decision — stated directly by the product owner in conversation.]** `/property` is the application's canonical search results page. Its responsibility is limited to: search, filters, map, results. Nothing more — no homepage-style marketing copy, no duplicated landing content, no discovery/pitch copy of its own. Users are expected to arrive here through searches and exploration (from the homepage's own search, or from a Property Detail page's "Continue Exploring" widget), not as a first-touch landing page. As of this session, its heading is purely functional (reflects the current search — e.g. "Bengaluru properties" or "Koramangala, Bengaluru" — rather than a marketing headline), matching this constraint directly.
+
+## 23. Related Properties
+
+**[Documented Product Decision — stated directly by the product owner in conversation.]** Related-property sections on the Property Detail page (`components/property/RelatedProperties.tsx`) must always be backed by real, distinguishable data — never render two sections with duplicate content under different headings. The current, MVP-acceptable progression is:
+
+- **Similar Properties** (same area as the current property) — this is the only similarity signal the schema currently supports (no price-band, bedroom-count, or amenity data to score against yet).
+- **Top Reviewed in {City}** — ranked by review count (falling back to average rating), excluding whatever "Similar Properties" already showed. Named for exactly what signal it uses, rather than "Popular," which would overclaim (no view/save counts exist yet).
+
+A section that would be empty, or that would exactly duplicate another section's contents, is not rendered at all. Future ranking signals under consideration, once available, include: **Trust Score**, **Verified Reviews**, **Recent Activity**, and **Popularity** (a genuine engagement metric, not review count standing in for it). The filtering logic behind each section is intentionally isolated into small, named functions (`getSimilarProperties()`, `getTopReviewedProperties()`) inside `RelatedProperties.tsx`, so that swapping in real backend queries later (e.g. dedicated `getSimilarProperties()`/`getPopularProperties()` RPCs) only touches that block, not the surrounding UI.
+
+## 24. Developer Navigation
+
+**[Documented Product Decision — stated directly by the product owner in conversation.]** The Developer Navigation section inside the Account menu (`components/shared/DeveloperNavigationMenu.tsx`, gated by `NEXT_PUBLIC_SHOW_DEV_NAV`) intentionally lists every route in the app, including the canonical search results page (`/property`) and pages not part of normal end-user navigation. This exists purely for developer productivity during active development — a single place to confirm every page still exists and works, so nothing is forgotten as the app grows — and is not user-facing product navigation. It must be disabled before public launch via the existing feature flag (already off by default — see `.env.example`). Badge wording should always describe *why* a route can't be clicked right now in accurate terms (e.g. "Context Required" for a page that needs live data such as a `reviewId`, "System Route" for a route that's never meant to be manually navigated, like the OAuth callback) — never "Coming Soon" or "Empty," which wrongly imply the feature itself is unfinished.
 
 ---
 

@@ -5,7 +5,7 @@ type DevRoute = {
   route: string;
   href: string | null;
   kind: "page" | "route";
-  badge?: "WIP" | "Empty" | "Coming Soon";
+  badge?: "WIP" | "Context Required" | "System Route";
 };
 
 type DevSection = {
@@ -51,7 +51,7 @@ export default function DeveloperNavigationMenu({
           route: "/property/[slug]",
           href: propertyHref,
           kind: "page",
-          badge: propertyHref ? undefined : "Empty",
+          badge: propertyHref ? undefined : "Context Required",
         },
       ],
     },
@@ -64,21 +64,21 @@ export default function DeveloperNavigationMenu({
           route: "/property/[slug]/review",
           href: reviewFormHref,
           kind: "page",
-          badge: reviewFormHref ? undefined : "Empty",
+          badge: reviewFormHref ? undefined : "Context Required",
         },
         {
           label: "Review Success",
           route: "/property/[slug]/review/success",
           href: reviewSuccessHref,
           kind: "page",
-          badge: reviewSuccessHref ? undefined : "Empty",
+          badge: reviewSuccessHref ? undefined : "Context Required",
         },
         {
           label: "Review Verification",
           route: "/property/[slug]/review/verify",
           href: reviewVerifyHref,
           kind: "page",
-          badge: reviewVerifyHref ? undefined : "Empty",
+          badge: reviewVerifyHref ? undefined : "Context Required",
         },
       ],
     },
@@ -97,7 +97,7 @@ export default function DeveloperNavigationMenu({
           route: "/auth/callback",
           href: null,
           kind: "route",
-          badge: "Coming Soon",
+          badge: "System Route",
         },
       ],
     },
