@@ -3,9 +3,13 @@ import { notFound } from "next/navigation";
 import PropertyGallery from "@/components/property/PropertyGallery";
 import ReviewSection from "@/components/property/ReviewSection";
 import PropertyShareButton from "@/components/property/PropertyShareButton";
+import VerifyStayPrompt from "@/components/property/VerifyStayPrompt";
+import RelatedProperties from "@/components/property/RelatedProperties";
 import type { Review } from "@/components/property/ReviewCard";
 import { createClient } from "@/lib/supabase/server";
 import { calculateAverageRating, formatINRPerMonth, getPropertyImageUrl } from "@/lib/property-format";
+import { getDiscoveryProperties } from "@/lib/property-discovery";
+import { DEFAULT_CITY } from "@/lib/cities";
 
 type PropertyPageProps = {
   params: Promise<{ slug: string }>;
@@ -68,7 +72,7 @@ export default async function PropertyPage({
 
   if (error || !property) notFound();
 
-  const [{ data: propertyImages }, { data: reviewRows }] = await Promise.all([
+  const [{ data: propertyImages }, { data: reviewRows }, cityProperties] = await Promise.all([
     supabase
       .from("property_images")
       .select("storage_path, alt_text")
@@ -81,6 +85,7 @@ export default async function PropertyPage({
       )
       .eq("property_id", property.id)
       .order("created_at", { ascending: false }),
+    getDiscoveryProperties(DEFAULT_CITY),
   ]);
 
   const images =
@@ -124,6 +129,12 @@ export default async function PropertyPage({
     { label: "Status", value: property.status },
     { label: "Notes", value: property.notes ?? "Not available" },
   ];
+
+  const searchProperties = cityProperties.map((discoveryProperty) => ({
+    slug: discoveryProperty.slug,
+    name: discoveryProperty.name,
+    location: `${discoveryProperty.area}, ${discoveryProperty.city}`,
+  }));
 
   return (
     <main className="min-h-screen bg-[#fbfbfa] pb-20 pt-28">
@@ -182,12 +193,7 @@ export default async function PropertyPage({
                     Pending approval
                   </p>
                 )}
-                <Link
-                  href={`/property/${property.slug}/review`}
-                  className="flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-800 transition hover:bg-slate-50"
-                >
-                  Verify Stay
-                </Link>
+                <VerifyStayPrompt propertySlug={property.slug} />
                 <PropertyShareButton propertyName={property.name} />
               </div>
             </section>
@@ -254,11 +260,23 @@ export default async function PropertyPage({
               </div>
             </section>
 
-            <section aria-labelledby="similar-properties-heading" className="mt-14 border-t border-slate-200 pt-10">
-              <p className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">Similar properties</p>
-              <h2 id="similar-properties-heading" className="mt-3 text-3xl font-medium tracking-[-0.035em] text-slate-950">More nearby homes, soon.</h2>
-              <p className="mt-5 rounded-2xl border border-slate-200 bg-white px-5 py-6 text-sm leading-6 text-slate-600">Nearby property recommendations will appear here as more homes are added.</p>
-            </section>
+            <p className="mt-14 border-t border-slate-200 pt-10 text-sm text-slate-600">
+              Didn&apos;t find what you&apos;re looking for?{" "}
+              <Link
+                href="/property"
+                className="font-medium text-blue-600 underline decoration-blue-200 underline-offset-4 transition hover:text-blue-700 hover:decoration-blue-400"
+              >
+                Search more properties →
+              </Link>
+            </p>
+
+            <RelatedProperties
+              currentSlug={property.slug}
+              area={property.area}
+              city={property.city}
+              properties={cityProperties}
+              searchProperties={searchProperties}
+            />
           </div>
 
           <aside className="hidden lg:sticky lg:top-8 lg:block">
@@ -266,7 +284,10 @@ export default async function PropertyPage({
               <p className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">Your next step</p>
               <div className="mt-5 space-y-3">
                 {property.status === "published" ? <Link href={`/property/${property.slug}/review`} className="flex w-full items-center justify-center rounded-xl bg-slate-950 px-4 py-3 text-sm font-medium text-white transition hover:bg-slate-800">Write Review</Link> : <p className="rounded-xl bg-slate-100 px-4 py-3 text-center text-sm font-medium text-slate-600">Pending approval</p>}
-                <Link href={`/property/${property.slug}/review`} className="flex w-full items-center justify-center rounded-xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-800 transition hover:bg-slate-50">Verify Stay</Link>
+                <VerifyStayPrompt
+                  propertySlug={property.slug}
+                  className="flex w-full items-center justify-center rounded-xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-800 transition hover:bg-slate-50"
+                />
                 <PropertyShareButton propertyName={property.name} />
               </div>
               <div className="mt-7 border-t border-slate-100 pt-6">

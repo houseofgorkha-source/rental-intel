@@ -3,16 +3,28 @@
 import Link from "next/link";
 import { createPortal } from "react-dom";
 import { useEffect, useMemo, useRef, useState } from "react";
-import SearchBar from "@/components/SearchBar";
-import CitySelector from "@/components/CitySelector";
-import AreaSelector from "@/components/property/AreaSelector";
+import HomeSearch from "@/components/property/HomeSearch";
 import DualRangeSlider from "@/components/property/DualRangeSlider";
-import { DEFAULT_CITY, LOCALITIES_BY_CITY } from "@/lib/cities";
+import { DEFAULT_CITY, LOCALITIES_BY_CITY, cityMatches } from "@/lib/cities";
 import { formatINRPerMonth } from "@/lib/property-format";
 import type { DiscoveryProperty } from "@/lib/property-discovery";
 
+// Seeded from app/property/page.tsx's searchParams (and, optionally, values
+// carried over from DetailPageSearch on the property detail page) so a
+// search is shareable/bookmarkable as a real URL, not just in-memory state.
+export type PropertySearchParams = {
+  city?: string;
+  areas?: string[];
+  query?: string;
+  rentMin?: number;
+  rentMax?: number;
+  reviewsOnly?: boolean;
+  photosOnly?: boolean;
+};
+
 type PropertyDiscoveryProps = {
   properties: DiscoveryProperty[];
+  initialSearch?: PropertySearchParams;
 };
 
 type PropertyListProps = {
@@ -42,18 +54,6 @@ type FiltersButtonProps = {
   onRentRangeChange: (range: [number, number]) => void;
   onlyShow: OnlyShowFilters;
   onOnlyShowChange: (filters: OnlyShowFilters) => void;
-};
-
-type PropertyToolbarProps = {
-  areas: string[];
-  selectedArea: string | null;
-  onAreaChange: (area: string | null) => void;
-  rentRange: [number, number];
-  onRentRangeChange: (range: [number, number]) => void;
-  onlyShow: OnlyShowFilters;
-  onOnlyShowChange: (filters: OnlyShowFilters) => void;
-  city?: string;
-  onCityChange?: (city: string) => void;
 };
 
 // Known gap: this stays a small, hand-picked subset for the sidebar below,
@@ -509,36 +509,6 @@ export function FiltersButton({
   );
 }
 
-export function PropertyToolbar({
-  areas,
-  selectedArea,
-  onAreaChange,
-  rentRange,
-  onRentRangeChange,
-  onlyShow,
-  onOnlyShowChange,
-  city,
-  onCityChange,
-}: PropertyToolbarProps) {
-  return (
-    <div className="flex flex-wrap items-center justify-between gap-2.5">
-      <div className="flex flex-wrap items-center gap-2.5">
-        {city && onCityChange && (
-          <CitySelector value={city} onChange={onCityChange} variant="pill" />
-        )}
-        <AreaSelector areas={areas} value={selectedArea} onChange={onAreaChange} />
-      </div>
-
-      <FiltersButton
-        rentRange={rentRange}
-        onRentRangeChange={onRentRangeChange}
-        onlyShow={onlyShow}
-        onOnlyShowChange={onOnlyShowChange}
-      />
-    </div>
-  );
-}
-
 export function PropertyList({
   properties,
   heading,
@@ -667,61 +637,91 @@ export function PropertyList({
 
 export default function PropertyDiscovery({
   properties,
+  initialSearch,
 }: PropertyDiscoveryProps) {
-  const city = DEFAULT_CITY;
-  const [selectedLocality, setSelectedLocality] = useState<string | null>(null);
-  const [rentRange, setRentRange] = useState<[number, number]>([RENT_MIN, RENT_MAX]);
+  const [selectedCity, setSelectedCity] = useState(initialSearch?.city ?? DEFAULT_CITY);
+  const [selectedAreas, setSelectedAreas] = useState<string[]>(initialSearch?.areas ?? []);
+  const [searchQuery, setSearchQuery] = useState(initialSearch?.query ?? "");
+  const [rentRange, setRentRange] = useState<[number, number]>([
+    initialSearch?.rentMin ?? RENT_MIN,
+    initialSearch?.rentMax ?? RENT_MAX,
+  ]);
   const [onlyShow, setOnlyShow] = useState<OnlyShowFilters>({
-    reviewsOnly: false,
-    photosOnly: false,
+    reviewsOnly: initialSearch?.reviewsOnly ?? false,
+    photosOnly: initialSearch?.photosOnly ?? false,
   });
+
+  // `properties` is fetched once for DEFAULT_CITY (see app/property/page.tsx),
+  // the same pattern the homepage uses — every other city is filtered down
+  // to empty here, which is correct today since only Bengaluru has real data
+  // (see lib/cities.ts's `available` flags).
+  const cityProperties = useMemo(
+    () => properties.filter((property) => cityMatches(property.city, selectedCity)),
+    [properties, selectedCity],
+  );
 
   const visibleProperties = useMemo(
     () =>
-      filterProperties(properties, {
-        areas: selectedLocality ? [selectedLocality] : [],
+      filterProperties(cityProperties, {
+        areas: selectedAreas,
         rentRange,
         onlyShow,
+        query: searchQuery,
       }),
-    [properties, selectedLocality, rentRange, onlyShow],
+    [cityProperties, selectedAreas, rentRange, onlyShow, searchQuery],
   );
 
-  const searchProperties = properties.map((property) => ({
+  const searchProperties = cityProperties.map((property) => ({
     slug: property.slug,
     name: property.name,
     location: `${property.area}, ${property.city}`,
   }));
 
+  function handleCityChange(city: string) {
+    setSelectedCity(city);
+    setSelectedAreas([]);
+  }
+
+  // This page is the canonical search results surface: search, filters, map,
+  // results — nothing else. No landing/marketing copy here (that's the
+  // homepage's job) — the H1 stays purely functional, reflecting the current
+  // search rather than pitching the product.
+  const resultsHeading =
+    selectedAreas.length === 1 ? `${selectedAreas[0]}, ${selectedCity}` : `${selectedCity} properties`;
+
   return (
     <main className="min-h-screen bg-[#fbfbfa] pb-16 pt-28">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
-        <div className="max-w-3xl">
-          <p className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
-            Property discovery
-          </p>
-          <h1 className="mt-4 text-4xl font-medium tracking-[-0.045em] text-slate-950 sm:text-5xl">
-            Find a place worth coming home to.
-          </h1>
-          <p className="mt-4 max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">
-            Explore rental homes and the tenant experiences behind each address.
-          </p>
-        </div>
+        <h1 className="text-3xl font-medium tracking-[-0.03em] text-slate-950 sm:text-4xl">
+          {resultsHeading}
+        </h1>
 
-        <div className="mt-9 max-w-3xl">
-          <SearchBar properties={searchProperties} />
-        </div>
-
-        <div className="mt-5">
-          <PropertyToolbar
-            areas={LOCALITIES_BY_CITY[city] ?? []}
-            selectedArea={selectedLocality}
-            onAreaChange={setSelectedLocality}
+        <div className="mt-6 flex flex-wrap items-start gap-3">
+          <HomeSearch
+            properties={searchProperties}
+            city={selectedCity}
+            onCityChange={handleCityChange}
+            areas={LOCALITIES_BY_CITY[selectedCity] ?? []}
+            selectedAreas={selectedAreas}
+            onAreasChange={setSelectedAreas}
+            query={searchQuery}
+            onQueryChange={setSearchQuery}
+          />
+          <FiltersButton
             rentRange={rentRange}
             onRentRangeChange={setRentRange}
             onlyShow={onlyShow}
             onOnlyShowChange={setOnlyShow}
           />
         </div>
+
+        {cityProperties.length === 0 && (
+          <p className="mt-4 text-sm text-slate-500">
+            {selectedCity === DEFAULT_CITY
+              ? "No properties are available yet."
+              : `${selectedCity} is coming soon. Try ${DEFAULT_CITY} for now.`}
+          </p>
+        )}
 
         <div className="mt-12 grid gap-10 lg:grid-cols-[minmax(13rem,1fr)_minmax(0,3fr)] lg:gap-14">
           <aside className="rounded-2xl border border-slate-200 bg-white p-5 lg:self-start">
@@ -731,22 +731,22 @@ export default function PropertyDiscovery({
             <div className="mt-4 space-y-1">
               <button
                 type="button"
-                onClick={() => setSelectedLocality(null)}
+                onClick={() => setSelectedAreas([])}
                 className={`w-full rounded-xl px-3 py-2.5 text-left text-sm transition ${
-                  selectedLocality === null
+                  selectedAreas.length === 0
                     ? "bg-slate-950 font-medium text-white"
                     : "text-slate-700 hover:bg-slate-50"
                 }`}
               >
-                All {city}
+                All {selectedCity}
               </button>
               {localities.map((locality) => (
                 <button
                   key={locality}
                   type="button"
-                  onClick={() => setSelectedLocality(locality)}
+                  onClick={() => setSelectedAreas([locality])}
                   className={`w-full rounded-xl px-3 py-2.5 text-left text-sm transition ${
-                    selectedLocality === locality
+                    selectedAreas.length === 1 && selectedAreas[0] === locality
                       ? "bg-slate-950 font-medium text-white"
                       : "text-slate-700 hover:bg-slate-50"
                   }`}
@@ -759,7 +759,7 @@ export default function PropertyDiscovery({
 
           <PropertyList
             properties={visibleProperties}
-            heading={selectedLocality ?? `${city} properties`}
+            heading={selectedAreas.length === 1 ? selectedAreas[0] : `${selectedCity} properties`}
           />
         </div>
       </div>
