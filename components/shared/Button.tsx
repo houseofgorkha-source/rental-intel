@@ -15,8 +15,13 @@ export default function Button({
   ...props
 }: ButtonProps) {
  
-    const baseClasses =
-  "inline-flex items-center justify-center rounded-full px-6 py-3 text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-200";
+    // `disabled:pointer-events-none` rather than overriding each variant's
+  // hover colours: both are single-class utilities, so a `disabled:hover:*`
+  // rule would depend on Tailwind's variant ordering to win. Removing pointer
+  // events makes the hover state unreachable instead, which is deterministic
+  // and is the conventional pattern. Applies to both variants.
+  const baseClasses =
+  "inline-flex items-center justify-center rounded-full px-6 py-3 text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:pointer-events-none disabled:opacity-50";
   
   const variants = {
   primary:

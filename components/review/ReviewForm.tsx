@@ -410,7 +410,8 @@ export default function ReviewForm({ propertyId, propertyArea }: ReviewFormProps
         type="button"
         onClick={handleSubmit}
         disabled={isSubmitting}
-        className="mt-10 w-full rounded-full bg-blue-600 px-6 py-4 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+        aria-busy={isSubmitting}
+        className="mt-10 w-full rounded-full bg-blue-600 px-6 py-4 text-sm font-medium text-white transition-colors hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500 disabled:hover:bg-slate-200"
       >
         {isSubmitting ? "Publishing..." : "Publish My Experience"}
       </button>
