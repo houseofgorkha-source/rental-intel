@@ -51,6 +51,7 @@ export default async function RootLayout({
   // shown in the dev nav menu, rather than dead placeholder text.
   const devNavEnabled = process.env.NEXT_PUBLIC_SHOW_DEV_NAV === "true";
   let sampleProperty: { slug: string } | null = null;
+  let sampleOwnProperty: { slug: string } | null = null;
   let sampleReview: { slug: string; reviewId: string } | null = null;
 
   if (devNavEnabled) {
@@ -63,6 +64,18 @@ export default async function RootLayout({
     sampleProperty = property;
 
     if (user) {
+      // The listing-edit route only works for a property the signed-in user
+      // created, so it needs its own sample rather than reusing the public
+      // one above.
+      const { data: ownProperty } = await supabase
+        .from("properties")
+        .select("slug")
+        .eq("created_by", user.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      sampleOwnProperty = ownProperty;
+
       const { data: review } = await supabase
         .from("reviews")
         .select("id, properties!inner(slug)")
@@ -90,6 +103,7 @@ export default async function RootLayout({
               <AccountMenu
                 email={user.email ?? "RentalIntel member"}
                 sampleProperty={sampleProperty}
+                sampleOwnProperty={sampleOwnProperty}
                 sampleReview={sampleReview}
               />
             ) : (

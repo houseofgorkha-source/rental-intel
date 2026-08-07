@@ -531,22 +531,33 @@ export function PropertyList({
   const grid = (
     <div className={`grid gap-3 sm:grid-cols-2 ${compact ? "" : "xl:grid-cols-3"}`}>
       {visibleProperties.map((property) => (
+        // One destination, so the whole card is a single link — no inner
+        // "View Property" link nested inside a clickable container, which
+        // previously fired navigation and selection together and left the
+        // card unreachable by keyboard. Map highlighting moved to hover and
+        // focus: pointing at a card is the intent to preview it, clicking it
+        // is the intent to open it. Marker click -> selection and the
+        // scrollIntoView sync are unchanged.
         <article
           key={property.slug}
           ref={(element) => {
             cardRefs.current[property.slug] = element;
           }}
-          onClick={() => onSelectProperty?.(property.slug)}
-          className={`overflow-hidden rounded-xl border bg-white transition hover:border-slate-300 hover:shadow-[0_18px_45px_-30px_rgba(15,23,42,0.45)] ${
-            onSelectProperty ? "cursor-pointer" : ""
-          } ${
+          onMouseEnter={() => onSelectProperty?.(property.slug)}
+          onFocus={() => onSelectProperty?.(property.slug)}
+          className={`overflow-hidden rounded-xl border bg-white transition hover:border-slate-300 hover:shadow-[0_18px_45px_-30px_rgba(15,23,42,0.45)] focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100 ${
             selectedSlug === property.slug
               ? "border-blue-500 ring-2 ring-blue-100"
               : "border-slate-200"
           }`}
         >
+          <Link href={`/property/${property.slug}`} className="block focus:outline-none">
           <div className="relative aspect-[5/2] bg-slate-100">
-            {property.isAvailable && (
+            {/* Only shown for owner listings: a tenant contributing the flat
+                they live in isn't advertising a vacancy, so badging it
+                "Available for rent" would be false. Legacy rows have a null
+                submittedAs and correctly show nothing. */}
+            {property.submittedAs === "owner" && property.isAvailable && (
               <span className="absolute right-2 top-2 z-10 inline-flex items-center gap-1 rounded-full bg-white/95 px-2 py-0.5 text-[10px] font-medium text-emerald-700 shadow-sm ring-1 ring-inset ring-emerald-600/20">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                 Available for rent
@@ -589,13 +600,8 @@ export function PropertyList({
             <p className="mt-2 text-sm font-medium text-slate-900">
               {formatRent(property.askingRent)}
             </p>
-            <Link
-              href={`/property/${property.slug}`}
-              className="mt-2.5 inline-flex text-xs font-medium text-slate-900 underline decoration-slate-300 underline-offset-4 transition hover:text-blue-600 hover:decoration-slate-900"
-            >
-              View Property
-            </Link>
           </div>
+          </Link>
         </article>
       ))}
     </div>

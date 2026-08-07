@@ -1,9 +1,11 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/auth";
 import { cleanUpFailedUpload, getFileExtension, validateUploadFiles, verifyFileSignature } from "@/lib/uploads";
 import { normalizeCityName } from "@/lib/cities";
+import { isSubmitterRole, type SubmitterRole } from "@/lib/property-roles";
 
 type CreatePropertyResult = {
   error?: string;
@@ -25,6 +27,30 @@ const maxTotalSize = 20 * 1024 * 1024;
 function getTextValue(formData: FormData, name: string) {
   const value = formData.get(name);
   return typeof value === "string" ? value.trim() : "";
+}
+
+// The role is a self-declared claim submitted through the form, so it is
+// re-validated here against the shared allow-list rather than trusted.
+function getSubmitterRole(formData: FormData): SubmitterRole | null {
+  const value = getTextValue(formData, "submittedAs");
+  return isSubmitterRole(value) ? value : null;
+}
+
+// Rupee amounts arrive as free text. Empty means "not provided" (null), but
+// a non-empty value that isn't a valid non-negative number is a real input
+// error and is surfaced rather than silently dropped.
+function parseAmount(
+  raw: string,
+  label: string,
+): { value: number | null; error?: string } {
+  if (!raw) return { value: null };
+
+  const parsed = Number(raw);
+  if (!Number.isFinite(parsed) || parsed < 0) {
+    return { value: null, error: `${label} must be a number of 0 or more.` };
+  }
+
+  return { value: Math.round(parsed) };
 }
 
 function createSlug(name: string) {
@@ -54,6 +80,30 @@ export async function createProperty(
   if (!city) {
     return { error: "Please complete all required property details." };
   }
+
+  const submittedAs = getSubmitterRole(formData);
+
+  // Listing details describe an owner's commercial offer, so they're only
+  // accepted from an owner submission. A tenant's own rent is a different
+  // fact and belongs on their review, not on the shared property record.
+  const isOwnerListing = submittedAs === "owner";
+  const askingRent = parseAmount(
+    isOwnerListing ? getTextValue(formData, "askingRent") : "",
+    "Monthly rent",
+  );
+  const securityDeposit = parseAmount(
+    isOwnerListing ? getTextValue(formData, "securityDeposit") : "",
+    "Security deposit",
+  );
+
+  const amountError = askingRent.error ?? securityDeposit.error;
+  if (amountError) return { error: amountError };
+
+  // Only an owner listing is a claim that the property is available to rent.
+  // A tenant or helper adding a property they know about is contributing
+  // knowledge, not advertising a vacancy — so the "Available for rent" badge
+  // must not appear for them.
+  const isAvailable = isOwnerListing && formData.get("isAvailable") !== null;
 
   const imageFiles = formData
     .getAll("images")
@@ -100,6 +150,10 @@ export async function createProperty(
       maps_url: getTextValue(formData, "mapsUrl") || null,
       notes: getTextValue(formData, "notes") || null,
       status: "pending",
+      submitted_as: submittedAs,
+      asking_rent: askingRent.value,
+      security_deposit: securityDeposit.value,
+      is_available: isAvailable,
       created_by: user.id,
     })
     .select("id, slug")
@@ -153,4 +207,176 @@ export async function createProperty(
   }
 
   return { slug: property.slug };
+}
+
+type DeletePropertyResult = {
+  error?: string;
+  success?: boolean;
+};
+
+// Removes a submission the caller created, while it is still pending approval.
+//
+// This is the only "correct my mistake" mechanism the product offers, and it
+// is deliberately narrow. A property's identity is immutable (CLAUDE.md §26)
+// because reviews attach to it permanently, so amending a submission is not
+// possible — removing a still-pending one and adding it again is. Once a
+// property is published it is part of the shared record and can no longer be
+// withdrawn this way.
+//
+// The database remains the authority: the "Property creators can remove their
+// pending properties" policy (migration 20260801000001) already scopes DELETE
+// to `created_by = auth.uid() and status = 'pending'`. The filters below
+// mirror that so the UI never offers what the database would refuse, and so a
+// forged slug fails the same way a forged UI would.
+export async function deletePendingProperty(
+  formData: FormData,
+): Promise<DeletePropertyResult> {
+  const slug = getTextValue(formData, "slug");
+  if (!slug) return { error: "Missing property." };
+
+  const supabase = await createClient();
+  const { user, error: authFailure } = await requireUser(
+    supabase,
+    "Please sign in to manage your submissions.",
+  );
+  if (!user) return { error: authFailure };
+
+  const { data: property } = await supabase
+    .from("properties")
+    .select("id, status")
+    .eq("slug", slug)
+    .eq("created_by", user.id)
+    .maybeSingle();
+
+  if (!property) {
+    return { error: "That submission could not be found in your account." };
+  }
+
+  if (property.status !== "pending") {
+    return {
+      error:
+        "This property has already been reviewed, so it can no longer be removed.",
+    };
+  }
+
+  // Read the image paths BEFORE deleting the property: property_images has
+  // `on delete cascade` on property_id, so the rows holding these paths are
+  // destroyed by the delete below and the storage objects would be
+  // unreachable afterwards.
+  const { data: imageRows } = await supabase
+    .from("property_images")
+    .select("storage_path")
+    .eq("property_id", property.id);
+
+  // Confine removal to this property's own folder. Storage RLS independently
+  // restricts deletes to `properties/<auth.uid()>/...`, so a path would have
+  // to satisfy both this prefix and that policy to be removed — a tampered
+  // storage_path cannot reach another property's or another user's objects.
+  const pathPrefix = `properties/${user.id}/${property.id}/`;
+  const storagePaths = (imageRows ?? [])
+    .map((row) => row.storage_path)
+    .filter((path): path is string => typeof path === "string" && path.startsWith(pathPrefix));
+
+  const { data: deleted, error: deleteError } = await supabase
+    .from("properties")
+    .delete()
+    .eq("id", property.id)
+    .eq("created_by", user.id)
+    .eq("status", "pending")
+    .select("id");
+
+  if (deleteError) {
+    return { error: "Unable to remove this submission. Please try again." };
+  }
+
+  // RLS filters rather than errors when a row isn't removable, so an empty
+  // result means the policy refused it — not a transient failure.
+  if (!deleted || deleted.length === 0) {
+    return { error: "That submission could not be removed from your account." };
+  }
+
+  // Best-effort and deliberately last: the row is already gone, so a storage
+  // failure leaves orphaned files rather than a property whose images have
+  // been destroyed underneath it. Never surfaced as an error — the user's
+  // action succeeded.
+  if (storagePaths.length > 0) {
+    try {
+      await supabase.storage.from("property-images").remove(storagePaths);
+    } catch {
+      // Intentionally ignored — see comment above.
+    }
+  }
+
+  revalidatePath("/account/properties");
+  revalidatePath("/account");
+  revalidatePath("/");
+  return { success: true };
+}
+
+type UpdateListingResult = {
+  error?: string;
+  success?: boolean;
+};
+
+// Updates only the commercial fields of a property the caller created.
+//
+// NOT YET FUNCTIONAL. `properties` still has no UPDATE policy, so every call
+// here is denied by RLS and returns "That listing could not be found in your
+// account." The privilege migration this depends on is deliberately deferred
+// (see the note in 20260808000000_add_listing_fields_and_submitter_role.sql).
+//
+// The security boundary is the database, not this function: that migration
+// will revoke blanket UPDATE and grant it only on
+// (asking_rent, security_deposit, currency, is_available), and the
+// "Creators can update their own listing fields" policy scopes rows to
+// created_by = auth.uid(). Identity columns — name, address, slug, status,
+// submitted_as — are unreachable through the Data API entirely, so a
+// property's identity can never drift away from the reviews attached to it.
+export async function updatePropertyListing(
+  formData: FormData,
+): Promise<UpdateListingResult> {
+  const slug = getTextValue(formData, "slug");
+  if (!slug) return { error: "Missing property." };
+
+  const askingRent = parseAmount(getTextValue(formData, "askingRent"), "Monthly rent");
+  const securityDeposit = parseAmount(
+    getTextValue(formData, "securityDeposit"),
+    "Security deposit",
+  );
+
+  const amountError = askingRent.error ?? securityDeposit.error;
+  if (amountError) return { error: amountError };
+
+  const supabase = await createClient();
+  const { user, error: authFailure } = await requireUser(
+    supabase,
+    "Please sign in to manage your listing.",
+  );
+
+  if (!user) return { error: authFailure };
+
+  const { data, error } = await supabase
+    .from("properties")
+    .update({
+      asking_rent: askingRent.value,
+      security_deposit: securityDeposit.value,
+      is_available: formData.get("isAvailable") !== null,
+    })
+    .eq("slug", slug)
+    .eq("created_by", user.id)
+    .select("slug");
+
+  if (error) {
+    return { error: "Unable to update your listing. Please try again." };
+  }
+
+  // RLS filters rather than errors when the row isn't the caller's, so an
+  // empty result means "not yours" (or gone), not a transient failure.
+  if (!data || data.length === 0) {
+    return { error: "That listing could not be found in your account." };
+  }
+
+  revalidatePath(`/property/${slug}`);
+  revalidatePath("/account/properties");
+  return { success: true };
 }

@@ -96,17 +96,22 @@ Supabase (Postgres + Auth + Storage), authorization enforced via Row Level Secur
 
 ```
 app/
-  actions/         Server Actions: auth.ts, property.ts, review.ts, verification.ts
+  actions/         Server Actions: auth.ts, property.ts (createProperty + updatePropertyListing), review.ts, verification.ts, profile.ts
   auth/callback/    OAuth / magic-link callback route handler
-  add-property/     Add-property page
+  account/          Authenticated account area (see §26): layout.tsx (auth gate + nav),
+                    overview, properties/, properties/[slug]/edit, reviews/, verifications/, profile/
+  add-property/     Add-property page (role-aware via ?as=owner|tenant|helper)
   login/, signup/   Auth pages
   property/         /property listing, /property/[slug] detail, review + verify sub-routes
   layout.tsx, page.tsx, globals.css
 
 components/
-  property/         PropertyDiscovery.tsx (PropertyList, FiltersButton, filterProperties, default PropertyDiscovery page shell — the canonical search results page, §22), HomeDiscovery.tsx (homepage shared-state owner, see §4), HomeSearch.tsx (city+area+text search bar, reused by the homepage, /property, and DetailPageSearch — see §20), DetailPageSearch.tsx (Property Detail page's search widget, composes HomeSearch + FiltersButton, no logic of its own), RelatedProperties.tsx (Similar/Top Reviewed sections + "Continue Exploring", see §23), VerifyStayPrompt.tsx (modal prompting review-first when Verify Stay is clicked before a review exists), PropertyMap.tsx (MapLibre + OSM), DualRangeSlider.tsx, AreaMultiSelect.tsx, PropertyGallery, ReviewSection, ReviewCard, PropertyShareButton. `AreaSelector.tsx` (single-select) is no longer used anywhere — superseded by `AreaMultiSelect.tsx` — kept but inert, not deleted (see §16's "treat existing omissions as intentional").
+  property/         PropertyDiscovery.tsx (PropertyList, FiltersButton, filterProperties, default PropertyDiscovery page shell — the canonical search results page, §22), HomeDiscovery.tsx (homepage shared-state owner, see §4), HomeSearch.tsx (city+area+text search bar, reused by the homepage, /property, and DetailPageSearch — see §20), DetailPageSearch.tsx (Property Detail page's search widget, composes HomeSearch + FiltersButton, no logic of its own), RelatedProperties.tsx (Similar/Top Reviewed sections + "Continue Exploring", see §23), ContributionStatusCards.tsx (the Property/Review/Stay Verification status cards on the Property Detail page — always visible, never hidden behind a click, see §25), PropertyMap.tsx (MapLibre + OSM), DualRangeSlider.tsx, AreaMultiSelect.tsx, PropertyGallery, ReviewSection, ReviewCard, PropertyShareButton. `AreaSelector.tsx` (single-select) is no longer used anywhere — superseded by `AreaMultiSelect.tsx` — kept but inert, not deleted (see §16's "treat existing omissions as intentional"). `VerifyStayPrompt.tsx` (a click-to-reveal modal, an earlier iteration of the verify-before-review guidance) was removed in favor of ContributionStatusCards' always-visible card.
   review/           ReviewForm, VerifyStayForm, StarRating, reviewCategories.ts
-  add-property/     PropertyForm, InfoCard, SectionTitle
+  add-property/     PropertyForm, RoleSelector (owner/tenant/helper claim, see §26), InfoCard, SectionTitle
+  account/          AccountSectionNav, AccountPrimitives (StatusPill/EmptyState shared by the
+                    four account sections), ProfileForm, ListingEditForm
+  home/             ListYourPropertySection (the homepage's role entry points, §26)
   login/            LoginForm, SignupForm
   shared/           Button, InputField, TextAreaField, AuthCard, AuthHeader, AuthLayout, AccountMenu, TrustBadge, Logo, AuthDivider, UseMyLocationButton
   SearchBar.tsx, CitySelector.tsx   (top-level; not currently in shared/ — see §13)
@@ -162,7 +167,9 @@ public/                static assets (currently empty — default create-next-ap
 4. `20260805000000_add_property_availability.sql` — adds `properties.is_available boolean not null default true`, powering the "Available for rent" card badge. No RLS change needed (no column-level security in this schema — a new column on an already-visible row is covered by the existing row-level policy). There is still no UI for anyone to actually set this to `false` — every property shows as available until that's built.
 5. `20260805000001_expand_review_fields.sql` — adds the deposit/owner-trait/would-rent-again columns `ReviewForm` collects, plus 7 new `review_categories` rows, so the review-submission data-loss bug (formerly listed in §13) has somewhere to land. Intentionally one-time-only, not idempotent (documented in the file itself) — matches this project's migration-history convention.
 6. `20260805000002_create_review_rpc.sql` — `public.create_review(...)`, `SECURITY INVOKER`, makes review + category-rating inserts atomic via a single RPC instead of two sequential client-side inserts. Safe to re-run (`CREATE OR REPLACE`).
-7. `20260805000003_grant_data_api_privileges.sql` — grants `SELECT/INSERT/UPDATE/DELETE`/sequence `USAGE` to `anon`/`authenticated`/`service_role`. **Fixes a real bug found via local verification**: tables created by hand-written migrations only got `TRUNCATE/REFERENCES/TRIGGER` by default (confirmed via `pg_default_acl` on a fresh Supabase CLI instance) — without this grant, a genuinely fresh database applies every migration without SQL error but silently denies all anon/authenticated requests, since Postgres checks table-level privileges before RLS. RLS remains the sole row-level authorization boundary; this only unblocks the table-level check it sits behind.
+7. `20260805000003_grant_data_api_privileges.sql` — grants `SELECT/INSERT/UPDATE/DELETE`/sequence `USAGE` to `anon`/`authenticated`/`service_role`. **Partially superseded for `properties` by migration 9** — see §12. **Fixes a real bug found via local verification**: tables created by hand-written migrations only got `TRUNCATE/REFERENCES/TRIGGER` by default (confirmed via `pg_default_acl` on a fresh Supabase CLI instance) — without this grant, a genuinely fresh database applies every migration without SQL error but silently denies all anon/authenticated requests, since Postgres checks table-level privileges before RLS. RLS remains the sole row-level authorization boundary; this only unblocks the table-level check it sits behind.
+8. `20260807000000_allow_owner_reviews_on_pending_properties.sql` — widens `reviews` INSERT and SELECT so a property's creator can write and read their own review while the property is still pending. Superseded on the INSERT side by migration 9.
+9. `20260808000000_add_listing_fields_and_submitter_role.sql` — adds `properties.submitted_as` (enum `owner`/`tenant`/`helper`, **nullable** = legacy/unknown) and `properties.security_deposit`; replaces blanket table-level UPDATE on `properties` with a **column-level grant** on `(asking_rent, security_deposit, currency, is_available)` plus a `created_by = auth.uid()` UPDATE policy; and narrows the `reviews` INSERT policy so an owner cannot review the property they listed. See §26.
 
 **[Verified Fact]** RLS is enabled on every `public` table. Public (anon) reads are generally scoped to `status = 'published'` (properties) or to records whose parent property is published; write access is scoped to `auth.uid()` matching the relevant owner/author column.
 
@@ -227,6 +234,7 @@ This is intentionally not built as in-app tooling for MVP — RLS has no UPDATE 
 **[Current Working Assumption — recommended by Claude, not yet ratified by product owner.]** Based on blast radius and the trust-sensitive nature of this product, the following are recommended as requiring explicit approval before any change, beyond the general workflow in §16:
 
 - RLS policies and any migration file under `supabase/migrations/`.
+- **The column-level UPDATE grant on `properties`** (migration 9). It is what makes a property's identity — name, address, slug, status, `submitted_as` — unreachable through the Data API. A future `grant ... update on all tables in schema public` (as migration 7 does) would **silently revert it** and re-expose those columns. Any new grants migration must exclude `public.properties` from a blanket UPDATE grant.
 - The authentication flow (`proxy.ts`, `lib/supabase/*`, `app/auth/callback/route.ts`).
 - The database schema (table shapes, enums, constraints).
 - Which visual/brand palette is canonical (until the Open Question in §9 is resolved).
@@ -338,6 +346,36 @@ A section that would be empty, or that would exactly duplicate another section's
 ## 24. Developer Navigation
 
 **[Documented Product Decision — stated directly by the product owner in conversation.]** The Developer Navigation section inside the Account menu (`components/shared/DeveloperNavigationMenu.tsx`, gated by `NEXT_PUBLIC_SHOW_DEV_NAV`) intentionally lists every route in the app, including the canonical search results page (`/property`) and pages not part of normal end-user navigation. This exists purely for developer productivity during active development — a single place to confirm every page still exists and works, so nothing is forgotten as the app grows — and is not user-facing product navigation. It must be disabled before public launch via the existing feature flag (already off by default — see `.env.example`). Badge wording should always describe *why* a route can't be clicked right now in accurate terms (e.g. "Context Required" for a page that needs live data such as a `reviewId`, "System Route" for a route that's never meant to be manually navigated, like the OAuth callback) — never "Coming Soon" or "Empty," which wrongly imply the feature itself is unfinished.
+
+## 25. Add Property & the Property Detail contribution dashboard
+
+**[Documented Product Decision — stated directly by the product owner in conversation.]** `app/add-property/page.tsx` / `PropertyForm.tsx` stay focused on property submission only — no inline review or verification capture there, deliberately, even though earlier drafts of this feature considered it. Once submitted, the user is redirected straight to the new property's detail page, which acts as that viewer's permanent, always-visible dashboard for their own contribution to that property via three status cards (`components/property/ContributionStatusCards.tsx`): **Property** (Pending Approval / Published / Not Approved), **Review** (Write Review → / Review Pending Approval / Review Published), and **Stay Verification** (a disabled state explaining verification requires a review first, until one exists → Verify My Stay → / Verification Pending / Verified Tenant). These cards are never hidden behind a click — showing the entire workflow up front was an explicit, deliberate choice over the click-to-reveal modal (`VerifyStayPrompt.tsx`) an earlier iteration used, which this superseded and removed.
+
+**[Documented Product Decision — amended, see §26.]** The Review card above applies to a `tenant`/`helper`/legacy submission. A property submitted **as its owner** shows a Listing card instead and **no** Review or Verification card — an owner cannot review their own property. See §26.
+
+**[Documented Product Decision — stated directly by the product owner in conversation.]** Stay Verification remains, permanently, tied to an existing review — `review_verifications.review_id` is `NOT NULL` and this is intentionally **not** being changed (no nullable `review_id`, no `property_id` column added to that table). The one deliberate schema change is narrower and lives entirely in `reviews`' own RLS: a property's creator can write and read their own review while the property is still pending approval (previously, review creation/reads were gated on the *property* being published, which made it impossible to review your own not-yet-approved property at all). Verification continuing to require a review is treated as a feature, not a limitation — it's explicitly framed as "reviews and verification are processed together to protect the integrity of the platform," not a technical gap to eventually close.
+
+## 26. Roles, listings, and the account area
+
+**[Documented Product Decision — stated directly by the product owner in conversation.]** RentalIntel supports **listing** (an owner advertising an available property) alongside its original knowledge contributions, using the **same `properties` entity**. There is deliberately **no `listings` table**, **no `owner_id`**, and **no property-claim flow**. A separate `listings` table earns its place only when rent *history over time* is needed (roadmap V3); until then it would force a join on every discovery query and either a second detail page or a merge layer.
+
+**Provenance, not ownership.** `properties.submitted_as` (`owner` / `tenant` / `helper`, **nullable** — NULL means a legacy row of unknown provenance) records what the submitter *claims* their relationship to the property is. It is never verified and must never be presented as if it were: the property page labels an owner submission "Listed by owner (unverified)", the same honesty pattern the product already applies to unverified reviews. Because it is self-declared, the owner self-review block is a **good-faith guard against casual self-review, not fraud prevention** — an owner who claims `tenant` cannot be stopped by any schema. The real defenses remain stay verification (documents) and 100% manual approval.
+
+**One submission route.** `/add-property` is the only submission flow; `?as=owner|tenant|helper` seeds the role selector, which is always shown and always re-validated server-side. There is no `/list-property`, and `/add-property` was not renamed. The three roles differ only in which fields appear and what happens afterwards:
+
+| Role | Listing fields | Can review | Can verify |
+|---|---|---|---|
+| `owner` | rent, deposit, availability | **No** — blocked in RLS *and* at `/property/[slug]/review` | No |
+| `tenant` | none (a tenant's paid rent belongs on their review, not the shared property record) | Yes | Yes, after a review |
+| `helper` | none | No — blocked in the UI only, deliberately: "owner" is a permanent commercial conflict, "helper" is a temporary state | No |
+
+**Property identity is immutable.** Migration 9 replaces blanket UPDATE on `properties` with a column-level grant, so `name`, `address_*`, `area`, `city`, `slug`, `status`, `created_by` and `submitted_as` are unreachable through the Data API **for everyone, including the creator**. This is what guarantees a property's identity can never drift away from the reviews permanently attached to it. Creating a property record therefore grants *commercial editing rights only* — never power over reviews, identity, or publication. See §12 for the fragility of this mechanism.
+
+**Two orthogonal state axes, never merged.** `status` is the *moderation* state (human-gated, Dashboard-only); `is_available` is the *commercial* state (creator-controlled, any time). `is_available = false` removes only the "Available for rent" badge — the property page, its reviews and its history stay live and fully searchable, because a property's rental history must outlive any particular tenancy. This is why `'rented'` is deliberately **not** a `property_status` value, and why `getDiscoveryProperties` filters on `status` only.
+
+**The availability badge is owner-only.** Before this work, `is_available` defaulted to `true` and nothing ever wrote it, so *every* property — including a tenant's contribution about the occupied flat they live in — was badged "Available for rent." That was false. The badge now requires `submitted_as = 'owner' && isAvailable`; legacy rows (NULL) correctly show nothing, and no data was backfilled.
+
+**`/account` is intentionally thin.** Five routes behind one `layout.tsx` that owns the only chrome (auth gate + section nav): overview (counts only), properties, reviews (reuses `ReviewCard`), verifications, profile (`display_name`, the sole editable `profiles` column). **Every one of these queries is permitted by pre-existing RLS — this area added no policy.** Explicitly excluded and to stay excluded: analytics, charts, activity feeds, messaging, enquiries, notifications, ownership claims, admin UI, and wishlist UI.
 
 ---
 

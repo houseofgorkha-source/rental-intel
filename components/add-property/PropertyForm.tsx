@@ -7,6 +7,8 @@ import InputField from "../shared/InputField";
 import TextAreaField from "../shared/TextAreaField";
 import SectionTitle from "./SectionTitle";
 import InfoCard from "./InfoCard";
+import RoleSelector from "./RoleSelector";
+import type { SubmitterRole } from "@/lib/property-roles";
 import Button from "../shared/Button";
 import UseMyLocationButton from "../shared/UseMyLocationButton";
 import { findNearestArea, findNearestCity, type Coordinates } from "@/lib/area-coordinates";
@@ -23,9 +25,17 @@ function getImageError(files: File[]) {
   return null;
 }
 
-export default function PropertyForm() {
+type PropertyFormProps = {
+  // Seeded from /add-property?as=... when the user arrived via one of the
+  // homepage "List Your Property" entry points. Always re-shown as a
+  // selection they can change, never hidden.
+  initialRole?: SubmitterRole | null;
+};
+
+export default function PropertyForm({ initialRole = null }: PropertyFormProps) {
   const [submissionError, setSubmissionError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [role, setRole] = useState<SubmitterRole | null>(initialRole);
   const [city, setCity] = useState("");
   const [area, setArea] = useState("");
   const router = useRouter();
@@ -94,6 +104,18 @@ export default function PropertyForm() {
 
       <form onSubmit={handleSubmit}>
         <div className="mt-10 rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
+
+          <SectionTitle
+            title="What's your relationship to this property?"
+            description="This tells renters where the information came from. We show it as an unverified claim."
+          />
+
+          <RoleSelector value={role} onChange={setRole} />
+
+        </div>
+
+        {role && (
+        <div className="mt-8 rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
 
         <SectionTitle
           title="Property Details"
@@ -192,6 +214,60 @@ export default function PropertyForm() {
         </div>
 
         </div>
+        )}
+
+        {/* Listing details are an owner's commercial offer, so they're only
+            collected from owners. What a tenant actually paid is a different
+            fact and belongs on their review, not on the property. */}
+        {role === "owner" && (
+          <div className="mt-8 rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
+
+            <SectionTitle
+              title="Listing Details"
+              description="What you're asking for this property. You can change these any time from your account."
+            />
+
+            <div className="space-y-6">
+
+              <div className="grid gap-6 md:grid-cols-2">
+
+                <InputField
+                  label="Monthly Rent (₹)"
+                  placeholder="28000"
+                  name="askingRent"
+                  type="number"
+                  min="0"
+                  step="500"
+                />
+
+                <InputField
+                  label="Security Deposit (₹)"
+                  placeholder="150000"
+                  name="securityDeposit"
+                  type="number"
+                  min="0"
+                  step="1000"
+                />
+
+              </div>
+
+              {/* Deliberately unchecked by default: advertising a property as
+                  available is a claim the owner must opt into, not something
+                  they opt out of. An unnoticed pre-ticked box would badge
+                  occupied properties as vacant. */}
+              <label className="flex items-center gap-2 text-gray-700">
+                <input
+                  type="checkbox"
+                  name="isAvailable"
+                  className="accent-blue-600"
+                />
+                This property is currently available to rent
+              </label>
+
+            </div>
+
+          </div>
+        )}
 
         {submissionError && (
           <p role="alert" className="mt-6 text-sm text-red-600">
@@ -203,7 +279,7 @@ export default function PropertyForm() {
           type="submit"
           variant="primary"
           fullWidth
-          disabled={isSubmitting}
+          disabled={isSubmitting || !role}
           className="mt-10"
         >
           {isSubmitting ? "Submitting..." : "Submit Property"}

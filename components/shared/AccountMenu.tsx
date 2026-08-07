@@ -11,6 +11,7 @@ type AccountMenuProps = {
   // NEXT_PUBLIC_SHOW_DEV_NAV is set. Always null/undefined otherwise, so
   // these props are inert in production.
   sampleProperty?: { slug: string } | null;
+  sampleOwnProperty?: { slug: string } | null;
   sampleReview?: { slug: string; reviewId: string } | null;
 };
 
@@ -19,6 +20,7 @@ const SHOW_DEV_NAV = process.env.NEXT_PUBLIC_SHOW_DEV_NAV === "true";
 export default function AccountMenu({
   email,
   sampleProperty = null,
+  sampleOwnProperty = null,
   sampleReview = null,
 }: AccountMenuProps) {
   const menuRef = useRef<HTMLDetailsElement>(null);
@@ -52,13 +54,27 @@ export default function AccountMenu({
         }`}
       >
         <p className="truncate px-3 py-2 text-xs text-gray-500">{email}</p>
-        <button
-          type="button"
+        <Link
+          href="/account"
           onClick={closeMenu}
-          className="block w-full px-3 py-2 text-left text-sm text-gray-400"
+          className="block rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600"
         >
-          My Profile (coming soon)
-        </button>
+          My Account
+        </Link>
+        <Link
+          href="/account/properties"
+          onClick={closeMenu}
+          className="block rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600"
+        >
+          My Properties
+        </Link>
+        <Link
+          href="/account/reviews"
+          onClick={closeMenu}
+          className="block rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600"
+        >
+          My Reviews
+        </Link>
         <Link
           href="/add-property"
           onClick={closeMenu}
@@ -78,6 +94,7 @@ export default function AccountMenu({
         {SHOW_DEV_NAV && (
           <DeveloperNavigationMenu
             sampleProperty={sampleProperty}
+            sampleOwnProperty={sampleOwnProperty}
             sampleReview={sampleReview}
             onNavigate={closeMenu}
           />

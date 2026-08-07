@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import PropertyGallery from "@/components/property/PropertyGallery";
 import ReviewSection from "@/components/property/ReviewSection";
 import PropertyShareButton from "@/components/property/PropertyShareButton";
-import VerifyStayPrompt from "@/components/property/VerifyStayPrompt";
+import ContributionStatusCards from "@/components/property/ContributionStatusCards";
 import RelatedProperties from "@/components/property/RelatedProperties";
 import type { Review } from "@/components/property/ReviewCard";
 import { createClient } from "@/lib/supabase/server";
@@ -72,7 +72,9 @@ export default async function PropertyPage({
 
   if (error || !property) notFound();
 
-  const [{ data: propertyImages }, { data: reviewRows }, cityProperties] = await Promise.all([
+  const { data: { user } } = await supabase.auth.getUser();
+
+  const [{ data: propertyImages }, { data: reviewRows }, cityProperties, { data: ownReview }] = await Promise.all([
     supabase
       .from("property_images")
       .select("storage_path, alt_text")
@@ -86,6 +88,18 @@ export default async function PropertyPage({
       .eq("property_id", property.id)
       .order("created_at", { ascending: false }),
     getDiscoveryProperties(DEFAULT_CITY),
+    // The current viewer's own review on this property, if any — drives the
+    // "Review"/"Verify My Stay" status cards below. Readable even on a
+    // still-pending property thanks to the "author can read their own
+    // review" RLS policy (reviews are otherwise published-property-only).
+    user
+      ? supabase
+          .from("reviews")
+          .select("id, verification_status")
+          .eq("property_id", property.id)
+          .eq("author_id", user.id)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
   ]);
 
   const images =
@@ -122,11 +136,53 @@ export default async function PropertyPage({
   );
   const latestReview = propertyReviews[0];
 
+  // Rent and deposit are only shown as listing facts when they came from an
+  // owner listing — that's the only context in which they're an offer rather
+  // than an unset column.
+  const isOwnerListing = property.submitted_as === "owner";
+
+  // Drives the trust badge below. A verified review is the only evidence this
+  // schema holds that anyone has proven they stayed here.
+  const hasVerifiedReview = propertyReviews.some((review) => review.verified);
+
+  // Provenance is a self-declared claim, never a verified fact — the owner
+  // case says so explicitly, since that's the one with a commercial
+  // incentive to misstate it.
+  const provenanceLabel =
+    property.submitted_as === "owner"
+      ? "🏠 Listed by owner (unverified)"
+      : property.submitted_as === "tenant"
+        ? "🔑 Added by a resident"
+        : property.submitted_as === "helper"
+          ? "🤝 Added by a community member"
+          : null;
+
+  // A property only carries commercial facts when it was submitted as an
+  // owner listing. For a tenant or helper contribution asking_rent is
+  // structurally always null, so showing "Rent: Not available" stated a
+  // missing value where there is no value to miss.
+  //
+  // `status` is deliberately absent: it is the moderation state, not a fact
+  // about the property, and the raw enum ("pending") leaked to every visitor.
+  // The creator already sees it, humanised, in ContributionStatusCards.
   const facts = [
-    { label: "Rent", value: formatRent(property.asking_rent) },
+    ...(isOwnerListing
+      ? [
+          { label: "Rent", value: formatRent(property.asking_rent) },
+          {
+            label: "Security deposit",
+            value: formatRent(property.security_deposit),
+          },
+          {
+            label: "Availability",
+            value: property.is_available
+              ? "Available for rent"
+              : "Not currently available",
+          },
+        ]
+      : []),
     { label: "Area", value: property.area },
     { label: "Address", value: property.address_line_1 },
-    { label: "Status", value: property.status },
     { label: "Notes", value: property.notes ?? "Not available" },
   ];
 
@@ -156,7 +212,11 @@ export default async function PropertyPage({
         )}
 
         <div className="mt-8 grid gap-12 lg:grid-cols-[minmax(0,7fr)_minmax(17rem,3fr)] lg:items-start">
-          <div>
+          {/* min-w-0: a grid item defaults to min-width:auto and refuses to
+              shrink below its content's intrinsic minimum, which pushed this
+              column to 430px inside a 342px grid at 390px wide and scrolled
+              the whole page sideways. Same fix HomeDiscovery already uses. */}
+          <div className="min-w-0">
             <section aria-labelledby="property-title">
               <p className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
                 Rental property
@@ -175,25 +235,32 @@ export default async function PropertyPage({
                 <span className="text-slate-500">
                   {propertyReviews.length} {propertyReviews.length === 1 ? "review" : "reviews"}
                 </span>
-                <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5 font-medium text-slate-600">
-                  Community verified
-                </span>
+                {/* Only shown when a review on this property has actually
+                    been verified. It previously rendered unconditionally —
+                    including on properties with no reviews at all — which
+                    asserted a trust signal the data did not support. Named
+                    for the signal it uses, not a vaguer "Community
+                    verified". */}
+                {hasVerifiedReview && (
+                  <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 font-medium text-emerald-700">
+                    ✓ Verified resident review
+                  </span>
+                )}
+                {provenanceLabel && (
+                  <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5 font-medium text-slate-600">
+                    {provenanceLabel}
+                  </span>
+                )}
               </div>
 
-              <div className="mt-7 grid gap-3 sm:grid-cols-3 lg:hidden">
-                {property.status === "published" ? (
-                  <Link
-                    href={`/property/${property.slug}/review`}
-                    className="flex items-center justify-center rounded-xl bg-slate-950 px-4 py-3 text-sm font-medium text-white transition hover:bg-slate-800"
-                  >
-                    Write Review
-                  </Link>
-                ) : (
-                  <p className="rounded-xl bg-slate-100 px-4 py-3 text-center text-sm font-medium text-slate-600">
-                    Pending approval
-                  </p>
-                )}
-                <VerifyStayPrompt propertySlug={property.slug} />
+              <div className="mt-7 flex flex-col gap-4 lg:hidden">
+                <ContributionStatusCards
+                  propertySlug={property.slug}
+                  propertyStatus={property.status}
+                  submittedAs={property.submitted_as}
+                  isAvailable={property.is_available}
+                  ownReview={ownReview}
+                />
                 <PropertyShareButton propertyName={property.name} />
               </div>
             </section>
@@ -247,7 +314,7 @@ export default async function PropertyPage({
             </section>
 
             <section id="reviews" aria-label="Property reviews" className="mt-14 border-t border-slate-200 pt-1">
-              <ReviewSection propertySlug={property.slug} propertyReviews={propertyReviews} recommendationPercentage={recommendationPercentage} recommendedCount={recommendedCount} canWriteReview={property.status === "published"} />
+              <ReviewSection propertySlug={property.slug} propertyReviews={propertyReviews} recommendationPercentage={recommendationPercentage} recommendedCount={recommendedCount} canWriteReview={(property.status === "published" || property.created_by === user?.id) && !(isOwnerListing && property.created_by === user?.id)} />
             </section>
 
             <section aria-labelledby="timeline-heading" className="mt-14 border-t border-slate-200 pt-10">
@@ -282,11 +349,13 @@ export default async function PropertyPage({
           <aside className="hidden lg:sticky lg:top-8 lg:block">
             <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_20px_50px_-40px_rgba(15,23,42,0.4)]">
               <p className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">Your next step</p>
-              <div className="mt-5 space-y-3">
-                {property.status === "published" ? <Link href={`/property/${property.slug}/review`} className="flex w-full items-center justify-center rounded-xl bg-slate-950 px-4 py-3 text-sm font-medium text-white transition hover:bg-slate-800">Write Review</Link> : <p className="rounded-xl bg-slate-100 px-4 py-3 text-center text-sm font-medium text-slate-600">Pending approval</p>}
-                <VerifyStayPrompt
+              <div className="mt-5 flex flex-col gap-3">
+                <ContributionStatusCards
                   propertySlug={property.slug}
-                  className="flex w-full items-center justify-center rounded-xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-800 transition hover:bg-slate-50"
+                  propertyStatus={property.status}
+                  submittedAs={property.submitted_as}
+                  isAvailable={property.is_available}
+                  ownReview={ownReview}
                 />
                 <PropertyShareButton propertyName={property.name} />
               </div>

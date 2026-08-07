@@ -25,6 +25,10 @@ import type { DiscoveryProperty } from "@/lib/property-discovery";
 
 type HomeDiscoveryProps = {
   properties: DiscoveryProperty[];
+  // Static sections rendered below the hero grid, inside the same container
+  // so they inherit its width and padding exactly. Passed as children so
+  // they can stay server components rather than joining this client bundle.
+  children?: React.ReactNode;
 };
 
 const CITY_ZOOM = 11;
@@ -39,7 +43,7 @@ const AREA_ZOOM = 14;
 // called exactly once, here, and the resulting array is handed to both the
 // map and the list — they can't disagree about what's visible because
 // they're literally looking at the same array reference.
-export default function HomeDiscovery({ properties }: HomeDiscoveryProps) {
+export default function HomeDiscovery({ properties, children }: HomeDiscoveryProps) {
   const [selectedCity, setSelectedCity] = useState(DEFAULT_CITY);
   const [selectedAreas, setSelectedAreas] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -220,6 +224,8 @@ export default function HomeDiscovery({ properties }: HomeDiscoveryProps) {
             </div>
           </section>
         </div>
+
+        {children}
       </div>
     </main>
   );

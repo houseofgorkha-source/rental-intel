@@ -15,6 +15,9 @@ type DevSection = {
 
 type DeveloperNavigationMenuProps = {
   sampleProperty: { slug: string } | null;
+  // The signed-in user's own property — the listing-edit route rejects
+  // anything they didn't create, so it can't reuse `sampleProperty`.
+  sampleOwnProperty: { slug: string } | null;
   sampleReview: { slug: string; reviewId: string } | null;
   onNavigate: () => void;
 };
@@ -28,6 +31,7 @@ type DeveloperNavigationMenuProps = {
 // real exists to link to, never a fake/dead link.
 export default function DeveloperNavigationMenu({
   sampleProperty,
+  sampleOwnProperty,
   sampleReview,
   onNavigate,
 }: DeveloperNavigationMenuProps) {
@@ -60,6 +64,24 @@ export default function DeveloperNavigationMenu({
       routes: [
         { label: "Add Property", route: "/add-property", href: "/add-property", kind: "page" },
         {
+          label: "Add Property (Owner)",
+          route: "/add-property?as=owner",
+          href: "/add-property?as=owner",
+          kind: "page",
+        },
+        {
+          label: "Add Property (Tenant)",
+          route: "/add-property?as=tenant",
+          href: "/add-property?as=tenant",
+          kind: "page",
+        },
+        {
+          label: "Add Property (Helper)",
+          route: "/add-property?as=helper",
+          href: "/add-property?as=helper",
+          kind: "page",
+        },
+        {
           label: "Review Property",
           route: "/property/[slug]/review",
           href: reviewFormHref,
@@ -85,6 +107,30 @@ export default function DeveloperNavigationMenu({
     {
       title: "Account",
       routes: [
+        { label: "Account Overview", route: "/account", href: "/account", kind: "page" },
+        {
+          label: "My Properties",
+          route: "/account/properties",
+          href: "/account/properties",
+          kind: "page",
+        },
+        {
+          label: "Manage Listing",
+          route: "/account/properties/[slug]/edit",
+          href: sampleOwnProperty
+            ? `/account/properties/${sampleOwnProperty.slug}/edit`
+            : null,
+          kind: "page",
+          badge: sampleOwnProperty ? undefined : "Context Required",
+        },
+        { label: "My Reviews", route: "/account/reviews", href: "/account/reviews", kind: "page" },
+        {
+          label: "My Verifications",
+          route: "/account/verifications",
+          href: "/account/verifications",
+          kind: "page",
+        },
+        { label: "Profile", route: "/account/profile", href: "/account/profile", kind: "page" },
         { label: "Login", route: "/login", href: "/login", kind: "page" },
         { label: "Signup", route: "/signup", href: "/signup", kind: "page" },
       ],

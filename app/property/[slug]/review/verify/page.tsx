@@ -22,12 +22,17 @@ export default async function VerifyStayPage({
 
 const { data: property, error } = await supabase
   .from("properties")
-  .select("id, name, slug")
+  .select("id, name, slug, status, created_by")
   .eq("slug", slug)
-  .eq("status", "published")
   .single();
 
 if (error || !property) {
+  notFound();
+}
+
+// Same "published, or the property's own creator" rule as the review page —
+// verification just additionally requires a review to already exist below.
+if (property.status !== "published" && property.created_by !== user.id) {
   notFound();
 }
 
@@ -43,11 +48,28 @@ if (error || !property) {
 
   if (reviewError || !review) notFound();
 
+  // The document types actually submitted, not just whether a verification
+  // exists. Without this the form can only say "something was submitted",
+  // which is what made all four document cards claim to be submitted when at
+  // most one usually was. Readable via the existing "Users can read their own
+  // verification document metadata" policy — no schema or RLS change.
   const { data: verification } = await supabase
     .from("review_verifications")
-    .select("id")
+    .select("id, status, verification_documents(document_type)")
     .eq("review_id", review.id)
     .maybeSingle();
 
-  return <VerifyStayForm propertyName={property.name} propertySlug={property.slug} reviewId={review.id} isSubmitted={Boolean(verification)} />;
+  const submittedTypes =
+    verification?.verification_documents?.map((document) => document.document_type) ?? [];
+
+  return (
+    <VerifyStayForm
+      propertyName={property.name}
+      propertySlug={property.slug}
+      reviewId={review.id}
+      isSubmitted={Boolean(verification)}
+      verificationStatus={verification?.status ?? null}
+      submittedTypes={submittedTypes}
+    />
+  );
 }

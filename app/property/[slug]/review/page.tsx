@@ -18,14 +18,31 @@ export default async function ReviewPage({
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect(`/login?next=/property/${slug}/review`);
 
+  // `select("*")` rather than naming submitted_as: a named column that
+  // doesn't exist yet (pending migration) fails the whole query and would
+  // 404 this page, whereas `*` simply omits it and the owner check below
+  // falls back to the pre-existing behaviour.
   const { data: property, error } = await supabase
     .from("properties")
-    .select("id, name, slug, area")
+    .select("*")
     .eq("slug", slug)
-    .eq("status", "published")
     .single();
 
   if (error || !property) {
+    notFound();
+  }
+
+  // Anyone can review a published property; a property's own creator can
+  // also review it while it's still pending approval — everyone else must
+  // wait, same as the reviews RLS insert policy enforces server-side.
+  if (property.status !== "published" && property.created_by !== user.id) {
+    notFound();
+  }
+
+  // An owner cannot review the property they listed. This mirrors the RLS
+  // insert policy exactly so the UI never offers something the database
+  // would reject — the database remains the actual boundary.
+  if (property.submitted_as === "owner" && property.created_by === user.id) {
     notFound();
   }
 

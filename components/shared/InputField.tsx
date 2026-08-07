@@ -12,6 +12,13 @@ type InputFieldProps = {
   // uncontrolled exactly as before. Passing it (with onChange) opts a
   // specific field into controlled mode, e.g. to prefill it programmatically.
   value?: string;
+  // Uncontrolled initial value, for fields that are prefilled once (e.g. the
+  // listing edit form) but shouldn't become controlled.
+  defaultValue?: string;
+  // Numeric-input constraints. Ignored by every non-number field, and
+  // omitted by every existing caller.
+  min?: string;
+  step?: string;
 };
 
 export default function InputField({
@@ -25,6 +32,9 @@ export default function InputField({
   multiple = false,
   onChange,
   value,
+  defaultValue,
+  min,
+  step,
 }: InputFieldProps) {
   return (
     <div className="space-y-2">
@@ -41,6 +51,9 @@ export default function InputField({
         multiple={multiple}
         onChange={onChange}
         value={value}
+        defaultValue={defaultValue}
+        min={min}
+        step={step}
         placeholder={placeholder}
         className="
           w-full

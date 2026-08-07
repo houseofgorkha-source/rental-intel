@@ -12,6 +12,10 @@ export type DiscoveryProperty = {
   image: { src: string; alt: string } | null;
   averageRating: number | null;
   reviewCount: number;
+  // Only an owner listing is a claim that the property is available to rent;
+  // a tenant/helper contribution is knowledge, not a vacancy ad. Both are
+  // needed to decide whether the "Available for rent" badge is truthful.
+  submittedAs: "owner" | "tenant" | "helper" | null;
   isAvailable: boolean;
   // Approximate — the area's centroid, not the property's real address.
   // See lib/area-coordinates.ts for why (no lat/lng column exists yet).
@@ -38,9 +42,10 @@ type ReviewRow = {
   overall_rating: number;
 };
 
-type AvailabilityRow = {
+type ListingRow = {
   id: string;
   is_available: boolean;
+  submitted_as: "owner" | "tenant" | "helper" | null;
 };
 
 export async function getDiscoveryProperties(
@@ -81,13 +86,14 @@ export async function getDiscoveryProperties(
           .from("reviews")
           .select("property_id, overall_rating")
           .in("property_id", propertyIds),
-        // Queried separately from the main properties fetch: is_available may
-        // not exist yet on every environment (pending migration). A failure
-        // here must never affect the properties list itself — every property
-        // just falls back to "available" below.
+        // Queried separately from the main properties fetch: is_available and
+        // submitted_as may not exist yet on every environment (pending
+        // migration). A failure here must never affect the properties list
+        // itself — every property just falls back to "available, unknown
+        // provenance" below, which renders no availability badge.
         supabase
           .from("properties")
-          .select("id, is_available")
+          .select("id, is_available, submitted_as")
           .in("id", propertyIds),
       ])
     : [{ data: [] }, { data: [] }, { data: null, error: null }];
@@ -106,10 +112,10 @@ export async function getDiscoveryProperties(
     reviewsByProperty.set(review.property_id, reviews);
   });
 
-  const availabilityByProperty = new Map<string, boolean>();
+  const listingByProperty = new Map<string, ListingRow>();
   if (!availabilityResult.error) {
-    ((availabilityResult.data ?? []) as AvailabilityRow[]).forEach((row) => {
-      availabilityByProperty.set(row.id, row.is_available);
+    ((availabilityResult.data ?? []) as ListingRow[]).forEach((row) => {
+      listingByProperty.set(row.id, row);
     });
   }
 
@@ -134,7 +140,8 @@ export async function getDiscoveryProperties(
         : null,
       averageRating,
       reviewCount: reviews.length,
-      isAvailable: availabilityByProperty.get(property.id) ?? true,
+      submittedAs: listingByProperty.get(property.id)?.submitted_as ?? null,
+      isAvailable: listingByProperty.get(property.id)?.is_available ?? true,
       coordinates: getAreaCoordinates(property.area),
     };
   });
