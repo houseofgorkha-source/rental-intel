@@ -1,21 +1,24 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { one } from "@/lib/embedded";
+import { EmptyState, StatusPill } from "@/components/shared/StatusPrimitives";
 import {
-  EmptyState,
-  StatusPill,
   verificationStatusLabel,
   verificationStatusTone,
 } from "@/components/account/AccountPrimitives";
 
 export const dynamic = "force-dynamic";
 
+type EmbeddedProperty = { slug: string; name: string };
+type EmbeddedReview = { id: string; properties: EmbeddedProperty | EmbeddedProperty[] };
+
 type VerificationRow = {
   id: string;
   status: "pending" | "verified" | "rejected";
   submitted_at: string;
   rejection_reason: string | null;
-  reviews: { id: string; properties: { slug: string; name: string }[] }[];
+  reviews: EmbeddedReview | EmbeddedReview[];
 };
 
 function formatDate(value: string) {
@@ -55,8 +58,8 @@ export default async function AccountVerificationsPage() {
   return (
     <ul className="flex flex-col gap-3">
       {verifications.map((verification) => {
-        const review = verification.reviews[0];
-        const property = review?.properties[0];
+        const review = one(verification.reviews);
+        const property = one(review?.properties);
 
         return (
           <li

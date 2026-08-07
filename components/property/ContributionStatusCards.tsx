@@ -70,16 +70,17 @@ export default function ContributionStatusCards({
       <>
         <PropertyStatusCard propertyStatus={propertyStatus} />
 
-        {/* No "Manage listing" action: editing listing details requires a
-            property UPDATE policy that is intentionally not applied yet, so
-            offering the action would lead to a guaranteed failure. The state
-            is still shown — it's real — just not editable from here. */}
+        {/* No "Manage listing" action. A property record has no amendment
+            flow at all — its columns are unreachable through the Data API by
+            design, so that a review can never end up attached to a property
+            that has since been rewritten. The state is still shown, because
+            it is real; it just isn't editable by anyone. */}
         <StatusCard label="Listing">
           <p className="font-medium text-slate-700">
             {isAvailable ? "🟢 Available for rent" : "⚪ Not currently available"}
           </p>
           <p className="mt-1 text-xs leading-5 text-slate-500">
-            Editing listing details isn&apos;t available yet.
+            Listing details are fixed once submitted.
           </p>
         </StatusCard>
 

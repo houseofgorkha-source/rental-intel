@@ -5,7 +5,7 @@ type DevRoute = {
   route: string;
   href: string | null;
   kind: "page" | "route";
-  badge?: "WIP" | "Context Required" | "System Route";
+  badge?: "WIP" | "Context Required" | "System Route" | "Admin Only";
 };
 
 type DevSection = {
@@ -15,10 +15,11 @@ type DevSection = {
 
 type DeveloperNavigationMenuProps = {
   sampleProperty: { slug: string } | null;
-  // The signed-in user's own property — the listing-edit route rejects
-  // anything they didn't create, so it can't reuse `sampleProperty`.
-  sampleOwnProperty: { slug: string } | null;
   sampleReview: { slug: string; reviewId: string } | null;
+  // Admin-only samples: these routes are unreachable for anyone who isn't an
+  // administrator, so they resolve to null for everyone else.
+  sampleModerationProperty: { slug: string } | null;
+  sampleVerification: { id: string } | null;
   onNavigate: () => void;
 };
 
@@ -31,8 +32,9 @@ type DeveloperNavigationMenuProps = {
 // real exists to link to, never a fake/dead link.
 export default function DeveloperNavigationMenu({
   sampleProperty,
-  sampleOwnProperty,
   sampleReview,
+  sampleModerationProperty,
+  sampleVerification,
   onNavigate,
 }: DeveloperNavigationMenuProps) {
   const propertyHref = sampleProperty ? `/property/${sampleProperty.slug}` : null;
@@ -114,15 +116,6 @@ export default function DeveloperNavigationMenu({
           href: "/account/properties",
           kind: "page",
         },
-        {
-          label: "Manage Listing",
-          route: "/account/properties/[slug]/edit",
-          href: sampleOwnProperty
-            ? `/account/properties/${sampleOwnProperty.slug}/edit`
-            : null,
-          kind: "page",
-          badge: sampleOwnProperty ? undefined : "Context Required",
-        },
         { label: "My Reviews", route: "/account/reviews", href: "/account/reviews", kind: "page" },
         {
           label: "My Verifications",
@@ -133,6 +126,39 @@ export default function DeveloperNavigationMenu({
         { label: "Profile", route: "/account/profile", href: "/account/profile", kind: "page" },
         { label: "Login", route: "/login", href: "/login", kind: "page" },
         { label: "Signup", route: "/signup", href: "/signup", kind: "page" },
+      ],
+    },
+    {
+      title: "Moderation",
+      routes: [
+        // The three list routes are always linked: an administrator lands on
+        // the queue, and anyone else gets the 404 the route itself returns —
+        // which is the accurate outcome, not a broken link.
+        { label: "Moderation Queue", route: "/admin", href: "/admin", kind: "page" },
+        { label: "Moderate Properties", route: "/admin/properties", href: "/admin/properties", kind: "page" },
+        {
+          label: "Inspect Submission",
+          route: "/admin/properties/[slug]",
+          href: sampleModerationProperty
+            ? `/admin/properties/${sampleModerationProperty.slug}`
+            : null,
+          kind: "page",
+          badge: sampleModerationProperty ? undefined : "Admin Only",
+        },
+        {
+          label: "Moderate Verifications",
+          route: "/admin/verifications",
+          href: "/admin/verifications",
+          kind: "page",
+        },
+        {
+          label: "Inspect Verification",
+          route: "/admin/verifications/[id]",
+          href: sampleVerification ? `/admin/verifications/${sampleVerification.id}` : null,
+          kind: "page",
+          badge: sampleVerification ? undefined : "Admin Only",
+        },
+        { label: "Inspect Reviews", route: "/admin/reviews", href: "/admin/reviews", kind: "page" },
       ],
     },
     {

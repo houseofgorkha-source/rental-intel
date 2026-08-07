@@ -81,7 +81,18 @@ export default function UseMyLocationButton({
           compact ? "text-sm" : "text-sm"
         }`}
       >
-        <span aria-hidden="true">📍</span>
+        {/* A direction arrow, not a map pin. A pin marks a place someone
+            else chose; this control points at where the user is right now,
+            which is what every navigation app uses this shape to mean. */}
+        <svg
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+          className={`h-4 w-4 fill-none stroke-current stroke-[1.8] ${
+            status === "loading" ? "animate-pulse" : ""
+          }`}
+        >
+          <path d="M21 3 3 10.5l7.5 3 3 7.5L21 3Z" strokeLinejoin="round" />
+        </svg>
         {status === "loading" ? "Finding your location…" : label}
       </button>
 

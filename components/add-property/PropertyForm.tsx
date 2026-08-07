@@ -4,7 +4,6 @@ import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createProperty } from "@/app/actions/property";
 import InputField from "../shared/InputField";
-import TextAreaField from "../shared/TextAreaField";
 import SectionTitle from "./SectionTitle";
 import InfoCard from "./InfoCard";
 import RoleSelector from "./RoleSelector";
@@ -38,17 +37,37 @@ export default function PropertyForm({ initialRole = null }: PropertyFormProps) 
   const [role, setRole] = useState<SubmitterRole | null>(initialRole);
   const [city, setCity] = useState("");
   const [area, setArea] = useState("");
+  const [locationResult, setLocationResult] = useState<string | null>(null);
   const router = useRouter();
 
   // Suggests city/area from the user's location — never stores the
   // coordinates themselves; only the resulting text values, which the user
   // can still edit before submitting. Reuses the same nearest-city/area
   // lookup the homepage's location button uses, not a separate lookup.
+  //
+  // Permission-denied, unsupported-browser and lookup-failure states are all
+  // handled inside UseMyLocationButton. What it cannot know is whether the
+  // coordinates it returned actually matched anywhere we cover, so that
+  // outcome is reported here — silently filling in nothing looked identical
+  // to the button not working.
   function handleLocated(coordinates: Coordinates) {
     const nearestCity = findNearestCity(coordinates);
-    if (nearestCity) setCity(nearestCity);
     const nearestArea = nearestCity ? findNearestArea(coordinates, nearestCity) : null;
+
+    if (!nearestCity) {
+      setLocationResult(
+        "We couldn't match your location to a city we cover yet. Please fill in the address below.",
+      );
+      return;
+    }
+
+    setCity(nearestCity);
     if (nearestArea) setArea(nearestArea);
+    setLocationResult(
+      nearestArea
+        ? `Filled in ${nearestArea}, ${nearestCity}. Change either one if that's not right.`
+        : `Filled in ${nearestCity}. Add your area below.`,
+    );
   }
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -131,6 +150,22 @@ export default function PropertyForm({ initialRole = null }: PropertyFormProps) 
             required
           />
 
+          {/* Before the address fields, not buried among them: this is the
+              shortcut that saves the user typing the next few, so it has to
+              be visible before they start typing. It fills city and area
+              only — the street address is still theirs to enter. */}
+          <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+            <UseMyLocationButton onLocated={handleLocated} compact />
+            <p className="mt-1.5 text-sm text-gray-500">
+              Fills in your city and area. You can edit both afterwards.
+            </p>
+            {locationResult && (
+              <p role="status" aria-live="polite" className="mt-2 text-sm font-medium text-blue-700">
+                {locationResult}
+              </p>
+            )}
+          </div>
+
           <InputField
             label="Address"
             placeholder="#31, C/o Anna PG, 27th Main Road"
@@ -139,13 +174,14 @@ export default function PropertyForm({ initialRole = null }: PropertyFormProps) 
             required
           />
 
+          {/* Placeholder no longer says "Near Empire Restaurant, Opposite BDA
+              Complex" — that is a landmark, and asking for it twice in two
+              fields is how landmark information ended up scattered. */}
           <InputField
             label="Address Line 2"
-            placeholder="Near Empire Restaurant, Opposite BDA Complex"
+            placeholder="Apartment, floor, block or tower"
             name="addressLine2"
           />
-
-          <UseMyLocationButton onLocated={handleLocated} compact />
 
           <InputField
             label="Area / Locality"
@@ -182,18 +218,24 @@ export default function PropertyForm({ initialRole = null }: PropertyFormProps) 
             name="postalCode"
           />
 
+          {/* Immediately after the address block, and a field in its own
+              right rather than a line inside free-text notes. In Indian
+              cities a landmark is how an address is actually given and
+              found, so it needs to be asked for explicitly, stored on its
+              own column, and shown on its own row. */}
+          <InputField
+            label="Landmark"
+            placeholder="Opposite BDA Complex, behind Empire Restaurant"
+            name="landmark"
+            helperText="The nearest well-known place. This is often how people find a property."
+          />
+
           <InputField
             label="Google Maps Link"
             placeholder="https://maps.google.com/..."
             name="mapsUrl"
             type="url"
             helperText="Optional for Version 1. Adding a Google Maps link helps us verify the property faster."
-          />
-
-          <TextAreaField
-            label="Additional Notes"
-            placeholder="Anything else that helps identify this property?"
-            name="notes"
           />
 
           <InputField

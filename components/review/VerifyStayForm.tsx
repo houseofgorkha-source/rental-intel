@@ -248,38 +248,55 @@ export default function VerifyStayForm({
                         </p>
                       ) : isSubmitted ? (
                         <p className="text-sm text-gray-500">Not submitted</p>
-                      ) : selectedFile ? (
-                        <div>
-                          <p className="break-all text-sm font-medium text-blue-700">
-                            {selectedFile.name}
-                          </p>
-                          <p className="mt-0.5 text-xs text-gray-600">
-                            {formatFileSize(selectedFile.size)} · ready to submit
-                          </p>
-                          <button
-                            type="button"
-                            onClick={() => handleRemove(document.type)}
-                            className="mt-2 rounded-lg px-1 py-0.5 text-sm font-medium text-gray-600 underline underline-offset-4 transition hover:text-red-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-200"
-                          >
-                            Remove
-                          </button>
-                        </div>
                       ) : (
-                        <label className="block cursor-pointer text-sm font-medium text-blue-600 focus-within:underline hover:underline">
-                          Choose file
-                          <input
-                            ref={(element) => {
-                              inputRefs.current[document.type] = element;
-                            }}
-                            className="sr-only"
-                            type="file"
-                            name={document.type}
-                            accept="application/pdf,image/jpeg,image/png"
-                            onChange={(event) =>
-                              handleFileChange(document.type, event.target.files?.[0])
-                            }
-                          />
-                        </label>
+                        // The file input stays mounted whether or not a file
+                        // has been chosen. It is uncontrolled — the file lives
+                        // on the DOM node, not in React state — so rendering
+                        // the chosen-file summary *instead of* the input
+                        // unmounted it and dropped the file from the form:
+                        // the page said "1 document ready to submit" while the
+                        // request carried none, and every submission failed
+                        // with "Please choose at least one supporting
+                        // document." The summary is now rendered alongside the
+                        // input, never in place of it.
+                        <div>
+                          {selectedFile && (
+                            <>
+                              <p className="break-all text-sm font-medium text-blue-700">
+                                {selectedFile.name}
+                              </p>
+                              <p className="mt-0.5 text-xs text-gray-600">
+                                {formatFileSize(selectedFile.size)} · ready to submit
+                              </p>
+                              <button
+                                type="button"
+                                onClick={() => handleRemove(document.type)}
+                                className="mt-2 mr-4 rounded-lg px-1 py-0.5 text-sm font-medium text-gray-600 underline underline-offset-4 transition hover:text-red-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-200"
+                              >
+                                Remove
+                              </button>
+                            </>
+                          )}
+                          <label
+                            className={`cursor-pointer text-sm font-medium text-blue-600 focus-within:underline hover:underline ${
+                              selectedFile ? "inline-block" : "block"
+                            }`}
+                          >
+                            {selectedFile ? "Replace file" : "Choose file"}
+                            <input
+                              ref={(element) => {
+                                inputRefs.current[document.type] = element;
+                              }}
+                              className="sr-only"
+                              type="file"
+                              name={document.type}
+                              accept="application/pdf,image/jpeg,image/png"
+                              onChange={(event) =>
+                                handleFileChange(document.type, event.target.files?.[0])
+                              }
+                            />
+                          </label>
+                        </div>
                       )}
                     </div>
                   </div>

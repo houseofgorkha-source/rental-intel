@@ -1,10 +1,9 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { formatINRPerMonth } from "@/lib/property-format";
+import { formatINRPerMonth, getPropertyImageUrl } from "@/lib/property-format";
+import { EmptyState, StatusPill } from "@/components/shared/StatusPrimitives";
 import {
-  EmptyState,
-  StatusPill,
   propertyStatusLabel,
   propertyStatusTone,
   roleLabel,
@@ -14,6 +13,7 @@ import PendingSubmissionActions from "@/components/account/PendingSubmissionActi
 export const dynamic = "force-dynamic";
 
 type PropertyRow = {
+  id: string;
   slug: string;
   name: string;
   area: string;
@@ -22,7 +22,6 @@ type PropertyRow = {
   submitted_as: "owner" | "tenant" | "helper" | null;
   asking_rent: number | null;
   is_available: boolean;
-  created_at: string;
 };
 
 export default async function AccountPropertiesPage() {
@@ -34,11 +33,30 @@ export default async function AccountPropertiesPage() {
   // readable" policy already includes `or created_by = auth.uid()`.
   const { data } = await supabase
     .from("properties")
-    .select("slug, name, area, city, status, submitted_as, asking_rent, is_available, created_at")
+    .select("id, slug, name, area, city, status, submitted_as, asking_rent, is_available")
     .eq("created_by", user.id)
     .order("created_at", { ascending: false });
 
   const properties = (data ?? []) as PropertyRow[];
+
+  // Same first-image-per-property shape the discovery cards use, so a
+  // contributor's own card looks like the card everyone else will see.
+  const { data: imageRows } = properties.length
+    ? await supabase
+        .from("property_images")
+        .select("property_id, storage_path, alt_text")
+        .in("property_id", properties.map((property) => property.id))
+        .order("sort_order")
+    : { data: [] };
+
+  const firstImage = new Map<string, { src: string; alt: string }>();
+  (imageRows ?? []).forEach((image) => {
+    if (firstImage.has(image.property_id)) return;
+    firstImage.set(image.property_id, {
+      src: getPropertyImageUrl(supabase, image.storage_path),
+      alt: image.alt_text || "Property image",
+    });
+  });
 
   if (properties.length === 0) {
     return (
@@ -52,73 +70,94 @@ export default async function AccountPropertiesPage() {
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-5">
       {/* A property's name and address can never be edited — reviews attach to
           them permanently (CLAUDE.md §26) — so the only way to correct a
           mistake is to remove the submission while it is still pending and
           add it again. Saying so here prevents the "where is the edit
           button?" dead end. */}
       <p className="text-sm leading-6 text-slate-600">
-        Submitted something incorrectly? You can remove a property while
-        it&apos;s still pending approval and add it again. Once published, a
-        property becomes part of the shared record and can no longer be
-        removed.
+        You can remove a property while it&apos;s still pending approval and add it
+        again. Once published, a property becomes part of the shared record and
+        can no longer be removed.
       </p>
 
-      <ul className="flex flex-col gap-3">
-        {properties.map((property) => (
-          <li
-            key={property.slug}
-            className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 sm:flex-row sm:items-start sm:justify-between"
-          >
-            <div className="min-w-0">
-              <p className="text-xs font-medium uppercase tracking-[0.12em] text-slate-500">
-                {property.area}, {property.city}
-              </p>
-              <h2 className="mt-1 truncate text-base font-medium text-slate-950">
-                {property.name}
-              </h2>
-              <div className="mt-2.5 flex flex-wrap items-center gap-2">
-                <StatusPill tone={propertyStatusTone(property.status)}>
-                  {propertyStatusLabel(property.status)}
-                </StatusPill>
-                <StatusPill tone="neutral">
-                  {roleLabel(property.submitted_as)}
-                </StatusPill>
-                {property.submitted_as === "owner" && (
-                  <StatusPill tone={property.is_available ? "success" : "neutral"}>
-                    {property.is_available ? "Available for rent" : "Not available"}
-                  </StatusPill>
-                )}
-                {property.submitted_as === "owner" && property.asking_rent !== null && (
-                  <span className="text-sm text-slate-600">
-                    {formatINRPerMonth(property.asking_rent)}
-                  </span>
-                )}
-              </div>
-            </div>
+      <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {properties.map((property) => {
+          const image = firstImage.get(property.id);
+          const isOwnerListing = property.submitted_as === "owner";
 
-            {/* Explicit controls rather than a clickable row: this carries two
-                actions, one of them destructive. "Manage listing" is
-                deliberately absent for every role — listing edits require a
-                property UPDATE policy that has not been applied yet, so
-                advertising the action would lead to a guaranteed failure. */}
-            <div className="flex shrink-0 flex-wrap items-start gap-4">
-              <Link
-                href={`/property/${property.slug}`}
-                className="rounded-lg px-2 py-1 text-sm font-medium text-slate-700 underline decoration-slate-300 underline-offset-4 transition hover:text-slate-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-200"
-              >
-                View
-              </Link>
-              {property.status === "pending" && (
-                <PendingSubmissionActions
-                  slug={property.slug}
-                  name={property.name}
-                />
-              )}
-            </div>
-          </li>
-        ))}
+          return (
+            <li key={property.slug}>
+              {/* Same card grammar as the discovery cards (PropertyList):
+                  one destination, whole card clickable, hover and
+                  focus-within share the same highlight. The link is
+                  stretched with a ::before overlay rather than wrapping the
+                  card, because a pending card also carries a destructive
+                  Remove control — and a button nested inside an anchor is
+                  both invalid and unusable. Remove sits above the overlay on
+                  its own stacking level, so it can never navigate. */}
+              <article className="relative flex h-full flex-col overflow-hidden rounded-xl border border-slate-200 bg-white transition hover:border-slate-300 hover:shadow-[0_18px_45px_-30px_rgba(15,23,42,0.45)] focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100">
+                <div className="relative aspect-[5/2] bg-slate-100">
+                  <span className="absolute right-2 top-2 z-10">
+                    <StatusPill tone={propertyStatusTone(property.status)}>
+                      {propertyStatusLabel(property.status)}
+                    </StatusPill>
+                  </span>
+                  {image ? (
+                    // The bucket accepts user uploads, so its public URLs are intentionally rendered directly.
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={image.src} alt={image.alt} className="h-full w-full object-cover" />
+                  ) : (
+                    <div className="flex h-full items-end bg-[linear-gradient(145deg,#e2e8f0,#f8fafc_58%,#dbeafe)] p-3">
+                      <span className="text-xs font-medium text-slate-500">
+                        No image added
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex flex-1 flex-col p-3">
+                  <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-slate-500">
+                    {property.area}, {property.city}
+                  </p>
+                  <h2 className="mt-1 text-sm font-medium tracking-[-0.02em] text-slate-950">
+                    <Link
+                      href={`/property/${property.slug}`}
+                      className="line-clamp-2 rounded-sm before:absolute before:inset-0 before:content-[''] focus:outline-none"
+                    >
+                      {property.name}
+                    </Link>
+                  </h2>
+
+                  <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                    <StatusPill tone="neutral">{roleLabel(property.submitted_as)}</StatusPill>
+                    {isOwnerListing && (
+                      <StatusPill tone={property.is_available ? "success" : "neutral"}>
+                        {property.is_available ? "Available for rent" : "Not available"}
+                      </StatusPill>
+                    )}
+                  </div>
+
+                  {isOwnerListing && property.asking_rent !== null && (
+                    <p className="mt-2 text-sm font-medium text-slate-900">
+                      {formatINRPerMonth(property.asking_rent)}
+                    </p>
+                  )}
+
+                  {/* Only while pending. A published property is part of the
+                      shared record and the database refuses to delete it, so
+                      no control is offered that would fail. */}
+                  {property.status === "pending" && (
+                    <div className="relative z-10 mt-auto pt-3">
+                      <PendingSubmissionActions slug={property.slug} name={property.name} />
+                    </div>
+                  )}
+                </div>
+              </article>
+            </li>
+          );
+        })}
       </ul>
     </div>
   );

@@ -9,6 +9,7 @@ import type { Review } from "@/components/property/ReviewCard";
 import { createClient } from "@/lib/supabase/server";
 import { calculateAverageRating, formatINRPerMonth, getPropertyImageUrl } from "@/lib/property-format";
 import { getDiscoveryProperties } from "@/lib/property-discovery";
+import { one } from "@/lib/embedded";
 import { DEFAULT_CITY } from "@/lib/cities";
 
 type PropertyPageProps = {
@@ -27,7 +28,7 @@ type ReviewRow = {
   stay_end_date: string | null;
   created_at: string;
   is_anonymous: boolean;
-  author: { display_name: string }[];
+  author: { display_name: string } | { display_name: string }[] | null;
 };
 
 function formatStay(stayStartDate: string | null, stayEndDate: string | null) {
@@ -111,9 +112,12 @@ export default async function PropertyPage({
   const propertyReviews: Review[] = ((reviewRows ?? []) as ReviewRow[]).map(
     (review) => ({
       id: review.id,
+      // `one()` because PostgREST returns this many-to-one embed as an
+      // object — indexing it as an array quietly attributed every named
+      // review to "RentalIntel member". See lib/embedded.ts.
       reviewer: review.is_anonymous
         ? "Anonymous"
-        : review.author[0]?.display_name ?? "RentalIntel member",
+        : one(review.author)?.display_name ?? "RentalIntel member",
       rating: review.overall_rating,
       title: review.title,
       review: review.body,
@@ -183,7 +187,13 @@ export default async function PropertyPage({
       : []),
     { label: "Area", value: property.area },
     { label: "Address", value: property.address_line_1 },
-    { label: "Notes", value: property.notes ?? "Not available" },
+    // Landmark is its own fact now. `notes` is only rendered for rows
+    // submitted before the landmark field existed — the column still holds
+    // real contributed text and dropping it would lose it. Neither row is
+    // shown as "Not available": an absent landmark is not a missing value,
+    // it is a question that wasn't answered.
+    ...(property.landmark ? [{ label: "Landmark", value: property.landmark }] : []),
+    ...(property.notes ? [{ label: "Notes", value: property.notes }] : []),
   ];
 
   const searchProperties = cityProperties.map((discoveryProperty) => ({

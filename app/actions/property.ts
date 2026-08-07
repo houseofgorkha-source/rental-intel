@@ -148,7 +148,10 @@ export async function createProperty(
       state,
       postal_code: getTextValue(formData, "postalCode") || null,
       maps_url: getTextValue(formData, "mapsUrl") || null,
-      notes: getTextValue(formData, "notes") || null,
+      // `notes` is deliberately not written any more: the form now asks for a
+      // landmark by name instead of accepting it inside a free-text notes
+      // field. The column and its existing data are untouched.
+      landmark: getTextValue(formData, "landmark") || null,
       status: "pending",
       submitted_as: submittedAs,
       asking_rent: askingRent.value,
@@ -313,70 +316,19 @@ export async function deletePendingProperty(
   return { success: true };
 }
 
-type UpdateListingResult = {
-  error?: string;
-  success?: boolean;
-};
-
-// Updates only the commercial fields of a property the caller created.
+// There is deliberately no updateProperty action of any kind.
 //
-// NOT YET FUNCTIONAL. `properties` still has no UPDATE policy, so every call
-// here is denied by RLS and returns "That listing could not be found in your
-// account." The privilege migration this depends on is deliberately deferred
-// (see the note in 20260808000000_add_listing_fields_and_submitter_role.sql).
+// A property record has no amendment flow: its identity columns are
+// unreachable through the Data API for every role (see
+// 20260809000001_add_admin_moderation.sql), which is what guarantees the
+// record a review is attached to cannot change out from under that review.
+// The only correction mechanism is deletePendingProperty above — remove a
+// still-pending submission and add it again.
 //
-// The security boundary is the database, not this function: that migration
-// will revoke blanket UPDATE and grant it only on
-// (asking_rent, security_deposit, currency, is_available), and the
-// "Creators can update their own listing fields" policy scopes rows to
-// created_by = auth.uid(). Identity columns — name, address, slug, status,
-// submitted_as — are unreachable through the Data API entirely, so a
-// property's identity can never drift away from the reviews attached to it.
-export async function updatePropertyListing(
-  formData: FormData,
-): Promise<UpdateListingResult> {
-  const slug = getTextValue(formData, "slug");
-  if (!slug) return { error: "Missing property." };
-
-  const askingRent = parseAmount(getTextValue(formData, "askingRent"), "Monthly rent");
-  const securityDeposit = parseAmount(
-    getTextValue(formData, "securityDeposit"),
-    "Security deposit",
-  );
-
-  const amountError = askingRent.error ?? securityDeposit.error;
-  if (amountError) return { error: amountError };
-
-  const supabase = await createClient();
-  const { user, error: authFailure } = await requireUser(
-    supabase,
-    "Please sign in to manage your listing.",
-  );
-
-  if (!user) return { error: authFailure };
-
-  const { data, error } = await supabase
-    .from("properties")
-    .update({
-      asking_rent: askingRent.value,
-      security_deposit: securityDeposit.value,
-      is_available: formData.get("isAvailable") !== null,
-    })
-    .eq("slug", slug)
-    .eq("created_by", user.id)
-    .select("slug");
-
-  if (error) {
-    return { error: "Unable to update your listing. Please try again." };
-  }
-
-  // RLS filters rather than errors when the row isn't the caller's, so an
-  // empty result means "not yours" (or gone), not a transient failure.
-  if (!data || data.length === 0) {
-    return { error: "That listing could not be found in your account." };
-  }
-
-  revalidatePath(`/property/${slug}`);
-  revalidatePath("/account/properties");
-  return { success: true };
-}
+// A previous iteration carried an `updatePropertyListing` here for an owner
+// to edit rent, deposit and availability. It had no caller and could never
+// have succeeded (there was, and is, no UPDATE policy scoped to a creator),
+// so it was removed rather than left as an action that silently fails.
+// Owner-editable availability is a real, still-open product gap: reopening it
+// needs its own migration widening the column grant, and must not widen it
+// past the four commercial columns.

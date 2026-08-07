@@ -2,7 +2,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import ReviewCard, { type Review } from "@/components/property/ReviewCard";
 import { createClient } from "@/lib/supabase/server";
-import { EmptyState } from "@/components/account/AccountPrimitives";
+import { one } from "@/lib/embedded";
+import { EmptyState } from "@/components/shared/StatusPrimitives";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +15,7 @@ type ReviewRow = {
   recommendation: "yes" | "maybe" | "no";
   verification_status: "unverified" | "pending" | "verified" | "rejected";
   created_at: string;
-  properties: { slug: string; name: string }[];
+  properties: { slug: string; name: string } | { slug: string; name: string }[];
 };
 
 export default async function AccountReviewsPage() {
@@ -48,7 +49,7 @@ export default async function AccountReviewsPage() {
   return (
     <ul className="flex flex-col gap-4">
       {rows.map((row) => {
-        const property = row.properties[0];
+        const property = one(row.properties);
         // Reuses the exact card the property page renders — the author's own
         // display name is irrelevant here, so it's labelled as theirs.
         const review: Review = {
