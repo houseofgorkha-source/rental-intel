@@ -7,24 +7,37 @@ import DeveloperNavigationMenu from "@/components/shared/DeveloperNavigationMenu
 
 type AccountMenuProps = {
   email: string;
+  // Whether to offer the moderation link. Presentation only: /admin gates
+  // itself server-side and every table behind it is filtered by RLS, so
+  // forging this prop would reveal a link to a page that 404s.
+  isAdmin?: boolean;
   // Dev-nav-only — resolved server-side in app/layout.tsx, only when
   // NEXT_PUBLIC_SHOW_DEV_NAV is set. Always null/undefined otherwise, so
   // these props are inert in production.
   sampleProperty?: { slug: string } | null;
-  sampleOwnProperty?: { slug: string } | null;
   sampleReview?: { slug: string; reviewId: string } | null;
+  sampleModerationProperty?: { slug: string } | null;
+  sampleVerification?: { id: string } | null;
 };
 
 const SHOW_DEV_NAV = process.env.NEXT_PUBLIC_SHOW_DEV_NAV === "true";
 
 export default function AccountMenu({
   email,
+  isAdmin = false,
   sampleProperty = null,
-  sampleOwnProperty = null,
   sampleReview = null,
+  sampleModerationProperty = null,
+  sampleVerification = null,
 }: AccountMenuProps) {
   const menuRef = useRef<HTMLDetailsElement>(null);
   const closeMenu = () => menuRef.current?.removeAttribute("open");
+
+  // The feature flag alone was not enough: with it on, every signed-in user
+  // saw the whole route list. It is a developer tool (CLAUDE.md §24), so it
+  // now also requires the same administrator check the Moderation link uses.
+  // An ordinary account sees only its own five entries.
+  const showDevNav = SHOW_DEV_NAV && isAdmin;
 
   useEffect(() => {
     const handlePointerDown = (event: PointerEvent) => {
@@ -50,7 +63,7 @@ export default function AccountMenu({
 
       <div
         className={`absolute right-0 z-30 mt-3 max-h-[80vh] overflow-y-auto rounded-xl border border-gray-200 bg-white p-2 shadow-lg ${
-          SHOW_DEV_NAV ? "w-80" : "w-52"
+          showDevNav ? "w-80" : "w-52"
         }`}
       >
         <p className="truncate px-3 py-2 text-xs text-gray-500">{email}</p>
@@ -82,6 +95,19 @@ export default function AccountMenu({
         >
           Add Property
         </Link>
+        {isAdmin && (
+          <>
+            <div className="my-1 border-t border-gray-100" />
+            <Link
+              href="/admin"
+              onClick={closeMenu}
+              className="block rounded-lg px-3 py-2 text-sm font-medium text-gray-900 hover:bg-blue-50 hover:text-blue-600"
+            >
+              Moderation
+            </Link>
+            <div className="my-1 border-t border-gray-100" />
+          </>
+        )}
         <form action={signOut} onSubmit={closeMenu}>
           <button
             type="submit"
@@ -91,11 +117,12 @@ export default function AccountMenu({
           </button>
         </form>
 
-        {SHOW_DEV_NAV && (
+        {showDevNav && (
           <DeveloperNavigationMenu
             sampleProperty={sampleProperty}
-            sampleOwnProperty={sampleOwnProperty}
             sampleReview={sampleReview}
+            sampleModerationProperty={sampleModerationProperty}
+            sampleVerification={sampleVerification}
             onNavigate={closeMenu}
           />
         )}

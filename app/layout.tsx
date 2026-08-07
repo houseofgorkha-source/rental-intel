@@ -4,6 +4,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import AccountMenu from "@/components/shared/AccountMenu";
 import Logo from "@/components/shared/Logo";
 import { createClient } from "@/lib/supabase/server";
+import { isAdminUser } from "@/lib/admin";
+import { one } from "@/lib/embedded";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -46,47 +48,61 @@ export default async function RootLayout({
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Only queried when the dev nav flag is on — zero extra DB calls in
-  // production. Resolves real, clickable examples for the dynamic routes
-  // shown in the dev nav menu, rather than dead placeholder text.
-  const devNavEnabled = process.env.NEXT_PUBLIC_SHOW_DEV_NAV === "true";
-  let sampleProperty: { slug: string } | null = null;
-  let sampleOwnProperty: { slug: string } | null = null;
-  let sampleReview: { slug: string; reviewId: string } | null = null;
+  // Decides whether the Account menu offers a way into moderation. Not a
+  // security check — /admin gates itself and every query behind it is filtered
+  // by RLS — so this only avoids showing a link that would 404.
+  const isAdmin = user ? await isAdminUser(supabase, user.id) : false;
 
-  if (devNavEnabled) {
-    const { data: property } = await supabase
-      .from("properties")
-      .select("slug")
-      .eq("status", "published")
+  // Only queried when the dev nav flag is on AND the viewer is an
+  // administrator — the same condition AccountMenu now uses to render it.
+  // Without the isAdmin half, an ordinary account paid for these queries to
+  // populate a menu it can no longer see. Zero extra DB calls in production,
+  // where the flag is off. Resolves real, clickable examples for the dynamic
+  // routes in the dev nav rather than dead placeholder text.
+  const devNavEnabled = process.env.NEXT_PUBLIC_SHOW_DEV_NAV === "true" && isAdmin;
+  let sampleProperty: { slug: string } | null = null;
+  let sampleReview: { slug: string; reviewId: string } | null = null;
+  let sampleModerationProperty: { slug: string } | null = null;
+  let sampleVerification: { id: string } | null = null;
+
+  if (devNavEnabled && user) {
+    const [{ data: property }, { data: moderationProperty }, { data: verification }] =
+      await Promise.all([
+        supabase
+          .from("properties")
+          .select("slug")
+          .eq("status", "published")
+          .limit(1)
+          .maybeSingle(),
+        supabase
+          .from("properties")
+          .select("slug")
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+        supabase
+          .from("review_verifications")
+          .select("id")
+          .order("submitted_at", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+      ]);
+    sampleProperty = property;
+    sampleModerationProperty = moderationProperty;
+    sampleVerification = verification;
+
+    // Separate: /review/success and /review/verify only work for a review the
+    // signed-in user actually owns, so this one is scoped to them.
+    const { data: review } = await supabase
+      .from("reviews")
+      .select("id, properties!inner(slug)")
+      .eq("author_id", user.id)
+      .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
-    sampleProperty = property;
-
-    if (user) {
-      // The listing-edit route only works for a property the signed-in user
-      // created, so it needs its own sample rather than reusing the public
-      // one above.
-      const { data: ownProperty } = await supabase
-        .from("properties")
-        .select("slug")
-        .eq("created_by", user.id)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      sampleOwnProperty = ownProperty;
-
-      const { data: review } = await supabase
-        .from("reviews")
-        .select("id, properties!inner(slug)")
-        .eq("author_id", user.id)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      const propertySlug = review?.properties?.[0]?.slug;
-      if (review && propertySlug) {
-        sampleReview = { slug: propertySlug, reviewId: review.id };
-      }
+    const propertySlug = one(review?.properties)?.slug;
+    if (review && propertySlug) {
+      sampleReview = { slug: propertySlug, reviewId: review.id };
     }
   }
 
@@ -102,9 +118,11 @@ export default async function RootLayout({
             {user ? (
               <AccountMenu
                 email={user.email ?? "RentalIntel member"}
+                isAdmin={isAdmin}
                 sampleProperty={sampleProperty}
-                sampleOwnProperty={sampleOwnProperty}
                 sampleReview={sampleReview}
+                sampleModerationProperty={sampleModerationProperty}
+                sampleVerification={sampleVerification}
               />
             ) : (
               <nav className="pointer-events-auto flex items-center gap-4 text-sm font-medium">
