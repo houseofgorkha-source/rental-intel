@@ -98,7 +98,7 @@ export default async function AccountPropertiesPage() {
                   Remove control — and a button nested inside an anchor is
                   both invalid and unusable. Remove sits above the overlay on
                   its own stacking level, so it can never navigate. */}
-              <article className="relative flex h-full flex-col overflow-hidden rounded-xl border border-border-subtle bg-surface transition hover:border-border-subtle hover:shadow-[0_18px_45px_-30px_rgba(255, 90, 54,0.45)] focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/25">
+              <article className="relative flex h-full flex-col overflow-hidden rounded-xl border border-border-subtle bg-surface transition hover:border-border-subtle hover:shadow-[0_18px_45px_-30px_rgba(14,143,94,0.45)] focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/25">
                 <div className="relative aspect-[5/2] bg-surface-raised">
                   <span className="absolute right-2 top-2 z-10">
                     <StatusPill tone={propertyStatusTone(property.status)}>
@@ -110,7 +110,7 @@ export default async function AccountPropertiesPage() {
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={image.src} alt={image.alt} className="h-full w-full object-cover" />
                   ) : (
-                    <div className="flex h-full items-end bg-[linear-gradient(145deg,#fff1e6,#fffaf6_58%,#ffe0cf)] p-3">
+                    <div className="flex h-full items-end bg-[linear-gradient(145deg,#eef5f0,#fbfdfb_58%,#dbe9e0)] p-3">
                       <span className="text-xs font-medium text-muted">
                         No image added
                       </span>

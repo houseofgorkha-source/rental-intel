@@ -20,7 +20,7 @@ export default function PropertyGallery({ images }: PropertyGalleryProps) {
 
   return (
     <section aria-label="Property gallery" className="mt-10">
-      <div className="overflow-hidden rounded-[1.5rem] border border-border-subtle bg-surface-raised shadow-[0_24px_60px_-45px_rgba(255, 90, 54,0.45)]">
+      <div className="overflow-hidden rounded-[1.5rem] border border-border-subtle bg-surface-raised shadow-[0_24px_60px_-45px_rgba(14,143,94,0.45)]">
         <img
           src={selectedImage.src}
           alt={selectedImage.alt}

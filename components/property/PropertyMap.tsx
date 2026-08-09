@@ -20,6 +20,12 @@ type PropertyMapProps = {
   zoom: number;
   selectedSlug: string | null;
   onSelectProperty: (slug: string | null) => void;
+  // Set (to a fresh object, even for the same slug twice in a row — see
+  // HomeDiscovery) when a property card is actually clicked, as opposed to
+  // hovered/focused. Opens that marker's popup, the same one clicking the
+  // marker itself would open, so a card click and a marker click land on
+  // the exact same result.
+  popupRequest?: { slug: string; token: number } | null;
   // Fires once the user finishes moving the map (drag/zoom end) — reports
   // the resulting view without feeding it back into `center`/`zoom`, so
   // dragging never triggers a city/area change on its own. This is exactly
@@ -73,10 +79,44 @@ function toGeoJSON(properties: DiscoveryProperty[]): GeoJSON.FeatureCollection {
         properties: {
           slug: property.slug,
           name: property.name,
+          area: property.area,
+          city: property.city,
           rent: property.askingRent,
         },
       })),
   };
+}
+
+// Shared by marker-click and card-click popups so the two can never drift
+// into showing different content for the same property. `area`/`city` is
+// the only location text this schema has to offer here -- the marker itself
+// sits at the area's centroid, not a geocoded street address (see
+// lib/area-coordinates.ts), so showing a precise address next to an
+// approximate pin would overclaim precision the map doesn't have.
+function buildPopupNode(
+  name: string,
+  area: string,
+  city: string,
+  rent: number | null,
+  slug: string,
+): HTMLDivElement {
+  const node = document.createElement("div");
+  node.className = "text-sm";
+  const title = document.createElement("p");
+  title.className = "font-medium text-foreground";
+  title.textContent = name;
+  const addressLine = document.createElement("p");
+  addressLine.className = "mt-0.5 text-xs uppercase tracking-wide text-muted";
+  addressLine.textContent = `${area}, ${city}`;
+  const rentLine = document.createElement("p");
+  rentLine.className = "mt-1 text-muted";
+  rentLine.textContent = rent === null ? "Rent on request" : formatINRPerMonth(rent);
+  const link = document.createElement("a");
+  link.href = `/property/${slug}`;
+  link.textContent = "View property →";
+  link.className = "mt-1.5 inline-block font-medium text-accent hover:underline";
+  node.append(title, addressLine, rentLine, link);
+  return node;
 }
 
 export default function PropertyMap({
@@ -85,6 +125,7 @@ export default function PropertyMap({
   zoom,
   selectedSlug,
   onSelectProperty,
+  popupRequest,
   onMoveEnd,
 }: PropertyMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -165,7 +206,7 @@ export default function PropertyMap({
         source: SOURCE_ID,
         filter: ["has", "point_count"],
         paint: {
-          "circle-color": "#ff5a36",
+          "circle-color": "#0e8f5e",
           "circle-radius": ["step", ["get", "point_count"], 16, 10, 20, 30, 24],
           "circle-opacity": 0.85,
         },
@@ -212,32 +253,20 @@ export default function PropertyMap({
       map.on("click", "unclustered", (event: { features?: MapGeoJSONFeature[] }) => {
         const feature = event.features?.[0];
         if (!feature || feature.geometry.type !== "Point") return;
-        const { slug, name, rent } = feature.properties as {
+        const { slug, name, area, city, rent } = feature.properties as {
           slug: string;
           name: string;
+          area: string;
+          city: string;
           rent: number | null;
         };
 
         onSelectPropertyRef.current(slug);
 
         popupRef.current?.remove();
-        const node = document.createElement("div");
-        node.className = "text-sm";
-        const title = document.createElement("p");
-        title.className = "font-medium text-foreground";
-        title.textContent = name;
-        const rentLine = document.createElement("p");
-        rentLine.className = "mt-0.5 text-muted";
-        rentLine.textContent = rent === null ? "Rent on request" : formatINRPerMonth(rent);
-        const link = document.createElement("a");
-        link.href = `/property/${slug}`;
-        link.textContent = "View property →";
-        link.className = "mt-1.5 inline-block font-medium text-accent hover:underline";
-        node.append(title, rentLine, link);
-
         popupRef.current = new Popup({ closeButton: true, offset: 12 })
           .setLngLat(feature.geometry.coordinates as [number, number])
-          .setDOMContent(node)
+          .setDOMContent(buildPopupNode(name, area, city, rent, slug))
           .addTo(map);
       });
 
@@ -295,6 +324,24 @@ export default function PropertyMap({
       mapRef.current?.easeTo({ center: [property.coordinates.lng, property.coordinates.lat] });
     }
   }, [selectedSlug, properties]);
+
+  // A card click, specifically -- not hover/focus, which only pans (above).
+  // `token` in the dependency array (rather than just `popupRequest?.slug`)
+  // is what lets clicking the same already-selected card twice in a row
+  // reopen the popup after someone has closed it, since the slug alone
+  // wouldn't change.
+  useEffect(() => {
+    if (!popupRequest || !isLoaded || !mapRef.current) return;
+    const property = properties.find((item) => item.slug === popupRequest.slug);
+    if (!property?.coordinates) return;
+
+    popupRef.current?.remove();
+    popupRef.current = new Popup({ closeButton: true, offset: 12 })
+      .setLngLat([property.coordinates.lng, property.coordinates.lat])
+      .setDOMContent(buildPopupNode(property.name, property.area, property.city, property.askingRent, property.slug))
+      .addTo(mapRef.current);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [popupRequest?.slug, popupRequest?.token, isLoaded, properties]);
 
   const hasVisibleMarkers = properties.some((property) => property.coordinates !== null);
 

@@ -1,30 +1,31 @@
 @import "tailwindcss";
 
 /* ---------------------------------------------------------------------------
-   RentalIntel light theme -- v2. The first pass went dark and read as a
-   generic dev-tool skin, not a consumer trust product; this reverts to a
-   warm, light base with ONE bold, confidently-saturated color doing the
-   work (coral, --accent) the way a reference the product owner liked
-   (findghosla.com) uses hot pink -- not a shy accent on a neutral page, the
-   color IS the identity. --accent-warm is repurposed as a complementary
-   BLUE pop (not warm-toned despite the variable name, kept to avoid
-   touching every call site) so the palette reads as genuinely two-color
-   colorful rather than monochrome-orange, the same way Ghosla pairs pink
-   headlines with blue map markers. Semantic colours (success/warning/
-   danger) keep their existing hue meaning, just retuned for a light,
-   warm-cream surface instead of a dark one.
+   RentalIntel light theme -- v3. v1 (dark) read as a generic dev-tool skin;
+   v2 (coral) had the right idea -- one bold, confidently-saturated color
+   carrying the identity, not a shy accent -- but the wrong hue for a rental-
+   trust product. v3 keeps the same "one bold color does the work" approach,
+   moved to a deep forest emerald instead.
+   --accent-warm is a gold/amber pop, used in exactly one place (the unread
+   message badge) for contrast against the green, not a second brand color.
+   --success is deliberately NOT the same green as --accent (a lighter,
+   teal-leaning green) -- once the primary accent is itself green, a
+   same-hue "Verified"/"Available" badge would be visually indistinguishable
+   from an ordinary interactive/active element, which is exactly the
+   collision CLAUDE.md's design notes warned about avoiding for the accent
+   pair. Kept them apart in hue, not just brightness.
    --------------------------------------------------------------------------- */
 :root {
-  --background: #fff8f3;
+  --background: #fdfbf7;
   --surface: #ffffff;
-  --surface-raised: #fff1e6;
-  --border-subtle: #f0ddcc;
-  --foreground: #2b1e16;
-  --muted: #7a6659;
-  --accent: #ff5a36;
-  --accent-hover: #e8451f;
-  --accent-warm: #2f6fed;
-  --success: #15803d;
+  --surface-raised: #eef5f0;
+  --border-subtle: #dbe6df;
+  --foreground: #1b2b22;
+  --muted: #66786d;
+  --accent: #0e8f5e;
+  --accent-hover: #0b7249;
+  --accent-warm: #e08e00;
+  --success: #0d9488;
   --warning: #b45309;
   --danger: #dc2626;
 }
@@ -62,7 +63,7 @@ body {
   transition: box-shadow 200ms ease, transform 200ms ease, border-color 200ms ease;
 }
 .glow-accent:hover {
-  box-shadow: 0 0 0 1px var(--accent), 0 8px 24px -8px rgba(255, 90, 54, 0.4);
+  box-shadow: 0 0 0 1px var(--accent), 0 8px 24px -8px rgba(14, 143, 94, 0.4);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -122,7 +123,7 @@ a {
   height: 18px;
   border-radius: 9999px;
   background: #fff;
-  border: 2px solid rgb(255 90 54);
+  border: 2px solid rgb(14 143 94);
   box-shadow: 0 1px 3px rgba(15, 23, 42, 0.25);
   cursor: pointer;
 }
@@ -133,7 +134,7 @@ a {
   height: 18px;
   border-radius: 9999px;
   background: #fff;
-  border: 2px solid rgb(255 90 54);
+  border: 2px solid rgb(14 143 94);
   box-shadow: 0 1px 3px rgba(15, 23, 42, 0.25);
   cursor: pointer;
 }

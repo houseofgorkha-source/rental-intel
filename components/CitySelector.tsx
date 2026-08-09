@@ -94,7 +94,7 @@ export default function CitySelector({ value, onChange, variant = "embedded" }: 
         className={
           variant === "embedded"
             ? "flex h-full items-center rounded-l-[0.9375rem] border-r border-border-subtle bg-surface-raised px-4 text-sm font-medium text-muted transition hover:bg-accent/10"
-            : "inline-flex items-center rounded-full border border-border-subtle bg-surface px-4 py-2 text-sm font-medium text-muted shadow-[0_1px_2px_rgba(255, 90, 54,0.04)] transition hover:border-accent/30 hover:text-accent"
+            : "inline-flex items-center rounded-full border border-border-subtle bg-surface px-4 py-2 text-sm font-medium text-muted shadow-[0_1px_2px_rgba(14,143,94,0.04)] transition hover:border-accent/30 hover:text-accent"
         }
       >
         {city}

@@ -54,8 +54,8 @@ export default function RoleSelector({ value, onChange }: RoleSelectorProps) {
               key={option.role}
               className={`flex cursor-pointer flex-col rounded-2xl border p-5 transition-all duration-200 ${
                 isSelected
-                  ? "border-accent bg-accent/10 shadow-[0_10px_28px_-10px_rgba(255,90,54,0.55)]"
-                  : "border-border-subtle bg-surface hover:-translate-y-1 hover:border-accent/60 hover:shadow-[0_14px_32px_-14px_rgba(255,90,54,0.4)]"
+                  ? "border-accent bg-accent/10 shadow-[0_10px_28px_-10px_rgba(14,143,94,0.55)]"
+                  : "border-border-subtle bg-surface hover:-translate-y-1 hover:border-accent/60 hover:shadow-[0_14px_32px_-14px_rgba(14,143,94,0.4)]"
               }`}
             >
               <input

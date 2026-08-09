@@ -29,7 +29,7 @@ export default function SectionNav({
             aria-current={isActive ? "page" : undefined}
             className={`rounded-full border px-4 py-2 text-sm font-medium transition-all duration-200 ${
               isActive
-                ? "border-accent bg-accent text-white shadow-[0_6px_18px_-6px_rgba(255,90,54,0.6)]"
+                ? "border-accent bg-accent text-white shadow-[0_6px_18px_-6px_rgba(14,143,94,0.6)]"
                 : "border-border-subtle bg-surface text-muted hover:-translate-y-0.5 hover:border-accent hover:text-accent"
             }`}
           >

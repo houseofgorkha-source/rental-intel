@@ -216,7 +216,7 @@ export default function SearchBar({
   return (
     <div ref={searchRef} className="w-full">
       <div
-        className={`flex overflow-visible rounded-2xl border border-border-subtle bg-surface shadow-[0_16px_35px_-20px_rgba(255, 90, 54,0.3)] transition focus-within:border-accent focus-within:ring-4 focus-within:ring-accent/25 ${
+        className={`flex overflow-visible rounded-2xl border border-border-subtle bg-surface shadow-[0_16px_35px_-20px_rgba(14,143,94,0.3)] transition focus-within:border-accent focus-within:ring-4 focus-within:ring-accent/25 ${
           compact ? "h-11" : "h-[68px]"
         }`}
       >

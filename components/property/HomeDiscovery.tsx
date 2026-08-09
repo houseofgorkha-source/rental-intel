@@ -48,6 +48,10 @@ export default function HomeDiscovery({ properties, children }: HomeDiscoveryPro
   const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState<PropertyFilters>(DEFAULT_FILTERS);
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
+  // A fresh object per click (not just the slug) so clicking the same
+  // already-selected card twice in a row still reopens the popup — see
+  // PropertyMap's own comment on why token, not slug alone, is watched.
+  const [popupRequest, setPopupRequest] = useState<{ slug: string; token: number } | null>(null);
   const [mapView, setMapView] = useState<{ center: Coordinates; zoom: number }>({
     center: getCityCoordinates(DEFAULT_CITY),
     zoom: CITY_ZOOM,
@@ -160,7 +164,7 @@ export default function HomeDiscovery({ properties, children }: HomeDiscoveryPro
           {/* Right: the unified discovery panel — one shared surface holding
               the toolbar, the map, and the property list. */}
           <section className="min-w-0" aria-label="Property discovery">
-            <div className="overflow-hidden rounded-2xl bg-surface shadow-[0_1px_2px_rgba(255, 90, 54,0.04)]">
+            <div className="overflow-hidden rounded-2xl bg-surface shadow-[0_1px_2px_rgba(14,143,94,0.04)]">
               <div className="flex flex-wrap items-center justify-between gap-4 p-5 sm:p-6">
                 <UseMyLocationButton onLocated={handleLocated} compact />
 
@@ -188,7 +192,7 @@ export default function HomeDiscovery({ properties, children }: HomeDiscoveryPro
               )}
 
               {/* Map and list touch — one divider, no gap, same height. */}
-              <div className="grid divide-slate-200 lg:h-[30rem] lg:grid-cols-[3fr_2fr] lg:divide-x">
+              <div className="grid divide-border-subtle lg:h-[30rem] lg:grid-cols-[3fr_2fr] lg:divide-x">
                 <div className="h-[22rem] lg:h-full">
                   <PropertyMap
                     properties={visibleProperties}
@@ -196,6 +200,7 @@ export default function HomeDiscovery({ properties, children }: HomeDiscoveryPro
                     zoom={mapView.zoom}
                     selectedSlug={selectedSlug}
                     onSelectProperty={setSelectedSlug}
+                    popupRequest={popupRequest}
                     onMoveEnd={handleMoveEnd}
                   />
                 </div>
@@ -207,6 +212,7 @@ export default function HomeDiscovery({ properties, children }: HomeDiscoveryPro
                     compact
                     selectedSlug={selectedSlug}
                     onSelectProperty={setSelectedSlug}
+                    onActivateProperty={(slug) => setPopupRequest({ slug, token: Date.now() })}
                   />
                 </div>
               </div>

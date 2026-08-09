@@ -423,7 +423,7 @@ export default async function PropertyPage({
           </div>
 
           <aside className="hidden lg:sticky lg:top-8 lg:block">
-            <div className="rounded-2xl border border-border-subtle bg-surface p-6 shadow-[0_20px_50px_-40px_rgba(255, 90, 54,0.4)]">
+            <div className="rounded-2xl border border-border-subtle bg-surface p-6 shadow-[0_20px_50px_-40px_rgba(14,143,94,0.4)]">
               <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted">Your next step</p>
               <div className="mt-5 flex flex-col gap-3">
                 <ContributionStatusCards

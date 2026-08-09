@@ -57,9 +57,14 @@ type PropertyListProps = {
   compact?: boolean;
   scrollable?: boolean;
   // Marker <-> card sync: which property (by slug) is currently selected,
-  // and the callback to fire when a card is clicked/focused.
+  // and the callback to fire when a card is hovered/focused (a preview --
+  // pans the map, does not open a popup).
   selectedSlug?: string | null;
   onSelectProperty?: (slug: string | null) => void;
+  // Fires only on an actual click on the card body (not hover/focus) --
+  // the stronger "I mean this one" signal that opens the map popup. Optional
+  // because /property's PropertyList has no map to react to it.
+  onActivateProperty?: (slug: string) => void;
 };
 
 export type OnlyShowFilters = {
@@ -681,7 +686,7 @@ export function FiltersButton({ filters, onFiltersChange }: FiltersButtonProps) 
         className={`inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-sm font-medium transition ${
           isFiltersOpen
             ? "border-accent bg-accent text-white shadow-[0_8px_20px_-8px_rgba(37,99,235,0.45)]"
-            : "border-border-subtle bg-surface text-muted shadow-[0_1px_2px_rgba(255, 90, 54,0.04)] hover:border-accent/30 hover:text-accent"
+            : "border-border-subtle bg-surface text-muted shadow-[0_1px_2px_rgba(14,143,94,0.04)] hover:border-accent/30 hover:text-accent"
         }`}
       >
         <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4 fill-none stroke-current stroke-[1.8]">
@@ -721,6 +726,7 @@ export function PropertyList({
   scrollable = false,
   selectedSlug = null,
   onSelectProperty,
+  onActivateProperty,
 }: PropertyListProps) {
   const cardRefs = useRef<Record<string, HTMLElement | null>>({});
 
@@ -736,13 +742,14 @@ export function PropertyList({
   const grid = (
     <div className={`grid gap-3 sm:grid-cols-2 ${compact ? "" : "xl:grid-cols-3"}`}>
       {visibleProperties.map((property) => (
-        // One destination, so the whole card is a single link — no inner
-        // "View Property" link nested inside a clickable container, which
-        // previously fired navigation and selection together and left the
-        // card unreachable by keyboard. Map highlighting moved to hover and
-        // focus: pointing at a card is the intent to preview it, clicking it
-        // is the intent to open it. Marker click -> selection and the
-        // scrollIntoView sync are unchanged.
+        // The card body is a click target for map preview (mouse-only — see
+        // onActivateProperty) but deliberately NOT itself a link: an earlier
+        // version nested a "View Property" link inside a whole-card link,
+        // which fired navigation and selection together and left the card
+        // unreachable by keyboard. The one real link is "View property"
+        // below, a normal tab stop. Hovering/focusing still previews on the
+        // map (pans only); clicking the card body also opens the marker's
+        // popup, same as clicking the marker itself would.
         <article
           key={property.slug}
           ref={(element) => {
@@ -750,13 +757,16 @@ export function PropertyList({
           }}
           onMouseEnter={() => onSelectProperty?.(property.slug)}
           onFocus={() => onSelectProperty?.(property.slug)}
-          className={`overflow-hidden rounded-xl border bg-surface transition-all duration-200 hover:-translate-y-1 hover:border-accent/60 hover:shadow-[0_18px_45px_-20px_rgba(255,90,54,0.5)] focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/25 ${
+          onClick={() => {
+            onSelectProperty?.(property.slug);
+            onActivateProperty?.(property.slug);
+          }}
+          className={`overflow-hidden rounded-xl border bg-surface transition-all duration-200 hover:-translate-y-1 hover:border-accent/60 hover:shadow-[0_18px_45px_-20px_rgba(14,143,94,0.5)] focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/25 ${
             selectedSlug === property.slug
               ? "border-accent ring-2 ring-accent/25"
               : "border-border-subtle"
-          }`}
+          } ${onActivateProperty ? "cursor-pointer" : ""}`}
         >
-          <Link href={`/property/${property.slug}`} className="block focus:outline-none">
           <div className="relative aspect-[5/2] bg-surface-raised">
             {/* Only shown for owner listings: a tenant contributing the flat
                 they live in isn't advertising a vacancy, so badging it
@@ -777,7 +787,7 @@ export function PropertyList({
                 className="h-full w-full object-cover"
               />
             ) : (
-              <div className="flex h-full items-end bg-[linear-gradient(145deg,#fff1e6,#fffaf6_58%,#ffe0cf)] p-3">
+              <div className="flex h-full items-end bg-[linear-gradient(145deg,#eef5f0,#fbfdfb_58%,#dbe9e0)] p-3">
                 <span className="text-xs font-medium text-muted">
                   Property image coming soon
                 </span>
@@ -805,8 +815,16 @@ export function PropertyList({
             <p className="mt-2 text-sm font-medium text-foreground">
               {formatRent(property.askingRent)}
             </p>
+            <Link
+              href={`/property/${property.slug}`}
+              className="group/view mt-3 inline-flex items-center gap-1 rounded-full bg-accent/10 px-3 py-1.5 text-sm font-medium text-accent transition-all duration-200 hover:gap-2 hover:bg-accent hover:text-white"
+            >
+              View property
+              <span aria-hidden="true" className="transition-transform duration-200 group-hover/view:translate-x-0.5">
+                →
+              </span>
+            </Link>
           </div>
-          </Link>
         </article>
       ))}
     </div>

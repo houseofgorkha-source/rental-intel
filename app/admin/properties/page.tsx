@@ -114,7 +114,7 @@ export default async function AdminPropertiesPage({
             <li key={property.slug}>
               <Link
                 href={`/admin/properties/${property.slug}`}
-                className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-xl border border-border-subtle bg-surface px-4 py-3.5 transition hover:border-accent hover:shadow-[0_18px_45px_-30px_rgba(255, 90, 54,0.45)] focus:outline-none focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/25"
+                className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-xl border border-border-subtle bg-surface px-4 py-3.5 transition hover:border-accent hover:shadow-[0_18px_45px_-30px_rgba(14,143,94,0.45)] focus:outline-none focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/25"
               >
                 <span className="min-w-0">
                   <span className="block truncate text-sm font-medium text-foreground">

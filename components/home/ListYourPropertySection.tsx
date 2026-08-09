@@ -33,13 +33,13 @@ export default function ListYourPropertySection() {
     >
       <div className="grid gap-10 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] lg:items-center lg:gap-8">
         {/* Left: the tinted panel, mirroring the hero's right-hand panel. */}
-        <div className="rounded-2xl bg-surface p-5 shadow-[0_1px_2px_rgba(255, 90, 54,0.04)] sm:p-6">
+        <div className="rounded-2xl bg-surface p-5 shadow-[0_1px_2px_rgba(14,143,94,0.04)] sm:p-6">
           <div className="grid gap-3 sm:grid-cols-3">
             {roles.map((role) => (
               <Link
                 key={role.href}
                 href={role.href}
-                className="flex flex-col rounded-xl bg-surface p-5 transition hover:shadow-[0_18px_45px_-30px_rgba(255, 90, 54,0.45)]"
+                className="flex flex-col rounded-xl border border-transparent bg-surface p-5 transition-all duration-200 hover:-translate-y-1 hover:border-accent/60 hover:shadow-[0_18px_45px_-20px_rgba(14,143,94,0.5)]"
               >
                 <span className="text-2xl" aria-hidden="true">
                   {role.icon}
@@ -49,9 +49,6 @@ export default function ListYourPropertySection() {
                 </span>
                 <span className="mt-1.5 text-sm leading-6 text-muted">
                   {role.description}
-                </span>
-                <span className="mt-3 text-sm font-medium text-accent">
-                  Continue →
                 </span>
               </Link>
             ))}
