@@ -7,6 +7,16 @@ import HomeSearch from "@/components/property/HomeSearch";
 import DualRangeSlider from "@/components/property/DualRangeSlider";
 import { DEFAULT_CITY, LOCALITIES_BY_CITY, cityMatches } from "@/lib/cities";
 import { formatINRPerMonth } from "@/lib/property-format";
+import {
+  FURNISHING_OPTIONS,
+  POSTED_BY_OPTIONS,
+  PROPERTY_CONFIGURATIONS,
+  PROPERTY_TYPES,
+  type Furnishing,
+  type PostedBy,
+  type PropertyConfiguration,
+  type PropertyType,
+} from "@/lib/property-attributes";
 import type { DiscoveryProperty } from "@/lib/property-discovery";
 
 // Seeded from app/property/page.tsx's searchParams (and, optionally, values
@@ -18,6 +28,14 @@ export type PropertySearchParams = {
   query?: string;
   rentMin?: number;
   rentMax?: number;
+  depositMin?: number;
+  depositMax?: number;
+  configurations?: PropertyConfiguration[];
+  propertyTypes?: PropertyType[];
+  furnishing?: Furnishing[];
+  minAreaSqft?: number;
+  listedWithinDays?: number;
+  postedBy?: PostedBy[];
   reviewsOnly?: boolean;
   photosOnly?: boolean;
 };
@@ -49,11 +67,30 @@ export type OnlyShowFilters = {
   photosOnly: boolean;
 };
 
-type FiltersButtonProps = {
+// Every filter the panel offers, in one object owned by the page.
+//
+// This used to be split: `rentRange` and `onlyShow` were lifted to the caller
+// and reached filterProperties, while bedrooms, property type, furnishing,
+// minimum area and "Posted by" lived in FiltersPanel's own useState and
+// reached nothing at all. Selecting "Tenant" highlighted a chip and changed
+// no results — and because the panel unmounts when it closes, the selection
+// silently reset too. Holding all of them here is what makes the panel a
+// filter rather than a set of toggles.
+export type PropertyFilters = {
   rentRange: [number, number];
-  onRentRangeChange: (range: [number, number]) => void;
+  depositRange: [number, number];
+  configurations: PropertyConfiguration[];
+  propertyTypes: PropertyType[];
+  furnishing: Furnishing[];
+  minAreaSqft: number | null;
+  listedWithinDays: number | null;
+  postedBy: PostedBy[];
   onlyShow: OnlyShowFilters;
-  onOnlyShowChange: (filters: OnlyShowFilters) => void;
+};
+
+type FiltersButtonProps = {
+  filters: PropertyFilters;
+  onFiltersChange: (filters: PropertyFilters) => void;
 };
 
 // Known gap: this stays a small, hand-picked subset for the sidebar below,
@@ -71,8 +108,59 @@ export const RENT_MIN = 3000;
 export const RENT_MAX = 100000; // upper bound is treated as "no cap" (100,000+)
 const RENT_STEP = 1000;
 
+export const DEPOSIT_MIN = 0;
+export const DEPOSIT_MAX = 2000000; // upper bound is treated as "no cap"
+const DEPOSIT_STEP = 50000;
+
+// "Any time" is null rather than a very large number, so the filter is either
+// applied or absent — never applied with a value chosen to be harmless.
+const LISTED_ON_OPTIONS: { label: string; days: number | null }[] = [
+  { label: "Any time", days: null },
+  { label: "Last 7 days", days: 7 },
+  { label: "Last 30 days", days: 30 },
+  { label: "Last 3 months", days: 90 },
+  { label: "Last 6 months", days: 180 },
+];
+
+// Nothing selected. Notably `postedBy` starts empty: it previously defaulted
+// to ["Tenant"], which rendered as an active chip. Had that selection ever
+// been wired to the query, it would have hidden every owner listing on the
+// site by default — the filter looked applied and was not.
+export const DEFAULT_FILTERS: PropertyFilters = {
+  rentRange: [RENT_MIN, RENT_MAX],
+  depositRange: [DEPOSIT_MIN, DEPOSIT_MAX],
+  configurations: [],
+  propertyTypes: [],
+  furnishing: [],
+  minAreaSqft: null,
+  listedWithinDays: null,
+  postedBy: [],
+  onlyShow: { reviewsOnly: false, photosOnly: false },
+};
+
+// Drives the count badge on the Filters chip. A filter counts as active when
+// it excludes something, which is why the ranges compare against their bounds
+// rather than just being non-null.
+export function countActiveFilters(filters: PropertyFilters): number {
+  return [
+    filters.rentRange[0] !== RENT_MIN || filters.rentRange[1] !== RENT_MAX,
+    filters.depositRange[0] !== DEPOSIT_MIN || filters.depositRange[1] !== DEPOSIT_MAX,
+    filters.configurations.length > 0,
+    filters.propertyTypes.length > 0,
+    filters.furnishing.length > 0,
+    filters.minAreaSqft !== null,
+    filters.listedWithinDays !== null,
+    filters.postedBy.length > 0,
+    filters.onlyShow.reviewsOnly,
+    filters.onlyShow.photosOnly,
+  ].filter(Boolean).length;
+}
+
+// These two inputs were previously `disabled` and styled to look it. They
+// filter for real now, so they get the same live treatment as every other
+// control in the panel.
 const fieldInputClass =
-  "min-w-0 flex-1 cursor-not-allowed rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500 placeholder:text-slate-400";
+  "min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100";
 
 // The single filtering implementation shared by the property list and the
 // map — both must derive from calling this once with the same state, never
@@ -80,18 +168,26 @@ const fieldInputClass =
 // as "visible."
 export function filterProperties(
   properties: DiscoveryProperty[],
-  filters: {
+  options: {
     // Empty array = no area filter. Non-empty = match ANY selected area
     // (multi-select), not all of them.
     areas: string[];
-    rentRange: [number, number];
-    onlyShow: OnlyShowFilters;
     query?: string;
+    filters: PropertyFilters;
   },
 ): DiscoveryProperty[] {
+  const { filters } = options;
   const [rentMin, rentMax] = filters.rentRange;
-  const query = filters.query?.trim().toLowerCase();
-  const areas = filters.areas.map((area) => area.toLocaleLowerCase());
+  const [depositMin, depositMax] = filters.depositRange;
+  const query = options.query?.trim().toLowerCase();
+  const areas = options.areas.map((area) => area.toLocaleLowerCase());
+
+  // Resolved once rather than per property, so every row is measured against
+  // the same instant.
+  const listedAfter =
+    filters.listedWithinDays === null
+      ? null
+      : Date.now() - filters.listedWithinDays * 24 * 60 * 60 * 1000;
 
   return properties.filter((property) => {
     if (
@@ -109,9 +205,65 @@ export function filterProperties(
       return false;
     }
 
+    // A null price is "not stated", not "free" — an unpriced property stays
+    // in the results rather than being excluded by a range it cannot answer.
+    // This is the pre-existing rent behaviour, applied to deposit too.
     if (property.askingRent !== null) {
       if (property.askingRent < rentMin) return false;
       if (rentMax < RENT_MAX && property.askingRent > rentMax) return false;
+    }
+
+    if (property.securityDeposit !== null) {
+      if (property.securityDeposit < depositMin) return false;
+      if (depositMax < DEPOSIT_MAX && property.securityDeposit > depositMax) return false;
+    }
+
+    // The attribute filters work the other way round: selecting "2 BHK" is a
+    // positive claim about what you want, and a property that never told us
+    // its configuration cannot satisfy it. Including nulls here would fill a
+    // "2 BHK" search with properties that might be anything.
+    if (
+      filters.configurations.length > 0 &&
+      (property.configuration === null ||
+        !filters.configurations.includes(property.configuration))
+    ) {
+      return false;
+    }
+
+    if (
+      filters.propertyTypes.length > 0 &&
+      (property.propertyType === null ||
+        !filters.propertyTypes.includes(property.propertyType))
+    ) {
+      return false;
+    }
+
+    if (
+      filters.furnishing.length > 0 &&
+      (property.furnishing === null || !filters.furnishing.includes(property.furnishing))
+    ) {
+      return false;
+    }
+
+    if (
+      filters.minAreaSqft !== null &&
+      (property.carpetAreaSqft === null || property.carpetAreaSqft < filters.minAreaSqft)
+    ) {
+      return false;
+    }
+
+    // Provenance comes from `submitted_as`, the column that already records
+    // it. A legacy row with unknown provenance is excluded from a positive
+    // "Posted by" filter for the same reason as the attributes above.
+    if (
+      filters.postedBy.length > 0 &&
+      (property.submittedAs === null || !filters.postedBy.includes(property.submittedAs))
+    ) {
+      return false;
+    }
+
+    if (listedAfter !== null && new Date(property.createdAt).getTime() < listedAfter) {
+      return false;
     }
 
     if (filters.onlyShow.reviewsOnly && property.reviewCount === 0) return false;
@@ -150,19 +302,19 @@ function FilterField({
   );
 }
 
-// Interactive but not wired to real data: this project's schema has no
-// bedroom/furnishing/property-type/amenities/posted-by fields on
-// `properties` yet, so these toggle a purely local selected state (real UI
-// feedback) without filtering the result list. Filtering these once the
-// underlying columns exist is a follow-up, not a UI change.
-function ToggleGroup({
+// Generic over the option type so a chip group can only ever be given values
+// from the matching canonical list (lib/property-attributes.ts). A typo like
+// "1RK" is a compile error rather than a chip that quietly matches nothing.
+function ToggleGroup<T extends string>({
   options,
   selected,
   onToggle,
+  labelFor,
 }: {
-  options: string[];
-  selected: string[];
-  onToggle: (option: string) => void;
+  options: readonly T[];
+  selected: readonly T[];
+  onToggle: (option: T) => void;
+  labelFor?: (option: T) => string;
 }) {
   return (
     <div className="flex flex-wrap gap-2">
@@ -180,7 +332,7 @@ function ToggleGroup({
                 : "border-slate-200 bg-white text-slate-700 hover:border-blue-200 hover:text-blue-600"
             }`}
           >
-            {option}
+            {labelFor ? labelFor(option) : option}
           </button>
         );
       })}
@@ -188,16 +340,16 @@ function ToggleGroup({
   );
 }
 
-function ToggleCheckboxGrid({
+function ToggleCheckboxGrid<T extends string>({
   options,
   columns,
   selected,
   onToggle,
 }: {
-  options: string[];
+  options: readonly T[];
   columns: 1 | 2;
-  selected: string[];
-  onToggle: (option: string) => void;
+  selected: readonly T[];
+  onToggle: (option: T) => void;
 }) {
   return (
     <div className={`grid gap-2.5 ${columns === 2 ? "grid-cols-2" : "grid-cols-1"}`}>
@@ -216,6 +368,10 @@ function ToggleCheckboxGrid({
   );
 }
 
+// Amenities is the one group still without a data model — it has no column,
+// no table, and no requirement asking for one. It stays local and clearly
+// labelled "coming soon" rather than being wired to nothing while looking
+// identical to the filters that work.
 function useToggleSet(initial: string[] = []) {
   const [selected, setSelected] = useState<string[]>(initial);
   const toggle = (option: string) =>
@@ -229,33 +385,34 @@ function useToggleSet(initial: string[] = []) {
 
 type FiltersPanelProps = {
   onClose: () => void;
-  rentRange: [number, number];
-  onRentRangeChange: (range: [number, number]) => void;
-  onlyShow: OnlyShowFilters;
-  onOnlyShowChange: (filters: OnlyShowFilters) => void;
+  filters: PropertyFilters;
+  onFiltersChange: (filters: PropertyFilters) => void;
   position: { top: number; right: number; width: number; maxHeight: number } | null;
   panelRef: React.RefObject<HTMLDivElement | null>;
 };
 
 function FiltersPanel({
   onClose,
-  rentRange,
-  onRentRangeChange,
-  onlyShow,
-  onOnlyShowChange,
+  filters,
+  onFiltersChange,
   position,
   panelRef,
 }: FiltersPanelProps) {
-  const [depositRange, setDepositRange] = useState<[number, number]>([0, 2000000]);
-  const [bedrooms, toggleBedroom] = useToggleSet();
-  const [propertyTypes, togglePropertyType] = useToggleSet();
-  const [furnishing, toggleFurnishing] = useToggleSet();
   const [amenities, toggleAmenity] = useToggleSet();
-  // Defaults to "Tenant": properties on RentalIntel are submitted by past
-  // tenants, not owners/brokers listing vacancies, so that's the
-  // product-accurate starting selection rather than nothing selected.
-  const [postedBy, togglePostedBy] = useToggleSet(["Tenant"]);
-  const [verifiedOnly, setVerifiedOnly] = useState(false);
+
+  // One updater for every group, so a new filter cannot be added and then
+  // forgotten on the way back up to the page's state — which is exactly how
+  // the previous version's selections got stranded inside this component.
+  function update<K extends keyof PropertyFilters>(key: K, value: PropertyFilters[K]) {
+    onFiltersChange({ ...filters, [key]: value });
+  }
+
+  function toggleIn<T extends string>(key: keyof PropertyFilters, list: readonly T[], option: T) {
+    const next = list.includes(option)
+      ? list.filter((item) => item !== option)
+      : [...list, option];
+    onFiltersChange({ ...filters, [key]: next });
+  }
 
   if (!position) return null;
 
@@ -279,42 +436,45 @@ function FiltersPanel({
             min={RENT_MIN}
             max={RENT_MAX}
             step={RENT_STEP}
-            value={rentRange}
-            onChange={onRentRangeChange}
+            value={filters.rentRange}
+            onChange={(range) => update("rentRange", range)}
             formatValue={formatRentSliderValue}
           />
         </FilterField>
         <FilterField label="Security deposit">
           <DualRangeSlider
-            min={0}
-            max={2000000}
-            step={50000}
-            value={depositRange}
-            onChange={setDepositRange}
+            min={DEPOSIT_MIN}
+            max={DEPOSIT_MAX}
+            step={DEPOSIT_STEP}
+            value={filters.depositRange}
+            onChange={(range) => update("depositRange", range)}
             formatValue={formatDepositSliderValue}
           />
-          <p className="mt-2 text-xs text-slate-500">Deposit filtering is coming soon.</p>
         </FilterField>
-        <FilterField label="Bedrooms">
+        {/* Labelled "Configuration", not "Bedrooms": 1 RK has no bedroom at
+            all, so a bedroom count cannot name the thing being chosen. */}
+        <FilterField label="Configuration">
           <ToggleGroup
-            options={["1 BHK", "2 BHK", "3 BHK", "4 BHK", "5+ BHK"]}
-            selected={bedrooms}
-            onToggle={toggleBedroom}
+            options={PROPERTY_CONFIGURATIONS}
+            selected={filters.configurations}
+            onToggle={(option) =>
+              toggleIn("configurations", filters.configurations, option)
+            }
           />
         </FilterField>
         <FilterField label="Property type">
           <ToggleCheckboxGrid
-            options={["Apartment", "Independent house", "Villa", "PG / Co-living", "Studio"]}
+            options={PROPERTY_TYPES}
             columns={2}
-            selected={propertyTypes}
-            onToggle={togglePropertyType}
+            selected={filters.propertyTypes}
+            onToggle={(option) => toggleIn("propertyTypes", filters.propertyTypes, option)}
           />
         </FilterField>
         <FilterField label="Furnishing">
           <ToggleGroup
-            options={["Unfurnished", "Semi-furnished", "Fully furnished"]}
-            selected={furnishing}
-            onToggle={toggleFurnishing}
+            options={FURNISHING_OPTIONS}
+            selected={filters.furnishing}
+            onToggle={(option) => toggleIn("furnishing", filters.furnishing, option)}
           />
         </FilterField>
         <FilterField label="Amenities">
@@ -328,20 +488,58 @@ function FiltersPanel({
         </FilterField>
         <FilterField label="Minimum area">
           <div className="flex items-center gap-2">
-            <input type="text" disabled placeholder="e.g. 600" className={fieldInputClass} />
+            <input
+              type="number"
+              min="0"
+              step="50"
+              inputMode="numeric"
+              placeholder="e.g. 600"
+              value={filters.minAreaSqft ?? ""}
+              onChange={(event) => {
+                const parsed = Number(event.target.value);
+                // Blank and 0 both mean "no minimum" — an area filter of zero
+                // excludes nothing but would still count as active.
+                update(
+                  "minAreaSqft",
+                  event.target.value === "" || !Number.isFinite(parsed) || parsed <= 0
+                    ? null
+                    : Math.round(parsed),
+                );
+              }}
+              className={fieldInputClass}
+            />
             <span className="text-sm text-slate-500">sq.ft</span>
           </div>
         </FilterField>
         <FilterField label="Listed on">
-          <select disabled className={`${fieldInputClass} w-full`}>
-            <option>Any time</option>
+          <select
+            value={filters.listedWithinDays ?? ""}
+            onChange={(event) =>
+              update("listedWithinDays", event.target.value === "" ? null : Number(event.target.value))
+            }
+            className={`${fieldInputClass} w-full`}
+          >
+            {LISTED_ON_OPTIONS.map((option) => (
+              <option key={option.label} value={option.days ?? ""}>
+                {option.label}
+              </option>
+            ))}
           </select>
+          <p className="mt-2 text-xs text-slate-500">
+            When the property was added to RentalIntel.
+          </p>
         </FilterField>
+        {/* Backed by `submitted_as`, the provenance already recorded at
+            submission. There is no "Broker" chip any more: RentalIntel has no
+            broker role, so it could never have matched a property. */}
         <FilterField label="Posted by">
           <ToggleGroup
-            options={["Owner", "Broker", "Tenant"]}
-            selected={postedBy}
-            onToggle={togglePostedBy}
+            options={POSTED_BY_OPTIONS.map((option) => option.value)}
+            selected={filters.postedBy}
+            onToggle={(option) => toggleIn("postedBy", filters.postedBy, option)}
+            labelFor={(value) =>
+              POSTED_BY_OPTIONS.find((option) => option.value === value)?.label ?? value
+            }
           />
         </FilterField>
         <FilterField label="Only show">
@@ -349,18 +547,12 @@ function FiltersPanel({
             <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-700">
               <input
                 type="checkbox"
-                checked={verifiedOnly}
-                onChange={() => setVerifiedOnly((value) => !value)}
-                className="accent-blue-600"
-              />
-              Verified properties
-            </label>
-            <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-700">
-              <input
-                type="checkbox"
-                checked={onlyShow.reviewsOnly}
+                checked={filters.onlyShow.reviewsOnly}
                 onChange={() =>
-                  onOnlyShowChange({ ...onlyShow, reviewsOnly: !onlyShow.reviewsOnly })
+                  update("onlyShow", {
+                    ...filters.onlyShow,
+                    reviewsOnly: !filters.onlyShow.reviewsOnly,
+                  })
                 }
                 className="accent-blue-600"
               />
@@ -369,9 +561,12 @@ function FiltersPanel({
             <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-700">
               <input
                 type="checkbox"
-                checked={onlyShow.photosOnly}
+                checked={filters.onlyShow.photosOnly}
                 onChange={() =>
-                  onOnlyShowChange({ ...onlyShow, photosOnly: !onlyShow.photosOnly })
+                  update("onlyShow", {
+                    ...filters.onlyShow,
+                    photosOnly: !filters.onlyShow.photosOnly,
+                  })
                 }
                 className="accent-blue-600"
               />
@@ -381,23 +576,27 @@ function FiltersPanel({
         </FilterField>
       </div>
       <div className="shrink-0 space-y-3 border-t border-slate-100 p-4">
+        {/* Every filter applies as it is changed, so there is no "Apply" any
+            more — a button that applied nothing was part of why the panel
+            looked like it worked. "Reset all" is what the old Apply slot is
+            worth: the one action the panel could not otherwise offer. */}
         <p className="text-xs text-slate-500">
-          Rent range and &quot;Only show&quot; filters apply live. Everything else previews what&apos;s coming.
+          Filters apply as you change them. Amenities are still coming soon.
         </p>
         <div className="flex items-center justify-between gap-3">
           <button
             type="button"
-            onClick={onClose}
+            onClick={() => onFiltersChange(DEFAULT_FILTERS)}
             className="text-sm font-medium text-slate-600 hover:text-slate-900"
           >
-            Close
+            Reset all
           </button>
           <button
             type="button"
             onClick={onClose}
             className="rounded-xl bg-slate-950 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800"
           >
-            Apply
+            Close
           </button>
         </div>
       </div>
@@ -412,12 +611,8 @@ function FiltersPanel({
 // PropertyToolbar's bundled City/Area selectors, which the homepage now
 // renders separately as part of Search. /property page still gets this via
 // PropertyToolbar below — same component, two call sites, no duplication.
-export function FiltersButton({
-  rentRange,
-  onRentRangeChange,
-  onlyShow,
-  onOnlyShowChange,
-}: FiltersButtonProps) {
+export function FiltersButton({ filters, onFiltersChange }: FiltersButtonProps) {
+  const activeCount = countActiveFilters(filters);
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [position, setPosition] = useState<{
     top: number;
@@ -493,14 +688,24 @@ export function FiltersButton({
           <path d="M4 5h16l-6.5 8v5.5L10.5 21v-8L4 5z" strokeLinejoin="round" />
         </svg>
         Filters
+        {/* The panel closes over the results, so without this the only way to
+            tell whether a filter is narrowing the list is to reopen it. */}
+        {activeCount > 0 && (
+          <span
+            aria-label={`${activeCount} active ${activeCount === 1 ? "filter" : "filters"}`}
+            className={`ml-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-xs font-semibold ${
+              isFiltersOpen ? "bg-white text-blue-600" : "bg-blue-600 text-white"
+            }`}
+          >
+            {activeCount}
+          </span>
+        )}
       </button>
       {isFiltersOpen && (
         <FiltersPanel
           onClose={() => setIsFiltersOpen(false)}
-          rentRange={rentRange}
-          onRentRangeChange={onRentRangeChange}
-          onlyShow={onlyShow}
-          onOnlyShowChange={onOnlyShowChange}
+          filters={filters}
+          onFiltersChange={onFiltersChange}
           position={position}
           panelRef={panelRef}
         />
@@ -648,14 +853,27 @@ export default function PropertyDiscovery({
   const [selectedCity, setSelectedCity] = useState(initialSearch?.city ?? DEFAULT_CITY);
   const [selectedAreas, setSelectedAreas] = useState<string[]>(initialSearch?.areas ?? []);
   const [searchQuery, setSearchQuery] = useState(initialSearch?.query ?? "");
-  const [rentRange, setRentRange] = useState<[number, number]>([
-    initialSearch?.rentMin ?? RENT_MIN,
-    initialSearch?.rentMax ?? RENT_MAX,
-  ]);
-  const [onlyShow, setOnlyShow] = useState<OnlyShowFilters>({
-    reviewsOnly: initialSearch?.reviewsOnly ?? false,
-    photosOnly: initialSearch?.photosOnly ?? false,
-  });
+  const [filters, setFilters] = useState<PropertyFilters>(() => ({
+    ...DEFAULT_FILTERS,
+    rentRange: [
+      initialSearch?.rentMin ?? RENT_MIN,
+      initialSearch?.rentMax ?? RENT_MAX,
+    ],
+    depositRange: [
+      initialSearch?.depositMin ?? DEPOSIT_MIN,
+      initialSearch?.depositMax ?? DEPOSIT_MAX,
+    ],
+    configurations: initialSearch?.configurations ?? [],
+    propertyTypes: initialSearch?.propertyTypes ?? [],
+    furnishing: initialSearch?.furnishing ?? [],
+    minAreaSqft: initialSearch?.minAreaSqft ?? null,
+    listedWithinDays: initialSearch?.listedWithinDays ?? null,
+    postedBy: initialSearch?.postedBy ?? [],
+    onlyShow: {
+      reviewsOnly: initialSearch?.reviewsOnly ?? false,
+      photosOnly: initialSearch?.photosOnly ?? false,
+    },
+  }));
 
   // `properties` is fetched once for DEFAULT_CITY (see app/property/page.tsx),
   // the same pattern the homepage uses — every other city is filtered down
@@ -670,11 +888,10 @@ export default function PropertyDiscovery({
     () =>
       filterProperties(cityProperties, {
         areas: selectedAreas,
-        rentRange,
-        onlyShow,
         query: searchQuery,
+        filters,
       }),
-    [cityProperties, selectedAreas, rentRange, onlyShow, searchQuery],
+    [cityProperties, selectedAreas, filters, searchQuery],
   );
 
   const searchProperties = cityProperties.map((property) => ({
@@ -713,12 +930,7 @@ export default function PropertyDiscovery({
             query={searchQuery}
             onQueryChange={setSearchQuery}
           />
-          <FiltersButton
-            rentRange={rentRange}
-            onRentRangeChange={setRentRange}
-            onlyShow={onlyShow}
-            onOnlyShowChange={setOnlyShow}
-          />
+          <FiltersButton filters={filters} onFiltersChange={setFilters} />
         </div>
 
         {cityProperties.length === 0 && (

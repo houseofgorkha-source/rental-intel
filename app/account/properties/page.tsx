@@ -77,9 +77,10 @@ export default async function AccountPropertiesPage() {
           add it again. Saying so here prevents the "where is the edit
           button?" dead end. */}
       <p className="text-sm leading-6 text-slate-600">
-        You can remove a property while it&apos;s still pending approval and add it
-        again. Once published, a property becomes part of the shared record and
-        can no longer be removed.
+        You can keep a property&apos;s details, rent and availability current at any
+        time — its name and address can&apos;t change, because reviews stay attached
+        to them. You can remove a property while it&apos;s still pending approval;
+        once published it becomes part of the shared record.
       </p>
 
       <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -145,14 +146,25 @@ export default async function AccountPropertiesPage() {
                     </p>
                   )}
 
-                  {/* Only while pending. A published property is part of the
-                      shared record and the database refuses to delete it, so
-                      no control is offered that would fail. */}
-                  {property.status === "pending" && (
-                    <div className="relative z-10 mt-auto pt-3">
+                  {/* Both controls sit above the stretched link's overlay on
+                      their own stacking level, so neither can navigate.
+                      Edit is offered at every status: keeping rent,
+                      availability and attributes current is exactly what a
+                      published property needs, and the database restricts what
+                      the form can reach. Remove stays pending-only — a
+                      published property is part of the shared record and the
+                      delete policy refuses it. */}
+                  <div className="relative z-10 mt-auto flex flex-wrap items-center gap-3 pt-3">
+                    <Link
+                      href={`/account/properties/${property.slug}/edit`}
+                      className="rounded-lg px-2 py-1 text-sm font-medium text-blue-600 underline decoration-blue-200 underline-offset-4 transition hover:text-blue-700 hover:decoration-blue-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-200"
+                    >
+                      Edit
+                    </Link>
+                    {property.status === "pending" && (
                       <PendingSubmissionActions slug={property.slug} name={property.name} />
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               </article>
             </li>

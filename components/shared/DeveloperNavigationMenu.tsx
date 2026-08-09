@@ -20,6 +20,9 @@ type DeveloperNavigationMenuProps = {
   // administrator, so they resolve to null for everyone else.
   sampleModerationProperty: { slug: string } | null;
   sampleVerification: { id: string } | null;
+  // The signed-in user's own most recent property, for the edit route — which
+  // is scoped to its creator and 404s for anyone else's.
+  sampleOwnProperty: { slug: string } | null;
   onNavigate: () => void;
 };
 
@@ -35,6 +38,7 @@ export default function DeveloperNavigationMenu({
   sampleReview,
   sampleModerationProperty,
   sampleVerification,
+  sampleOwnProperty,
   onNavigate,
 }: DeveloperNavigationMenuProps) {
   const propertyHref = sampleProperty ? `/property/${sampleProperty.slug}` : null;
@@ -116,7 +120,20 @@ export default function DeveloperNavigationMenu({
           href: "/account/properties",
           kind: "page",
         },
+        {
+          label: "Edit Property",
+          route: "/account/properties/[slug]/edit",
+          // Scoped to a property this user created — the route 404s for
+          // anyone else's, so linking a stranger's slug would be a dead link
+          // dressed up as a working one.
+          href: sampleOwnProperty
+            ? `/account/properties/${sampleOwnProperty.slug}/edit`
+            : null,
+          kind: "page",
+          badge: sampleOwnProperty ? undefined : "Context Required",
+        },
         { label: "My Reviews", route: "/account/reviews", href: "/account/reviews", kind: "page" },
+        { label: "Messages", route: "/account/messages", href: "/account/messages", kind: "page" },
         {
           label: "My Verifications",
           route: "/account/verifications",

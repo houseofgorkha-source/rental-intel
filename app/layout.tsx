@@ -53,6 +53,19 @@ export default async function RootLayout({
   // by RLS — so this only avoids showing a link that would 404.
   const isAdmin = user ? await isAdminUser(supabase, user.id) : false;
 
+  // Unread message count for the Account menu badge — every signed-in user,
+  // not just admins/dev-nav, unlike the sample-data queries below. A `head`
+  // count query so the badge costs one round trip and no row data.
+  let unreadMessageCount = 0;
+  if (user) {
+    const { count } = await supabase
+      .from("property_messages")
+      .select("id", { count: "exact", head: true })
+      .eq("recipient_id", user.id)
+      .is("read_at", null);
+    unreadMessageCount = count ?? 0;
+  }
+
   // Only queried when the dev nav flag is on AND the viewer is an
   // administrator — the same condition AccountMenu now uses to render it.
   // Without the isAdmin half, an ordinary account paid for these queries to
@@ -64,10 +77,15 @@ export default async function RootLayout({
   let sampleReview: { slug: string; reviewId: string } | null = null;
   let sampleModerationProperty: { slug: string } | null = null;
   let sampleVerification: { id: string } | null = null;
+  let sampleOwnProperty: { slug: string } | null = null;
 
   if (devNavEnabled && user) {
-    const [{ data: property }, { data: moderationProperty }, { data: verification }] =
-      await Promise.all([
+    const [
+      { data: property },
+      { data: moderationProperty },
+      { data: verification },
+      { data: ownProperty },
+    ] = await Promise.all([
         supabase
           .from("properties")
           .select("slug")
@@ -86,10 +104,20 @@ export default async function RootLayout({
           .order("submitted_at", { ascending: false })
           .limit(1)
           .maybeSingle(),
+        // Scoped to this user: /account/properties/[slug]/edit only resolves
+        // for a property they created.
+        supabase
+          .from("properties")
+          .select("slug")
+          .eq("created_by", user.id)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
       ]);
     sampleProperty = property;
     sampleModerationProperty = moderationProperty;
     sampleVerification = verification;
+    sampleOwnProperty = ownProperty;
 
     // Separate: /review/success and /review/verify only work for a review the
     // signed-in user actually owns, so this one is scoped to them.
@@ -119,10 +147,12 @@ export default async function RootLayout({
               <AccountMenu
                 email={user.email ?? "RentalIntel member"}
                 isAdmin={isAdmin}
+                unreadMessageCount={unreadMessageCount}
                 sampleProperty={sampleProperty}
                 sampleReview={sampleReview}
                 sampleModerationProperty={sampleModerationProperty}
                 sampleVerification={sampleVerification}
+                sampleOwnProperty={sampleOwnProperty}
               />
             ) : (
               <nav className="pointer-events-auto flex items-center gap-4 text-sm font-medium">

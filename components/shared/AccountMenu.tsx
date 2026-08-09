@@ -11,6 +11,10 @@ type AccountMenuProps = {
   // itself server-side and every table behind it is filtered by RLS, so
   // forging this prop would reveal a link to a page that 404s.
   isAdmin?: boolean;
+  // Unread property_messages addressed to this user. Presentation only, same
+  // as isAdmin above — /account/messages re-derives its own contents from
+  // RLS regardless of what this number says.
+  unreadMessageCount?: number;
   // Dev-nav-only — resolved server-side in app/layout.tsx, only when
   // NEXT_PUBLIC_SHOW_DEV_NAV is set. Always null/undefined otherwise, so
   // these props are inert in production.
@@ -18,6 +22,7 @@ type AccountMenuProps = {
   sampleReview?: { slug: string; reviewId: string } | null;
   sampleModerationProperty?: { slug: string } | null;
   sampleVerification?: { id: string } | null;
+  sampleOwnProperty?: { slug: string } | null;
 };
 
 const SHOW_DEV_NAV = process.env.NEXT_PUBLIC_SHOW_DEV_NAV === "true";
@@ -25,10 +30,12 @@ const SHOW_DEV_NAV = process.env.NEXT_PUBLIC_SHOW_DEV_NAV === "true";
 export default function AccountMenu({
   email,
   isAdmin = false,
+  unreadMessageCount = 0,
   sampleProperty = null,
   sampleReview = null,
   sampleModerationProperty = null,
   sampleVerification = null,
+  sampleOwnProperty = null,
 }: AccountMenuProps) {
   const menuRef = useRef<HTMLDetailsElement>(null);
   const closeMenu = () => menuRef.current?.removeAttribute("open");
@@ -59,6 +66,11 @@ export default function AccountMenu({
     <details ref={menuRef} className="pointer-events-auto relative">
       <summary className="cursor-pointer list-none rounded-full border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-900 hover:border-blue-600 hover:text-blue-600">
         Account
+        {unreadMessageCount > 0 && (
+          <span className="ml-1.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-blue-600 px-1 text-[11px] font-semibold text-white">
+            {unreadMessageCount > 9 ? "9+" : unreadMessageCount}
+          </span>
+        )}
       </summary>
 
       <div
@@ -87,6 +99,18 @@ export default function AccountMenu({
           className="block rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600"
         >
           My Reviews
+        </Link>
+        <Link
+          href="/account/messages"
+          onClick={closeMenu}
+          className="flex items-center justify-between rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600"
+        >
+          Messages
+          {unreadMessageCount > 0 && (
+            <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-blue-600 px-1 text-[11px] font-semibold text-white">
+              {unreadMessageCount > 9 ? "9+" : unreadMessageCount}
+            </span>
+          )}
         </Link>
         <Link
           href="/add-property"
@@ -123,6 +147,7 @@ export default function AccountMenu({
             sampleReview={sampleReview}
             sampleModerationProperty={sampleModerationProperty}
             sampleVerification={sampleVerification}
+            sampleOwnProperty={sampleOwnProperty}
             onNavigate={closeMenu}
           />
         )}

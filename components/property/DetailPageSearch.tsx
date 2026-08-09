@@ -5,9 +5,10 @@ import { useState } from "react";
 import HomeSearch from "@/components/property/HomeSearch";
 import {
   FiltersButton,
+  DEFAULT_FILTERS,
   RENT_MIN,
   RENT_MAX,
-  type OnlyShowFilters,
+  type PropertyFilters,
 } from "@/components/property/PropertyDiscovery";
 import { DEFAULT_CITY, LOCALITIES_BY_CITY } from "@/lib/cities";
 
@@ -31,26 +32,39 @@ export default function DetailPageSearch({ properties }: DetailPageSearchProps) 
   const [city, setCity] = useState(DEFAULT_CITY);
   const [selectedAreas, setSelectedAreas] = useState<string[]>([]);
   const [query, setQuery] = useState("");
-  const [rentRange, setRentRange] = useState<[number, number]>([RENT_MIN, RENT_MAX]);
-  const [onlyShow, setOnlyShow] = useState<OnlyShowFilters>({
-    reviewsOnly: false,
-    photosOnly: false,
-  });
+  const [filters, setFilters] = useState<PropertyFilters>(DEFAULT_FILTERS);
 
   function handleCityChange(nextCity: string) {
     setCity(nextCity);
     setSelectedAreas([]);
   }
 
+  // Every filter the panel can set is carried into the URL. Anything omitted
+  // here would be silently discarded on the way to /property — the same class
+  // of dead control this change is fixing inside the panel itself.
   function handleSearch() {
     const params = new URLSearchParams();
     if (city !== DEFAULT_CITY) params.set("city", city);
     if (selectedAreas.length > 0) params.set("areas", selectedAreas.join(","));
     if (query.trim()) params.set("q", query.trim());
-    if (rentRange[0] !== RENT_MIN) params.set("rentMin", String(rentRange[0]));
-    if (rentRange[1] !== RENT_MAX) params.set("rentMax", String(rentRange[1]));
-    if (onlyShow.reviewsOnly) params.set("reviewsOnly", "1");
-    if (onlyShow.photosOnly) params.set("photosOnly", "1");
+    if (filters.rentRange[0] !== RENT_MIN) params.set("rentMin", String(filters.rentRange[0]));
+    if (filters.rentRange[1] !== RENT_MAX) params.set("rentMax", String(filters.rentRange[1]));
+    if (filters.depositRange[0] !== DEFAULT_FILTERS.depositRange[0]) {
+      params.set("depositMin", String(filters.depositRange[0]));
+    }
+    if (filters.depositRange[1] !== DEFAULT_FILTERS.depositRange[1]) {
+      params.set("depositMax", String(filters.depositRange[1]));
+    }
+    if (filters.configurations.length > 0) params.set("config", filters.configurations.join(","));
+    if (filters.propertyTypes.length > 0) params.set("ptype", filters.propertyTypes.join(","));
+    if (filters.furnishing.length > 0) params.set("furnishing", filters.furnishing.join(","));
+    if (filters.minAreaSqft !== null) params.set("minArea", String(filters.minAreaSqft));
+    if (filters.listedWithinDays !== null) {
+      params.set("listedWithin", String(filters.listedWithinDays));
+    }
+    if (filters.postedBy.length > 0) params.set("postedBy", filters.postedBy.join(","));
+    if (filters.onlyShow.reviewsOnly) params.set("reviewsOnly", "1");
+    if (filters.onlyShow.photosOnly) params.set("photosOnly", "1");
 
     const queryString = params.toString();
     router.push(queryString ? `/property?${queryString}` : "/property");
@@ -68,12 +82,7 @@ export default function DetailPageSearch({ properties }: DetailPageSearchProps) 
         query={query}
         onQueryChange={setQuery}
       />
-      <FiltersButton
-        rentRange={rentRange}
-        onRentRangeChange={setRentRange}
-        onlyShow={onlyShow}
-        onOnlyShowChange={setOnlyShow}
-      />
+      <FiltersButton filters={filters} onFiltersChange={setFilters} />
       <button
         type="button"
         onClick={handleSearch}

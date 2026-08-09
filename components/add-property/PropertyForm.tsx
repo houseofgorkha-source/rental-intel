@@ -7,6 +7,8 @@ import InputField from "../shared/InputField";
 import SectionTitle from "./SectionTitle";
 import InfoCard from "./InfoCard";
 import RoleSelector from "./RoleSelector";
+import PropertyAttributeFields from "./PropertyAttributeFields";
+import ContactPreferenceFields from "./ContactPreferenceFields";
 import type { SubmitterRole } from "@/lib/property-roles";
 import Button from "../shared/Button";
 import UseMyLocationButton from "../shared/UseMyLocationButton";
@@ -258,6 +260,26 @@ export default function PropertyForm({ initialRole = null }: PropertyFormProps) 
         </div>
         )}
 
+        {/* Asked of every role, not just owners: these are facts about the
+            property itself, and they are what the discovery filters search
+            on. Collecting them only from owners would leave a tenant's
+            contribution unreachable by a "2 BHK" search — the filter would
+            work and still appear broken. Every field is optional, because a
+            community member adding a property they don't live in genuinely
+            may not know. */}
+        {role && (
+          <div className="mt-8 rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
+
+            <SectionTitle
+              title="About the Property"
+              description="Renters filter by these, so anything you can answer helps this property be found."
+            />
+
+            <PropertyAttributeFields />
+
+          </div>
+        )}
+
         {/* Listing details are an owner's commercial offer, so they're only
             collected from owners. What a tenant actually paid is a different
             fact and belongs on their review, not on the property. */}
@@ -279,7 +301,7 @@ export default function PropertyForm({ initialRole = null }: PropertyFormProps) 
                   name="askingRent"
                   type="number"
                   min="0"
-                  step="500"
+                  step="1"
                 />
 
                 <InputField
@@ -288,7 +310,7 @@ export default function PropertyForm({ initialRole = null }: PropertyFormProps) 
                   name="securityDeposit"
                   type="number"
                   min="0"
-                  step="1000"
+                  step="1"
                 />
 
               </div>
@@ -307,6 +329,24 @@ export default function PropertyForm({ initialRole = null }: PropertyFormProps) 
               </label>
 
             </div>
+
+          </div>
+        )}
+
+        {/* Contact preference is asked of every role too: a tenant or a
+            community member may well be willing to answer a question about a
+            place they know, and the person asking has no other way to reach
+            them. The default is "no direct contact" — nothing is exposed
+            unless it is chosen. */}
+        {role && (
+          <div className="mt-8 rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
+
+            <SectionTitle
+              title="How should interested renters reach you?"
+              description="Your choice controls what is shown. Contact details are never visible to signed-out visitors."
+            />
+
+            <ContactPreferenceFields />
 
           </div>
         )}

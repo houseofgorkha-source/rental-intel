@@ -6,6 +6,13 @@ import { requireUser } from "@/lib/auth";
 import { cleanUpFailedUpload, getFileExtension, validateUploadFiles, verifyFileSignature } from "@/lib/uploads";
 import { normalizeCityName } from "@/lib/cities";
 import { isSubmitterRole, type SubmitterRole } from "@/lib/property-roles";
+import {
+  isContactMethod,
+  isFurnishing,
+  isPropertyConfiguration,
+  isPropertyType,
+  type ContactMethod,
+} from "@/lib/property-attributes";
 
 type CreatePropertyResult = {
   error?: string;
@@ -53,6 +60,60 @@ function parseAmount(
   return { value: Math.round(parsed) };
 }
 
+// The filterable attributes, re-validated against the canonical lists rather
+// than trusted from the form. An unrecognised value becomes null: the rest of
+// the submission is still worth keeping, and a null simply means the property
+// does not match a positive filter for that attribute.
+function getAttributes(formData: FormData) {
+  const configuration = getTextValue(formData, "configuration");
+  const propertyType = getTextValue(formData, "propertyType");
+  const furnishing = getTextValue(formData, "furnishing");
+  const area = parseAmount(getTextValue(formData, "carpetAreaSqft"), "Built-up area");
+
+  return {
+    configuration: isPropertyConfiguration(configuration) ? configuration : null,
+    property_type: isPropertyType(propertyType) ? propertyType : null,
+    furnishing: isFurnishing(furnishing) ? furnishing : null,
+    // 0 sq.ft is not a measurement anyone means; the column's CHECK rejects
+    // it anyway, so it is normalised to "not provided" here rather than
+    // failing the whole submission.
+    carpet_area_sqft: area.value && area.value > 0 ? area.value : null,
+  };
+}
+
+// The contact channel, plus only the detail belonging to that channel.
+//
+// Storing a phone number for a contributor who chose 'email' would keep a
+// private number the product has been told not to use — so the other field is
+// dropped here, not merely hidden in the UI.
+function getContactPreference(formData: FormData): {
+  method: ContactMethod;
+  phone: string | null;
+  email: string | null;
+  error?: string;
+} {
+  const raw = getTextValue(formData, "contactMethod");
+  const method: ContactMethod = isContactMethod(raw) ? raw : "none";
+
+  if (method === "phone") {
+    const phone = getTextValue(formData, "contactPhone");
+    if (phone.length < 6 || phone.length > 20) {
+      return { method, phone: null, email: null, error: "Please enter a valid phone number." };
+    }
+    return { method, phone, email: null };
+  }
+
+  if (method === "email") {
+    const email = getTextValue(formData, "contactEmail");
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+      return { method, phone: null, email: null, error: "Please enter a valid email address." };
+    }
+    return { method, phone: null, email };
+  }
+
+  return { method, phone: null, email: null };
+}
+
 function createSlug(name: string) {
   const baseSlug = name
     .toLowerCase()
@@ -96,7 +157,10 @@ export async function createProperty(
     "Security deposit",
   );
 
-  const amountError = askingRent.error ?? securityDeposit.error;
+  const attributes = getAttributes(formData);
+  const contact = getContactPreference(formData);
+
+  const amountError = askingRent.error ?? securityDeposit.error ?? contact.error;
   if (amountError) return { error: amountError };
 
   // Only an owner listing is a claim that the property is available to rent.
@@ -157,6 +221,8 @@ export async function createProperty(
       asking_rent: askingRent.value,
       security_deposit: securityDeposit.value,
       is_available: isAvailable,
+      ...attributes,
+      contact_method: contact.method,
       created_by: user.id,
     })
     .select("id, slug")
@@ -164,6 +230,26 @@ export async function createProperty(
 
   if (propertyError || !property) {
     return { error: "Unable to submit your property. Please try again." };
+  }
+
+  // Contact details go in their own table so they are never part of the
+  // publicly readable property row (see 20260810000000).
+  //
+  // If this insert fails the property is kept and the channel is downgraded to
+  // 'none': advertising "call the owner" with no number stored would be a
+  // dead button, and destroying an otherwise complete submission over a phone
+  // number would lose far more than it protects.
+  if (contact.phone || contact.email) {
+    const { error: contactError } = await supabase
+      .from("property_contacts")
+      .insert({ property_id: property.id, phone: contact.phone, email: contact.email });
+
+    if (contactError) {
+      await supabase
+        .from("properties")
+        .update({ contact_method: "none" })
+        .eq("id", property.id);
+    }
   }
 
   const propertyImages: PropertyImageInsert[] = [];
@@ -316,19 +402,118 @@ export async function deletePendingProperty(
   return { success: true };
 }
 
-// There is deliberately no updateProperty action of any kind.
+type UpdatePropertyResult = {
+  error?: string;
+  success?: boolean;
+};
+
+// Amend a property you contributed.
 //
-// A property record has no amendment flow: its identity columns are
-// unreachable through the Data API for every role (see
-// 20260809000001_add_admin_moderation.sql), which is what guarantees the
-// record a review is attached to cannot change out from under that review.
-// The only correction mechanism is deletePendingProperty above — remove a
-// still-pending submission and add it again.
+// What this can change is decided by the database, not by this function: the
+// column-level UPDATE grant in 20260810000001 lists the commercial and
+// descriptive columns, and Postgres rejects a statement naming any other one
+// outright — for every role, including administrators. So `name`,
+// `address_*`, `area`, `city`, `slug`, `created_by` and `submitted_as` are
+// not "left out of the update" here, they are unreachable. The record a
+// review is attached to still cannot drift.
 //
-// A previous iteration carried an `updatePropertyListing` here for an owner
-// to edit rent, deposit and availability. It had no caller and could never
-// have succeeded (there was, and is, no UPDATE policy scoped to a creator),
-// so it was removed rather than left as an action that silently fails.
-// Owner-editable availability is a real, still-open product gap: reopening it
-// needs its own migration widening the column grant, and must not widen it
-// past the four commercial columns.
+// `status` is the one column both a moderator and a creator can reach through
+// the same role, so it is guarded by the
+// `properties_guard_moderation_status` trigger instead of by a grant. This
+// action never names it.
+//
+// Row scope is the "Contributors can update their own property" policy
+// (created_by = auth.uid()). The .eq() filters below mirror it so the UI
+// never offers what the database would refuse, and a forged slug fails the
+// same way a forged form would.
+export async function updateProperty(
+  formData: FormData,
+): Promise<UpdatePropertyResult> {
+  const slug = getTextValue(formData, "slug");
+  if (!slug) return { error: "Missing property." };
+
+  const supabase = await createClient();
+  const { user, error: authFailure } = await requireUser(
+    supabase,
+    "Please sign in to manage your properties.",
+  );
+  if (!user) return { error: authFailure };
+
+  const { data: existing } = await supabase
+    .from("properties")
+    .select("id, submitted_as")
+    .eq("slug", slug)
+    .eq("created_by", user.id)
+    .maybeSingle();
+
+  if (!existing) {
+    return { error: "That property could not be found in your account." };
+  }
+
+  // Same rule as submission: rent, deposit and availability are an owner's
+  // commercial offer. A tenant editing the flat they live in is not setting an
+  // asking price, so those fields are neither shown nor accepted for them.
+  const isOwnerListing = existing.submitted_as === "owner";
+  const askingRent = parseAmount(
+    isOwnerListing ? getTextValue(formData, "askingRent") : "",
+    "Monthly rent",
+  );
+  const securityDeposit = parseAmount(
+    isOwnerListing ? getTextValue(formData, "securityDeposit") : "",
+    "Security deposit",
+  );
+
+  const contact = getContactPreference(formData);
+  const amountError = askingRent.error ?? securityDeposit.error ?? contact.error;
+  if (amountError) return { error: amountError };
+
+  const { data: updated, error: updateError } = await supabase
+    .from("properties")
+    .update({
+      ...getAttributes(formData),
+      landmark: getTextValue(formData, "landmark") || null,
+      contact_method: contact.method,
+      ...(isOwnerListing
+        ? {
+            asking_rent: askingRent.value,
+            security_deposit: securityDeposit.value,
+            is_available: formData.get("isAvailable") !== null,
+          }
+        : {}),
+    })
+    .eq("id", existing.id)
+    .eq("created_by", user.id)
+    .select("slug");
+
+  if (updateError) {
+    return { error: "Unable to save your changes. Please try again." };
+  }
+
+  // RLS filters rather than errors when a row isn't updatable, so an empty
+  // result means the policy refused it — not a transient failure.
+  if (!updated || updated.length === 0) {
+    return { error: "That property could not be updated from your account." };
+  }
+
+  // Upsert rather than insert: the contributor may be adding contact details
+  // for the first time or correcting existing ones, and the table is keyed by
+  // property_id so there is at most one row either way.
+  if (contact.phone || contact.email) {
+    await supabase
+      .from("property_contacts")
+      .upsert(
+        { property_id: existing.id, phone: contact.phone, email: contact.email },
+        { onConflict: "property_id" },
+      );
+  } else {
+    // Switching to "message here" or "no direct contact" removes the stored
+    // number or address. Leaving it behind would keep private data the
+    // contributor has just withdrawn consent for.
+    await supabase.from("property_contacts").delete().eq("property_id", existing.id);
+  }
+
+  revalidatePath("/account/properties");
+  revalidatePath(`/property/${slug}`);
+  revalidatePath("/");
+  return { success: true };
+}

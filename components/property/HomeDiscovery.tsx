@@ -8,10 +8,9 @@ import UseMyLocationButton from "@/components/shared/UseMyLocationButton";
 import {
   PropertyList,
   FiltersButton,
-  RENT_MIN,
-  RENT_MAX,
+  DEFAULT_FILTERS,
   filterProperties,
-  type OnlyShowFilters,
+  type PropertyFilters,
 } from "@/components/property/PropertyDiscovery";
 import { DEFAULT_CITY, LOCALITIES_BY_CITY, cityMatches } from "@/lib/cities";
 import {
@@ -47,11 +46,7 @@ export default function HomeDiscovery({ properties, children }: HomeDiscoveryPro
   const [selectedCity, setSelectedCity] = useState(DEFAULT_CITY);
   const [selectedAreas, setSelectedAreas] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [rentRange, setRentRange] = useState<[number, number]>([RENT_MIN, RENT_MAX]);
-  const [onlyShow, setOnlyShow] = useState<OnlyShowFilters>({
-    reviewsOnly: false,
-    photosOnly: false,
-  });
+  const [filters, setFilters] = useState<PropertyFilters>(DEFAULT_FILTERS);
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
   const [mapView, setMapView] = useState<{ center: Coordinates; zoom: number }>({
     center: getCityCoordinates(DEFAULT_CITY),
@@ -74,11 +69,10 @@ export default function HomeDiscovery({ properties, children }: HomeDiscoveryPro
     () =>
       filterProperties(cityProperties, {
         areas: selectedAreas,
-        rentRange,
-        onlyShow,
         query: searchQuery,
+        filters,
       }),
-    [cityProperties, selectedAreas, rentRange, onlyShow, searchQuery],
+    [cityProperties, selectedAreas, filters, searchQuery],
   );
 
   const searchProperties = cityProperties.map((property) => ({
@@ -181,12 +175,7 @@ export default function HomeDiscovery({ properties, children }: HomeDiscoveryPro
                     query={searchQuery}
                     onQueryChange={setSearchQuery}
                   />
-                  <FiltersButton
-                    rentRange={rentRange}
-                    onRentRangeChange={setRentRange}
-                    onlyShow={onlyShow}
-                    onOnlyShowChange={setOnlyShow}
-                  />
+                  <FiltersButton filters={filters} onFiltersChange={setFilters} />
                 </div>
               </div>
 

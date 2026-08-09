@@ -4,6 +4,9 @@ import PropertyGallery from "@/components/property/PropertyGallery";
 import ReviewSection from "@/components/property/ReviewSection";
 import PropertyShareButton from "@/components/property/PropertyShareButton";
 import ContributionStatusCards from "@/components/property/ContributionStatusCards";
+import WishlistButton from "@/components/property/WishlistButton";
+import ContactContributor from "@/components/property/ContactContributor";
+import { isContactMethod } from "@/lib/property-attributes";
 import RelatedProperties from "@/components/property/RelatedProperties";
 import type { Review } from "@/components/property/ReviewCard";
 import { createClient } from "@/lib/supabase/server";
@@ -14,7 +17,7 @@ import { DEFAULT_CITY } from "@/lib/cities";
 
 type PropertyPageProps = {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ verification?: string }>;
+  searchParams: Promise<{ verification?: string; wishlist?: string }>;
 };
 
 type ReviewRow = {
@@ -62,7 +65,7 @@ export default async function PropertyPage({
   searchParams,
 }: PropertyPageProps) {
   const { slug } = await params;
-  const { verification } = await searchParams;
+  const { verification, wishlist } = await searchParams;
   const supabase = await createClient();
 
   const { data: property, error } = await supabase
@@ -99,6 +102,33 @@ export default async function PropertyPage({
           .select("id, verification_status")
           .eq("property_id", property.id)
           .eq("author_id", user.id)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+  ]);
+
+  // Both are signed-in-only queries, deliberately kept out of the Promise.all
+  // above so a signed-out visitor issues neither. property_contacts has no
+  // policy for anon at all, so this is belt and braces on top of RLS: contact
+  // details never enter the render for somebody without an account.
+  const isContributor = property.created_by === user?.id;
+  const contactMethod = isContactMethod(property.contact_method)
+    ? property.contact_method
+    : "none";
+
+  const [{ data: wishlistRow }, { data: contactDetails }] = await Promise.all([
+    user
+      ? supabase
+          .from("wishlists")
+          .select("property_id")
+          .eq("property_id", property.id)
+          .eq("user_id", user.id)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+    user && (contactMethod === "phone" || contactMethod === "email")
+      ? supabase
+          .from("property_contacts")
+          .select("phone, email")
+          .eq("property_id", property.id)
           .maybeSingle()
       : Promise.resolve({ data: null }),
   ]);
@@ -185,6 +215,19 @@ export default async function PropertyPage({
           },
         ]
       : []),
+    // Only rendered when answered. An unanswered attribute is a question
+    // nobody got to, not a missing value, and "Configuration: Not available"
+    // reads as a defect in the property rather than a gap in what we know.
+    ...(property.configuration
+      ? [{ label: "Configuration", value: property.configuration }]
+      : []),
+    ...(property.property_type
+      ? [{ label: "Property type", value: property.property_type }]
+      : []),
+    ...(property.furnishing ? [{ label: "Furnishing", value: property.furnishing }] : []),
+    ...(property.carpet_area_sqft
+      ? [{ label: "Built-up area", value: `${property.carpet_area_sqft} sq.ft` }]
+      : []),
     { label: "Area", value: property.area },
     { label: "Address", value: property.address_line_1 },
     // Landmark is its own fact now. `notes` is only rendered for rows
@@ -195,6 +238,28 @@ export default async function PropertyPage({
     ...(property.landmark ? [{ label: "Landmark", value: property.landmark }] : []),
     ...(property.notes ? [{ label: "Notes", value: property.notes }] : []),
   ];
+
+  // Rendered in both the mobile block and the desktop sidebar. Built once so
+  // the two placements can never drift into offering different actions.
+  const viewerActions = (
+    <>
+      <WishlistButton
+        slug={property.slug}
+        isSignedIn={Boolean(user)}
+        initialSaved={Boolean(wishlistRow)}
+        pendingSave={wishlist === "add"}
+      />
+      <ContactContributor
+        slug={property.slug}
+        contactMethod={contactMethod}
+        submittedAs={property.submitted_as}
+        isSignedIn={Boolean(user)}
+        phone={contactDetails?.phone ?? null}
+        email={contactDetails?.email ?? null}
+        isOwnContribution={isContributor}
+      />
+    </>
+  );
 
   const searchProperties = cityProperties.map((discoveryProperty) => ({
     slug: discoveryProperty.slug,
@@ -271,6 +336,7 @@ export default async function PropertyPage({
                   isAvailable={property.is_available}
                   ownReview={ownReview}
                 />
+                {viewerActions}
                 <PropertyShareButton propertyName={property.name} />
               </div>
             </section>
@@ -367,6 +433,7 @@ export default async function PropertyPage({
                   isAvailable={property.is_available}
                   ownReview={ownReview}
                 />
+                {viewerActions}
                 <PropertyShareButton propertyName={property.name} />
               </div>
               <div className="mt-7 border-t border-slate-100 pt-6">
