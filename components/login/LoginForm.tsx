@@ -75,10 +75,10 @@ export default function LoginForm({ nextPath, callbackError }: { nextPath?: stri
       </Button>
       </form>
 
-      {message && <p className="mt-4 text-sm text-green-700">{message}</p>}
-      {error && <p role="alert" className="mt-4 text-sm text-red-600">{error}</p>}
+      {message && <p className="mt-4 text-sm text-success">{message}</p>}
+      {error && <p role="alert" className="mt-4 text-sm text-danger">{error}</p>}
 
-      <p className="mt-8 text-center text-sm text-gray-500">
+      <p className="mt-8 text-center text-sm text-muted">
   Don&apos;t have an account?
 </p>
 
@@ -86,7 +86,7 @@ export default function LoginForm({ nextPath, callbackError }: { nextPath?: stri
 
   <Link
     href="/signup"
-    className="font-medium text-blue-600 hover:underline"
+    className="font-medium text-accent hover:underline"
   >
     Create Account
   </Link>
@@ -97,7 +97,7 @@ export default function LoginForm({ nextPath, callbackError }: { nextPath?: stri
 
   <Link
     href="/"
-    className="text-sm text-gray-500 hover:text-blue-600"
+    className="text-sm text-muted hover:text-accent"
   >
     ← Back to Home
   </Link>

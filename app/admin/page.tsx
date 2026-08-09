@@ -91,17 +91,17 @@ export default async function AdminQueuePage() {
       {/* The only dark surface in the product. It marks the moderation
           workspace as a different place from the public site without
           inventing a second visual language for it. */}
-      <div className="grid gap-px overflow-hidden rounded-2xl bg-slate-800 sm:grid-cols-2">
+      <div className="grid gap-px overflow-hidden rounded-2xl bg-accent-hover sm:grid-cols-2">
         {waiting.map((item) => (
           <Link
             key={item.label}
             href={item.href}
-            className="group bg-slate-950 p-6 transition hover:bg-slate-900 focus:outline-none focus-visible:bg-slate-900"
+            className="group bg-accent p-6 transition hover:bg-accent-hover focus:outline-none focus-visible:bg-accent-hover"
           >
             <p className="text-4xl font-medium tracking-[-0.04em] text-white tabular-nums">
               {item.count}
             </p>
-            <p className="mt-2 text-sm text-slate-300 group-hover:text-white">
+            <p className="mt-2 text-sm text-muted group-hover:text-white">
               {item.label} →
             </p>
           </Link>
@@ -111,17 +111,17 @@ export default async function AdminQueuePage() {
       <dl className="flex flex-wrap gap-x-10 gap-y-3">
         {context.map((item) => (
           <div key={item.label} className="flex items-baseline gap-2">
-            <dt className="text-sm text-slate-500">{item.label}</dt>
-            <dd className="text-sm font-medium text-slate-900 tabular-nums">{item.value}</dd>
+            <dt className="text-sm text-muted">{item.label}</dt>
+            <dd className="text-sm font-medium text-foreground tabular-nums">{item.value}</dd>
           </div>
         ))}
       </dl>
 
       <section aria-labelledby="queue-properties">
-        <h2 id="queue-properties" className="text-lg font-medium tracking-[-0.02em] text-slate-950">
+        <h2 id="queue-properties" className="text-lg font-medium tracking-[-0.02em] text-foreground">
           Properties awaiting approval
         </h2>
-        <p className="mt-1 text-sm text-slate-500">Oldest first.</p>
+        <p className="mt-1 text-sm text-muted">Oldest first.</p>
 
         <div className="mt-4">
           {properties.length === 0 ? (
@@ -135,13 +135,13 @@ export default async function AdminQueuePage() {
                 <li key={property.slug}>
                   <Link
                     href={`/admin/properties/${property.slug}`}
-                    className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-xl border border-slate-200 bg-white px-4 py-3 transition hover:border-blue-500 hover:shadow-[0_18px_45px_-30px_rgba(15,23,42,0.45)] focus:outline-none focus-visible:border-blue-500 focus-visible:ring-2 focus-visible:ring-blue-100"
+                    className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-xl border border-border-subtle bg-surface px-4 py-3 transition hover:border-accent hover:shadow-[0_18px_45px_-30px_rgba(255, 90, 54,0.45)] focus:outline-none focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/25"
                   >
                     <span className="min-w-0">
-                      <span className="block truncate text-sm font-medium text-slate-950">
+                      <span className="block truncate text-sm font-medium text-foreground">
                         {property.name}
                       </span>
-                      <span className="mt-0.5 block text-xs text-slate-500">
+                      <span className="mt-0.5 block text-xs text-muted">
                         {property.area}, {property.city} · submitted {formatDate(property.created_at)}
                       </span>
                     </span>
@@ -155,10 +155,10 @@ export default async function AdminQueuePage() {
       </section>
 
       <section aria-labelledby="queue-verifications">
-        <h2 id="queue-verifications" className="text-lg font-medium tracking-[-0.02em] text-slate-950">
+        <h2 id="queue-verifications" className="text-lg font-medium tracking-[-0.02em] text-foreground">
           Stay verifications awaiting a decision
         </h2>
-        <p className="mt-1 text-sm text-slate-500">
+        <p className="mt-1 text-sm text-muted">
           Each one has documents attached. Open it to see them.
         </p>
 
@@ -178,13 +178,13 @@ export default async function AdminQueuePage() {
                   <li key={verification.id}>
                     <Link
                       href={`/admin/verifications/${verification.id}`}
-                      className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-xl border border-slate-200 bg-white px-4 py-3 transition hover:border-blue-500 hover:shadow-[0_18px_45px_-30px_rgba(15,23,42,0.45)] focus:outline-none focus-visible:border-blue-500 focus-visible:ring-2 focus-visible:ring-blue-100"
+                      className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-xl border border-border-subtle bg-surface px-4 py-3 transition hover:border-accent hover:shadow-[0_18px_45px_-30px_rgba(255, 90, 54,0.45)] focus:outline-none focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/25"
                     >
                       <span className="min-w-0">
-                        <span className="block truncate text-sm font-medium text-slate-950">
+                        <span className="block truncate text-sm font-medium text-foreground">
                           {property?.name ?? "Property"}
                         </span>
-                        <span className="mt-0.5 block truncate text-xs text-slate-500">
+                        <span className="mt-0.5 block truncate text-xs text-muted">
                           “{review?.title}” · submitted {formatDate(verification.submitted_at)}
                         </span>
                       </span>

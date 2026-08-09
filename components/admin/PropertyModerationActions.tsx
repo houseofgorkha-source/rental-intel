@@ -48,7 +48,7 @@ export default function PropertyModerationActions({
           onClick={() => decide("published")}
           disabled={isPending || status === "published"}
           aria-busy={isPending}
-          className="rounded-full bg-blue-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500 disabled:hover:bg-slate-200"
+          className="rounded-full bg-accent px-5 py-2.5 text-sm font-medium text-white transition hover:bg-accent-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/30 disabled:cursor-not-allowed disabled:bg-surface-raised disabled:text-muted disabled:hover:bg-surface-raised"
         >
           {status === "published" ? "Published" : "Publish"}
         </button>
@@ -57,19 +57,19 @@ export default function PropertyModerationActions({
           onClick={() => decide("rejected")}
           disabled={isPending || status === "rejected"}
           aria-busy={isPending}
-          className="rounded-full border border-slate-200 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 transition hover:border-red-300 hover:text-red-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-200 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-400 disabled:hover:border-slate-200 disabled:hover:text-slate-400"
+          className="rounded-full border border-border-subtle bg-surface px-5 py-2.5 text-sm font-medium text-muted transition hover:border-red-300 hover:text-red-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-200 disabled:cursor-not-allowed disabled:border-border-subtle disabled:text-muted disabled:hover:border-border-subtle disabled:hover:text-muted"
         >
           {status === "rejected" ? "Not approved" : "Don't approve"}
         </button>
       </div>
 
-      <p className="text-xs leading-5 text-slate-500">
+      <p className="text-xs leading-5 text-muted">
         Publishing makes this property and its reviews visible to everyone. You
         can change this decision later — the other option stays available.
       </p>
 
       {error && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="text-sm text-danger">
           {error}
         </p>
       )}

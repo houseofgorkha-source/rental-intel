@@ -83,10 +83,10 @@ export default function WishlistButton({
         disabled={isPending}
         aria-pressed={isSignedIn ? saved : undefined}
         aria-busy={isPending}
-        className={`inline-flex w-full items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-60 ${
+        className={`inline-flex w-full items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/30 disabled:cursor-not-allowed disabled:opacity-60 ${
           saved
-            ? "border-blue-600 bg-blue-50 text-blue-700 hover:bg-blue-100"
-            : "border-slate-200 bg-white text-slate-900 hover:border-blue-300 hover:text-blue-700"
+            ? "border-accent bg-accent/10 text-accent-hover hover:bg-accent/15"
+            : "border-border-subtle bg-surface text-foreground hover:border-accent/60 hover:text-accent-hover"
         }`}
       >
         <svg
@@ -103,7 +103,7 @@ export default function WishlistButton({
       </button>
 
       {error && (
-        <p role="alert" className="text-xs leading-5 text-red-600">
+        <p role="alert" className="text-xs leading-5 text-danger">
           {error}
         </p>
       )}

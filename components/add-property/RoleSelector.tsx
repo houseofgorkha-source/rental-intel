@@ -52,10 +52,10 @@ export default function RoleSelector({ value, onChange }: RoleSelectorProps) {
           return (
             <label
               key={option.role}
-              className={`flex cursor-pointer flex-col rounded-2xl border p-5 transition ${
+              className={`flex cursor-pointer flex-col rounded-2xl border p-5 transition-all duration-200 ${
                 isSelected
-                  ? "border-blue-600 bg-blue-50"
-                  : "border-gray-200 bg-white hover:border-blue-300"
+                  ? "border-accent bg-accent/10 shadow-[0_10px_28px_-10px_rgba(255,90,54,0.55)]"
+                  : "border-border-subtle bg-surface hover:-translate-y-1 hover:border-accent/60 hover:shadow-[0_14px_32px_-14px_rgba(255,90,54,0.4)]"
               }`}
             >
               <input
@@ -73,13 +73,13 @@ export default function RoleSelector({ value, onChange }: RoleSelectorProps) {
 
               <span
                 className={`mt-3 font-semibold ${
-                  isSelected ? "text-blue-700" : "text-gray-900"
+                  isSelected ? "text-accent-hover" : "text-foreground"
                 }`}
               >
                 {option.title}
               </span>
 
-              <span className="mt-2 text-sm leading-6 text-gray-600">
+              <span className="mt-2 text-sm leading-6 text-muted">
                 {option.description}
               </span>
             </label>

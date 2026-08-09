@@ -81,10 +81,10 @@ export default function ReviewSection({
       <div className="flex flex-col gap-7">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
+            <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted">
               Community reviews
             </p>
-            <h2 className="mt-3 text-3xl font-medium tracking-[-0.035em] text-slate-950">
+            <h2 className="mt-3 text-3xl font-medium tracking-[-0.035em] text-foreground">
               Reviews ({displayedReviews.length})
             </h2>
           </div>
@@ -92,24 +92,24 @@ export default function ReviewSection({
           {canWriteReview ? (
             <Link
               href={`/property/${propertySlug}/review`}
-              className="inline-flex items-center justify-center rounded-xl bg-slate-950 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800"
+              className="inline-flex items-center justify-center rounded-xl bg-accent px-5 py-3 text-sm font-medium text-white transition hover:bg-accent-hover"
             >
               Write Review
             </Link>
           ) : (
-            <p className="text-sm font-medium text-slate-600">Pending approval</p>
+            <p className="text-sm font-medium text-muted">Pending approval</p>
           )}
         </div>
 
-        <div className="grid gap-7 rounded-2xl border border-slate-200 bg-white p-6 sm:grid-cols-[minmax(0,1fr)_minmax(14rem,0.8fr)]">
+        <div className="grid gap-7 rounded-2xl border border-border-subtle bg-surface p-6 sm:grid-cols-[minmax(0,1fr)_minmax(14rem,0.8fr)]">
           <div>
-            <p className="text-4xl font-medium tracking-[-0.04em] text-slate-950">
+            <p className="text-4xl font-medium tracking-[-0.04em] text-foreground">
               {recommendationPercentage}%
             </p>
-            <p className="mt-2 text-sm font-medium text-slate-900">
+            <p className="mt-2 text-sm font-medium text-foreground">
               recommend this property
             </p>
-            <p className="mt-2 text-sm leading-6 text-slate-500">
+            <p className="mt-2 text-sm leading-6 text-muted">
               {recommendedCount} of {propertyReviews.length}{" "}
               {propertyReviews.length === 1 ? "reviewer recommends" : "reviewers recommend"}{" "}
               this property.
@@ -119,12 +119,12 @@ export default function ReviewSection({
           <div className="space-y-2.5">
             {[5, 4, 3, 2, 1].map((star) => (
               <div key={star} className="flex items-center gap-3">
-                <span className="w-8 text-sm font-medium text-slate-700">
+                <span className="w-8 text-sm font-medium text-muted">
                   {star} ★
                 </span>
-                <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-100">
+                <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-surface-raised">
                   <div
-                    className="h-full rounded-full bg-slate-900"
+                    className="h-full rounded-full bg-accent-hover"
                     style={{
                       width: `${
                         (ratingCounts[star as keyof typeof ratingCounts] /
@@ -134,7 +134,7 @@ export default function ReviewSection({
                     }}
                   />
                 </div>
-                <span className="w-5 text-right text-sm text-slate-500">
+                <span className="w-5 text-right text-sm text-muted">
                   {ratingCounts[star as keyof typeof ratingCounts]}
                 </span>
               </div>
@@ -151,8 +151,8 @@ export default function ReviewSection({
                 onClick={() => setFilter(option)}
                 className={`rounded-full px-3.5 py-2 text-sm font-medium transition ${
                   filter === option
-                    ? "bg-slate-950 text-white"
-                    : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                    ? "bg-accent text-white"
+                    : "border border-border-subtle bg-surface text-muted hover:bg-surface-raised"
                 }`}
               >
                 {option}
@@ -160,17 +160,17 @@ export default function ReviewSection({
             ))}
           </div>
 
-          <label className="flex items-center gap-2 text-sm text-slate-600">
+          <label className="flex items-center gap-2 text-sm text-muted">
             <span className="sr-only">Sort reviews</span>
             <select
               value={sort}
               onChange={(event) =>
                 setSort(event.target.value as (typeof sortOptions)[number])
               }
-              className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-900 outline-none transition focus:border-slate-500"
+              className="rounded-xl border border-border-subtle bg-surface px-3 py-2 text-sm font-medium text-foreground outline-none transition focus:border-muted"
             >
               {sortOptions.map((option) => (
-                <option key={option} className="bg-white text-slate-900">
+                <option key={option} className="bg-surface text-foreground">
                   {option}
                 </option>
               ))}
@@ -185,9 +185,9 @@ export default function ReviewSection({
             <ReviewCard key={review.id} review={review} />
           ))
         ) : (
-          <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center">
-            <h3 className="text-lg font-medium text-slate-950">No reviews found</h3>
-            <p className="mt-2 text-sm text-slate-500">Try another filter.</p>
+          <div className="rounded-2xl border border-dashed border-border-subtle bg-surface p-8 text-center">
+            <h3 className="text-lg font-medium text-foreground">No reviews found</h3>
+            <p className="mt-2 text-sm text-muted">Try another filter.</p>
           </div>
         )}
       </div>

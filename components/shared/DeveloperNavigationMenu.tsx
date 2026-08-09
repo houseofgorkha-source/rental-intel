@@ -193,14 +193,14 @@ export default function DeveloperNavigationMenu({
   ];
 
   return (
-    <div className="mt-1 border-t border-gray-100 pt-2">
-      <p className="px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-gray-400">
+    <div className="mt-1 border-t border-border-subtle pt-2">
+      <p className="px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-muted">
         Pages
       </p>
 
       {sections.map((section) => (
         <div key={section.title} className="mt-1">
-          <p className="px-3 py-1 text-[11px] font-medium uppercase tracking-wide text-gray-400">
+          <p className="px-3 py-1 text-[11px] font-medium uppercase tracking-wide text-muted">
             {section.title}
           </p>
           {section.routes.map((item) => (
@@ -215,21 +215,21 @@ export default function DeveloperNavigationMenu({
 function DevRouteItem({ item, onNavigate }: { item: DevRoute; onNavigate: () => void }) {
   const badgeClass =
     item.kind === "route"
-      ? "bg-gray-100 text-gray-500"
-      : "bg-blue-50 text-blue-600";
+      ? "bg-surface-raised text-muted"
+      : "bg-accent/10 text-accent";
 
   const content = (
     <>
       <span className="flex min-w-0 flex-col">
-        <span className="truncate text-sm text-gray-700">{item.label}</span>
-        <span className="truncate font-mono text-[11px] text-gray-400">{item.route}</span>
+        <span className="truncate text-sm text-foreground">{item.label}</span>
+        <span className="truncate font-mono text-[11px] text-muted">{item.route}</span>
       </span>
       <span className="flex shrink-0 items-center gap-1">
         <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium uppercase ${badgeClass}`}>
           {item.kind}
         </span>
         {item.badge && (
-          <span className="rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium uppercase text-amber-600">
+          <span className="rounded bg-warning/10 px-1.5 py-0.5 text-[10px] font-medium uppercase text-warning">
             {item.badge}
           </span>
         )}
@@ -249,7 +249,7 @@ function DevRouteItem({ item, onNavigate }: { item: DevRoute; onNavigate: () => 
     <a
       href={item.href}
       onClick={onNavigate}
-      className="flex items-center justify-between gap-2 rounded-lg px-3 py-2 hover:bg-blue-50"
+      className="flex items-center justify-between gap-2 rounded-lg px-3 py-2 transition-colors hover:bg-surface-raised"
     >
       {content}
     </a>

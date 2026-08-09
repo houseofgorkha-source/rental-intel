@@ -88,16 +88,16 @@ export default async function AdminVerificationPage({
       <div>
         <Link
           href="/admin/verifications"
-          className="rounded-lg px-1 py-0.5 text-sm font-medium text-blue-600 underline decoration-blue-200 underline-offset-4 transition hover:text-blue-700 hover:decoration-blue-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-200"
+          className="rounded-lg px-1 py-0.5 text-sm font-medium text-accent underline decoration-accent/40 underline-offset-4 transition hover:text-accent-hover hover:decoration-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/30"
         >
           ← Back to verifications
         </Link>
-        <h2 className="mt-4 text-2xl font-medium tracking-[-0.03em] text-slate-950">
+        <h2 className="mt-4 text-2xl font-medium tracking-[-0.03em] text-foreground">
           {property?.name ?? "Property"}
         </h2>
-        <p className="mt-2 text-sm text-slate-600">
+        <p className="mt-2 text-sm text-muted">
           {property?.area}, {property?.city} · submitted by{" "}
-          <span className="font-medium text-slate-900">
+          <span className="font-medium text-foreground">
             {contributor?.display_name ?? "a contributor"}
           </span>{" "}
           on {formatDateTime(verification.submitted_at)}
@@ -111,18 +111,18 @@ export default async function AdminVerificationPage({
 
       <section
         aria-labelledby="evidence"
-        className="rounded-2xl border border-slate-200 bg-white p-6"
+        className="rounded-2xl border border-border-subtle bg-surface p-6"
       >
-        <h3 id="evidence" className="text-base font-medium text-slate-950">
+        <h3 id="evidence" className="text-base font-medium text-foreground">
           Documents
         </h3>
-        <p className="mt-1.5 text-sm text-slate-500">
+        <p className="mt-1.5 text-sm text-muted">
           Does the document show this person at this address? Links expire after
           ten minutes.
         </p>
 
         {signedDocuments.length === 0 ? (
-          <p className="mt-4 text-sm text-slate-600">
+          <p className="mt-4 text-sm text-muted">
             No documents are attached to this request.
           </p>
         ) : (
@@ -130,20 +130,20 @@ export default async function AdminVerificationPage({
             {signedDocuments.map((document) => (
               <li
                 key={document.id}
-                className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-xl border border-slate-200 px-4 py-3"
+                className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-xl border border-border-subtle px-4 py-3"
               >
-                <span className="text-sm font-medium text-slate-900">{document.label}</span>
+                <span className="text-sm font-medium text-foreground">{document.label}</span>
                 {document.url ? (
                   <a
                     href={document.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm font-medium text-blue-600 underline decoration-blue-200 underline-offset-4 transition hover:text-blue-700 hover:decoration-blue-400"
+                    className="text-sm font-medium text-accent underline decoration-accent/40 underline-offset-4 transition hover:text-accent-hover hover:decoration-accent"
                   >
                     Open document ↗
                   </a>
                 ) : (
-                  <span className="text-sm text-red-600">
+                  <span className="text-sm text-danger">
                     This file could not be opened.
                   </span>
                 )}
@@ -155,13 +155,13 @@ export default async function AdminVerificationPage({
 
       <section
         aria-labelledby="decision"
-        className="rounded-2xl border border-slate-200 bg-white p-6"
+        className="rounded-2xl border border-border-subtle bg-surface p-6"
       >
-        <h3 id="decision" className="text-base font-medium text-slate-950">
+        <h3 id="decision" className="text-base font-medium text-foreground">
           Decision
         </h3>
         {verification.rejection_reason && (
-          <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900">
+          <p className="mt-3 rounded-xl border border-warning/30 bg-warning/10 px-4 py-3 text-sm leading-6 text-amber-900">
             Reason sent to the contributor: {verification.rejection_reason}
           </p>
         )}
@@ -175,21 +175,21 @@ export default async function AdminVerificationPage({
           review is allowed to say. */}
       <section
         aria-labelledby="linked-review"
-        className="rounded-2xl border border-slate-200 bg-white p-6"
+        className="rounded-2xl border border-border-subtle bg-surface p-6"
       >
-        <h3 id="linked-review" className="text-base font-medium text-slate-950">
+        <h3 id="linked-review" className="text-base font-medium text-foreground">
           The review this verifies
         </h3>
-        <p className="mt-3 text-sm font-medium text-slate-900">{review?.title}</p>
-        <p className="mt-1 text-xs text-slate-500">
+        <p className="mt-3 text-sm font-medium text-foreground">{review?.title}</p>
+        <p className="mt-1 text-xs text-muted">
           {review?.overall_rating}/5 · stay{" "}
           {review?.stay_start_date ?? "not given"} to {review?.stay_end_date ?? "present"}
         </p>
-        <p className="mt-3 whitespace-pre-line text-sm leading-6 text-slate-700">{review?.body}</p>
+        <p className="mt-3 whitespace-pre-line text-sm leading-6 text-muted">{review?.body}</p>
         {property && (
           <Link
             href={`/property/${property.slug}`}
-            className="mt-4 inline-flex text-sm font-medium text-blue-600 underline decoration-blue-200 underline-offset-4 transition hover:text-blue-700 hover:decoration-blue-400"
+            className="mt-4 inline-flex text-sm font-medium text-accent underline decoration-accent/40 underline-offset-4 transition hover:text-accent-hover hover:decoration-accent"
           >
             See the property page →
           </Link>

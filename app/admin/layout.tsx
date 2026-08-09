@@ -27,19 +27,19 @@ export default async function AdminLayout({
   if (!(await isAdminUser(supabase, user.id))) notFound();
 
   return (
-    <main className="min-h-screen bg-[#fbfbfa] pb-20 pt-28">
+    <main className="min-h-screen bg-background pb-20 pt-28">
       <div className="mx-auto max-w-6xl px-6 lg:px-8">
         <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
           <div>
-            <p className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
+            <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted">
               RentalIntel moderation
             </p>
-            <h1 className="mt-3 text-3xl font-medium tracking-[-0.035em] text-slate-950 sm:text-4xl">
+            <h1 className="mt-3 text-3xl font-medium tracking-[-0.035em] text-foreground sm:text-4xl">
               Review what people submitted
             </h1>
           </div>
-          <p className="text-sm text-slate-500">
-            Signed in as <span className="font-medium text-slate-700">{user.email}</span>
+          <p className="text-sm text-muted">
+            Signed in as <span className="font-medium text-muted">{user.email}</span>
           </p>
         </div>
 

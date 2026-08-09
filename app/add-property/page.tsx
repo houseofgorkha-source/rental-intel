@@ -20,7 +20,7 @@ export default async function AddPropertyPage({ searchParams }: AddPropertyPageP
   }
 
   return (
-    <main className="min-h-screen bg-[#FAFAF8]">
+    <main className="min-h-screen bg-background">
       <PropertyForm initialRole={isSubmitterRole(as) ? as : null} />
     </main>
   );

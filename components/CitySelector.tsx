@@ -93,8 +93,8 @@ export default function CitySelector({ value, onChange, variant = "embedded" }: 
         aria-controls="city-options"
         className={
           variant === "embedded"
-            ? "flex h-full items-center rounded-l-[0.9375rem] border-r border-slate-200 bg-slate-50 px-4 text-sm font-medium text-slate-700 transition hover:bg-blue-50"
-            : "inline-flex items-center rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition hover:border-blue-200 hover:text-blue-600"
+            ? "flex h-full items-center rounded-l-[0.9375rem] border-r border-border-subtle bg-surface-raised px-4 text-sm font-medium text-muted transition hover:bg-accent/10"
+            : "inline-flex items-center rounded-full border border-border-subtle bg-surface px-4 py-2 text-sm font-medium text-muted shadow-[0_1px_2px_rgba(255, 90, 54,0.04)] transition hover:border-accent/30 hover:text-accent"
         }
       >
         {city}
@@ -104,7 +104,7 @@ export default function CitySelector({ value, onChange, variant = "embedded" }: 
         <div
           id="city-options"
           role="listbox"
-          className="absolute left-0 z-30 mt-3 max-h-64 w-56 overflow-y-auto overscroll-contain rounded-2xl border border-slate-200 bg-white p-2 shadow-xl"
+          className="absolute left-0 z-30 mt-3 max-h-64 w-56 overflow-y-auto overscroll-contain rounded-2xl border border-border-subtle bg-surface p-2 shadow-xl"
         >
           {CITIES.map((option, index) => {
             const isActive = activeIndex === index;
@@ -123,9 +123,9 @@ export default function CitySelector({ value, onChange, variant = "embedded" }: 
                 onClick={() => option.available && selectCity(option.name)}
                 className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm ${
                   option.available
-                    ? "font-medium text-slate-900 hover:bg-blue-50"
-                    : "cursor-not-allowed text-slate-400"
-                } ${isActive ? "bg-slate-50" : ""}`}
+                    ? "font-medium text-foreground hover:bg-accent/10"
+                    : "cursor-not-allowed text-muted"
+                } ${isActive ? "bg-surface-raised" : ""}`}
               >
                 {option.name}
                 {!option.available && <span className="text-xs">Coming Soon</span>}

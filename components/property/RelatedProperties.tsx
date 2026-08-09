@@ -76,11 +76,11 @@ export default function RelatedProperties({
   );
 
   return (
-    <section aria-labelledby="related-properties-heading" className="mt-14 border-t border-slate-200 pt-10">
-      <h2 id="related-properties-heading" className="text-3xl font-medium tracking-[-0.035em] text-slate-950">
+    <section aria-labelledby="related-properties-heading" className="mt-14 border-t border-border-subtle pt-10">
+      <h2 id="related-properties-heading" className="text-3xl font-medium tracking-[-0.035em] text-foreground">
         Continue Exploring
       </h2>
-      <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
+      <p className="mt-3 max-w-2xl text-sm leading-6 text-muted">
         Search by city, area, or budget — or browse a few more homes below.
       </p>
 
@@ -109,7 +109,7 @@ export default function RelatedProperties({
 
       <Link
         href={`/property?city=${encodeURIComponent(city)}`}
-        className="mt-8 inline-flex text-sm font-medium text-blue-600 underline decoration-blue-200 underline-offset-4 transition hover:text-blue-700 hover:decoration-blue-400"
+        className="mt-8 inline-flex text-sm font-medium text-accent underline decoration-accent/40 underline-offset-4 transition hover:text-accent-hover hover:decoration-accent"
       >
         Browse all properties in {city}
       </Link>

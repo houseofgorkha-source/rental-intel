@@ -20,7 +20,7 @@ export default function PropertyGallery({ images }: PropertyGalleryProps) {
 
   return (
     <section aria-label="Property gallery" className="mt-10">
-      <div className="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-slate-100 shadow-[0_24px_60px_-45px_rgba(15,23,42,0.45)]">
+      <div className="overflow-hidden rounded-[1.5rem] border border-border-subtle bg-surface-raised shadow-[0_24px_60px_-45px_rgba(255, 90, 54,0.45)]">
         <img
           src={selectedImage.src}
           alt={selectedImage.alt}
@@ -39,10 +39,10 @@ export default function PropertyGallery({ images }: PropertyGalleryProps) {
               onClick={() => setSelectedImage(image)}
               aria-label={`View ${image.alt}`}
               aria-pressed={isSelected}
-              className={`shrink-0 overflow-hidden rounded-xl border-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 ${
+              className={`shrink-0 overflow-hidden rounded-xl border-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-subtle ${
                 isSelected
-                  ? "border-slate-950"
-                  : "border-transparent opacity-70 hover:border-slate-300 hover:opacity-100"
+                  ? "border-accent"
+                  : "border-transparent opacity-70 hover:border-border-subtle hover:opacity-100"
               }`}
             >
               <img

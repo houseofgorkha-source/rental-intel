@@ -14,22 +14,21 @@ export default function Button({
   className = "",
   ...props
 }: ButtonProps) {
- 
-    // `disabled:pointer-events-none` rather than overriding each variant's
+  // `disabled:pointer-events-none` rather than overriding each variant's
   // hover colours: both are single-class utilities, so a `disabled:hover:*`
   // rule would depend on Tailwind's variant ordering to win. Removing pointer
   // events makes the hover state unreachable instead, which is deterministic
   // and is the conventional pattern. Applies to both variants.
   const baseClasses =
-  "inline-flex items-center justify-center rounded-full px-6 py-3 text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:pointer-events-none disabled:opacity-50";
-  
-  const variants = {
-  primary:
-    "border border-gray-300 bg-white text-gray-900 hover:border-blue-600 hover:text-blue-600 hover:bg-blue-50 active:bg-blue-100",
+    "inline-flex items-center justify-center rounded-full px-6 py-3 text-sm font-semibold transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-40 active:scale-[0.97]";
 
-  secondary:
-    "border border-gray-200 bg-white text-gray-600 hover:border-gray-400 hover:bg-gray-50",
-};
+  const variants = {
+    primary:
+      "bg-accent text-white shadow-[0_0_0_1px_rgba(255,90,54,0.35)] hover:bg-accent-hover hover:shadow-[0_10px_28px_-8px_rgba(255,90,54,0.6)] hover:-translate-y-0.5",
+
+    secondary:
+      "border border-border-subtle bg-surface text-foreground hover:border-accent hover:text-accent hover:bg-surface-raised hover:-translate-y-0.5",
+  };
 
   return (
     <button

@@ -15,12 +15,12 @@ export default async function AccountLayout({
   if (!user) redirect("/login?next=/account");
 
   return (
-    <main className="min-h-screen bg-[#fbfbfa] pb-20 pt-28">
+    <main className="min-h-screen bg-background pb-20 pt-28">
       <div className="mx-auto max-w-5xl px-6 lg:px-8">
-        <p className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
+        <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted">
           Your account
         </p>
-        <h1 className="mt-3 text-3xl font-medium tracking-[-0.035em] text-slate-950 sm:text-4xl">
+        <h1 className="mt-3 text-3xl font-medium tracking-[-0.035em] text-foreground sm:text-4xl">
           {user.email}
         </h1>
 

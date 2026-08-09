@@ -73,7 +73,7 @@ export default async function AccountReviewsPage() {
             {property && (
               <Link
                 href={`/property/${property.slug}`}
-                className="mb-2 inline-flex text-sm font-medium text-blue-600 underline decoration-blue-200 underline-offset-4 transition hover:text-blue-700 hover:decoration-blue-400"
+                className="mb-2 inline-flex text-sm font-medium text-accent underline decoration-accent/40 underline-offset-4 transition hover:text-accent-hover hover:decoration-accent"
               >
                 {property.name} →
               </Link>

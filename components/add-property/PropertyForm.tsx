@@ -103,11 +103,11 @@ export default function PropertyForm({ initialRole = null }: PropertyFormProps) 
 
         <div className="text-5xl">🏠</div>
 
-        <h1 className="mt-5 text-3xl font-bold tracking-tight text-gray-900">
+        <h1 className="mt-5 text-3xl font-bold tracking-tight text-foreground">
           Add a Property
         </h1>
 
-        <p className="mt-3 text-gray-600">
+        <p className="mt-3 text-muted">
           Help future tenants by adding a property that isn&apos;t yet listed on RentalIntel.
         </p>
 
@@ -124,7 +124,7 @@ export default function PropertyForm({ initialRole = null }: PropertyFormProps) 
       </div>
 
       <form onSubmit={handleSubmit}>
-        <div className="mt-10 rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
+        <div className="mt-10 rounded-2xl border border-border-subtle bg-surface p-8 shadow-sm">
 
           <SectionTitle
             title="What's your relationship to this property?"
@@ -136,7 +136,7 @@ export default function PropertyForm({ initialRole = null }: PropertyFormProps) 
         </div>
 
         {role && (
-        <div className="mt-8 rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
+        <div className="mt-8 rounded-2xl border border-border-subtle bg-surface p-8 shadow-sm">
 
         <SectionTitle
           title="Property Details"
@@ -156,13 +156,13 @@ export default function PropertyForm({ initialRole = null }: PropertyFormProps) 
               shortcut that saves the user typing the next few, so it has to
               be visible before they start typing. It fills city and area
               only — the street address is still theirs to enter. */}
-          <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+          <div className="rounded-xl border border-border-subtle bg-surface-raised/70 p-4">
             <UseMyLocationButton onLocated={handleLocated} compact />
-            <p className="mt-1.5 text-sm text-gray-500">
+            <p className="mt-1.5 text-sm text-muted">
               Fills in your city and area. You can edit both afterwards.
             </p>
             {locationResult && (
-              <p role="status" aria-live="polite" className="mt-2 text-sm font-medium text-blue-700">
+              <p role="status" aria-live="polite" className="mt-2 text-sm font-medium text-accent-hover">
                 {locationResult}
               </p>
             )}
@@ -268,7 +268,7 @@ export default function PropertyForm({ initialRole = null }: PropertyFormProps) 
             community member adding a property they don't live in genuinely
             may not know. */}
         {role && (
-          <div className="mt-8 rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
+          <div className="mt-8 rounded-2xl border border-border-subtle bg-surface p-8 shadow-sm">
 
             <SectionTitle
               title="About the Property"
@@ -284,7 +284,7 @@ export default function PropertyForm({ initialRole = null }: PropertyFormProps) 
             collected from owners. What a tenant actually paid is a different
             fact and belongs on their review, not on the property. */}
         {role === "owner" && (
-          <div className="mt-8 rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
+          <div className="mt-8 rounded-2xl border border-border-subtle bg-surface p-8 shadow-sm">
 
             <SectionTitle
               title="Listing Details"
@@ -319,7 +319,7 @@ export default function PropertyForm({ initialRole = null }: PropertyFormProps) 
                   available is a claim the owner must opt into, not something
                   they opt out of. An unnoticed pre-ticked box would badge
                   occupied properties as vacant. */}
-              <label className="flex items-center gap-2 text-gray-700">
+              <label className="flex items-center gap-2 text-muted">
                 <input
                   type="checkbox"
                   name="isAvailable"
@@ -339,7 +339,7 @@ export default function PropertyForm({ initialRole = null }: PropertyFormProps) 
             them. The default is "no direct contact" — nothing is exposed
             unless it is chosen. */}
         {role && (
-          <div className="mt-8 rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
+          <div className="mt-8 rounded-2xl border border-border-subtle bg-surface p-8 shadow-sm">
 
             <SectionTitle
               title="How should interested renters reach you?"
@@ -352,7 +352,7 @@ export default function PropertyForm({ initialRole = null }: PropertyFormProps) 
         )}
 
         {submissionError && (
-          <p role="alert" className="mt-6 text-sm text-red-600">
+          <p role="alert" className="mt-6 text-sm text-danger">
             {submissionError}
           </p>
         )}

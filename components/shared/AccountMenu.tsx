@@ -64,50 +64,57 @@ export default function AccountMenu({
 
   return (
     <details ref={menuRef} className="pointer-events-auto relative">
-      <summary className="cursor-pointer list-none rounded-full border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-900 hover:border-blue-600 hover:text-blue-600">
+      <summary className="cursor-pointer list-none rounded-full border border-border-subtle bg-surface px-4 py-2 text-sm font-medium text-foreground transition-all duration-200 hover:-translate-y-0.5 hover:border-accent hover:text-accent hover:shadow-[0_6px_18px_-6px_rgba(255,90,54,0.5)]">
         Account
         {unreadMessageCount > 0 && (
-          <span className="ml-1.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-blue-600 px-1 text-[11px] font-semibold text-white">
+          <span className="ml-1.5 inline-flex h-5 min-w-5 animate-pulse items-center justify-center rounded-full bg-accent-warm px-1 text-[11px] font-semibold text-white">
             {unreadMessageCount > 9 ? "9+" : unreadMessageCount}
           </span>
         )}
       </summary>
 
       <div
-        className={`absolute right-0 z-30 mt-3 max-h-[80vh] overflow-y-auto rounded-xl border border-gray-200 bg-white p-2 shadow-lg ${
+        className={`absolute right-0 z-30 mt-3 max-h-[80vh] overflow-y-auto rounded-xl border border-border-subtle bg-surface p-2 shadow-2xl shadow-black/40 ${
           showDevNav ? "w-80" : "w-52"
         }`}
       >
-        <p className="truncate px-3 py-2 text-xs text-gray-500">{email}</p>
+        <p className="truncate px-3 py-2 text-xs text-muted">{email}</p>
         <Link
           href="/account"
           onClick={closeMenu}
-          className="block rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600"
+          className="block rounded-lg px-3 py-2 text-sm text-foreground transition-colors hover:bg-surface-raised hover:text-accent"
         >
           My Account
         </Link>
         <Link
           href="/account/properties"
           onClick={closeMenu}
-          className="block rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600"
+          className="block rounded-lg px-3 py-2 text-sm text-foreground transition-colors hover:bg-surface-raised hover:text-accent"
         >
           My Properties
         </Link>
         <Link
           href="/account/reviews"
           onClick={closeMenu}
-          className="block rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600"
+          className="block rounded-lg px-3 py-2 text-sm text-foreground transition-colors hover:bg-surface-raised hover:text-accent"
         >
           My Reviews
         </Link>
         <Link
           href="/account/messages"
           onClick={closeMenu}
-          className="flex items-center justify-between rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600"
+          // Prefetch off, deliberately: this link renders (and becomes
+          // prefetch-eligible) the moment the menu opens, before anyone has
+          // actually chosen Messages. /account/messages marks the viewer's
+          // inbox read as a side effect of rendering, so a prefetch fired by
+          // opening this menu would silently clear the unread badge without
+          // the message ever being read. It should only run on a real click.
+          prefetch={false}
+          className="flex items-center justify-between rounded-lg px-3 py-2 text-sm text-foreground transition-colors hover:bg-surface-raised hover:text-accent"
         >
           Messages
           {unreadMessageCount > 0 && (
-            <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-blue-600 px-1 text-[11px] font-semibold text-white">
+            <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-accent-warm px-1 text-[11px] font-semibold text-white">
               {unreadMessageCount > 9 ? "9+" : unreadMessageCount}
             </span>
           )}
@@ -115,27 +122,27 @@ export default function AccountMenu({
         <Link
           href="/add-property"
           onClick={closeMenu}
-          className="block rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600"
+          className="block rounded-lg px-3 py-2 text-sm text-foreground transition-colors hover:bg-surface-raised hover:text-accent"
         >
           Add Property
         </Link>
         {isAdmin && (
           <>
-            <div className="my-1 border-t border-gray-100" />
+            <div className="my-1 border-t border-border-subtle" />
             <Link
               href="/admin"
               onClick={closeMenu}
-              className="block rounded-lg px-3 py-2 text-sm font-medium text-gray-900 hover:bg-blue-50 hover:text-blue-600"
+              className="block rounded-lg px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-raised hover:text-accent"
             >
               Moderation
             </Link>
-            <div className="my-1 border-t border-gray-100" />
+            <div className="my-1 border-t border-border-subtle" />
           </>
         )}
         <form action={signOut} onSubmit={closeMenu}>
           <button
             type="submit"
-            className="w-full rounded-lg px-3 py-2 text-left text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600"
+            className="w-full rounded-lg px-3 py-2 text-left text-sm text-foreground transition-colors hover:bg-danger/10 hover:text-danger"
           >
             Logout
           </button>

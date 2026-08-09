@@ -40,25 +40,25 @@ export default async function AccountOverviewPage() {
           <Link
             key={item.label}
             href={item.href}
-            className="rounded-2xl border border-slate-200 bg-white p-5 transition hover:border-slate-300"
+            className="rounded-2xl border border-border-subtle bg-surface p-5 transition hover:border-border-subtle"
           >
-            <p className="text-3xl font-medium tracking-[-0.03em] text-slate-950">
+            <p className="text-3xl font-medium tracking-[-0.03em] text-foreground">
               {item.count}
             </p>
-            <p className="mt-1.5 text-sm text-slate-600">{item.label}</p>
+            <p className="mt-1.5 text-sm text-muted">{item.label}</p>
           </Link>
         ))}
       </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-6">
-        <h2 className="text-base font-medium text-slate-950">Add to RentalIntel</h2>
-        <p className="mt-2 max-w-xl text-sm leading-6 text-slate-600">
+      <div className="rounded-2xl border border-border-subtle bg-surface p-6">
+        <h2 className="text-base font-medium text-foreground">Add to RentalIntel</h2>
+        <p className="mt-2 max-w-xl text-sm leading-6 text-muted">
           List a property you own, add the place you live in, or add one on
           someone&apos;s behalf. Every submission is reviewed before it&apos;s published.
         </p>
         <Link
           href="/add-property"
-          className="mt-4 inline-flex text-sm font-medium text-blue-600 underline decoration-blue-200 underline-offset-4 transition hover:text-blue-700 hover:decoration-blue-400"
+          className="mt-4 inline-flex text-sm font-medium text-accent underline decoration-accent/40 underline-offset-4 transition hover:text-accent-hover hover:decoration-accent"
         >
           Add a property →
         </Link>

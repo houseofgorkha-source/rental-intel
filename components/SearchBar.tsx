@@ -172,12 +172,12 @@ export default function SearchBar({
           width: dropdownPosition.width,
           maxHeight: dropdownPosition.maxHeight,
         }}
-        className="fixed z-30 overflow-y-auto overscroll-contain rounded-2xl border border-slate-200 bg-white shadow-2xl touch-pan-y"
+        className="fixed z-30 overflow-y-auto overscroll-contain rounded-2xl border border-border-subtle bg-surface shadow-2xl touch-pan-y"
         role="listbox"
       >
         {filteredResults.length > 0 ? (
           <>
-            <div className="sticky top-0 border-b border-slate-100 bg-white px-5 py-3 text-xs font-medium uppercase tracking-[0.14em] text-slate-500">
+            <div className="sticky top-0 border-b border-border-subtle bg-surface px-5 py-3 text-xs font-medium uppercase tracking-[0.14em] text-muted">
               Search Results
             </div>
             {filteredResults.map((property, index) => (
@@ -190,21 +190,21 @@ export default function SearchBar({
                 onClick={() => selectProperty(property)}
                 role="option"
                 aria-selected={highlightedIndex === index}
-                className={`cursor-pointer border-b border-slate-100 px-5 py-4 transition hover:bg-slate-50 last:border-b-0 ${
-                  highlightedIndex === index ? "bg-slate-50" : ""
+                className={`cursor-pointer border-b border-border-subtle px-5 py-4 transition hover:bg-surface-raised last:border-b-0 ${
+                  highlightedIndex === index ? "bg-surface-raised" : ""
                 }`}
               >
-                <p className="font-medium text-slate-900">{property.name}</p>
-                <p className="mt-1 text-sm text-slate-500">{property.location}</p>
+                <p className="font-medium text-foreground">{property.name}</p>
+                <p className="mt-1 text-sm text-muted">{property.location}</p>
               </div>
             ))}
           </>
         ) : (
           <div className="p-6 text-center">
-            <p className="font-medium text-slate-900">
+            <p className="font-medium text-foreground">
               No matching properties found
             </p>
-            <p className="mt-2 text-sm text-slate-500">
+            <p className="mt-2 text-sm text-muted">
               Try a locality, society, apartment, property, or landmark.
             </p>
           </div>
@@ -216,7 +216,7 @@ export default function SearchBar({
   return (
     <div ref={searchRef} className="w-full">
       <div
-        className={`flex overflow-visible rounded-2xl border border-slate-300 bg-white shadow-[0_16px_35px_-20px_rgba(15,23,42,0.3)] transition focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-100 ${
+        className={`flex overflow-visible rounded-2xl border border-border-subtle bg-surface shadow-[0_16px_35px_-20px_rgba(255, 90, 54,0.3)] transition focus-within:border-accent focus-within:ring-4 focus-within:ring-accent/25 ${
           compact ? "h-11" : "h-[68px]"
         }`}
       >
@@ -239,7 +239,7 @@ export default function SearchBar({
           aria-activedescendant={
             highlightedIndex >= 0 ? `search-option-${highlightedIndex}` : undefined
           }
-          className={`min-w-0 flex-1 bg-transparent text-slate-900 placeholder:text-slate-400 outline-none ${
+          className={`min-w-0 flex-1 bg-transparent text-foreground placeholder:text-muted outline-none ${
             compact ? "px-3.5 text-sm" : "px-5 text-[15px]"
           }`}
         />
@@ -247,7 +247,7 @@ export default function SearchBar({
           type="button"
           onClick={performSearch}
           aria-label="Search properties"
-          className={`flex shrink-0 items-center justify-center rounded-xl text-slate-700 transition hover:bg-blue-50 hover:text-blue-600 ${
+          className={`flex shrink-0 items-center justify-center rounded-xl text-muted transition hover:bg-accent/10 hover:text-accent ${
             compact ? "m-1 h-9 w-9" : "m-2 h-12 w-12"
           }`}
         >

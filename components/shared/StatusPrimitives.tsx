@@ -9,10 +9,10 @@ import Link from "next/link";
 export type Tone = "pending" | "success" | "danger" | "neutral";
 
 const toneClass: Record<Tone, string> = {
-  pending: "bg-amber-50 text-amber-700 ring-amber-600/20",
-  success: "bg-emerald-50 text-emerald-700 ring-emerald-600/20",
-  danger: "bg-red-50 text-red-700 ring-red-600/20",
-  neutral: "bg-slate-100 text-slate-600 ring-slate-500/20",
+  pending: "bg-warning/10 text-warning ring-warning/30",
+  success: "bg-success/10 text-success ring-success/30",
+  danger: "bg-danger/10 text-danger ring-danger/30",
+  neutral: "bg-surface-raised text-muted ring-border-subtle",
 };
 
 export function StatusPill({ tone, children }: { tone: Tone; children: React.ReactNode }) {
@@ -37,13 +37,13 @@ export function EmptyState({
   actionLabel?: string;
 }) {
   return (
-    <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
-      <p className="font-medium text-slate-900">{title}</p>
-      <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500">{description}</p>
+    <div className="rounded-2xl border border-dashed border-border-subtle bg-surface px-6 py-12 text-center">
+      <p className="font-medium text-foreground">{title}</p>
+      <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted">{description}</p>
       {actionHref && actionLabel && (
         <Link
           href={actionHref}
-          className="mt-5 inline-flex text-sm font-medium text-blue-600 underline decoration-blue-200 underline-offset-4 transition hover:text-blue-700 hover:decoration-blue-400"
+          className="mt-5 inline-flex text-sm font-medium text-accent underline decoration-accent/40 underline-offset-4 transition hover:text-accent-hover hover:decoration-accent"
         >
           {actionLabel}
         </Link>

@@ -165,34 +165,34 @@ export default function VerifyStayForm({
 
   const statusTone = isSubmitted
     ? verificationStatus === "verified"
-      ? "bg-emerald-100 text-emerald-800"
+      ? "bg-emerald-100 text-success"
       : verificationStatus === "rejected"
         ? "bg-red-100 text-red-700"
         : "bg-yellow-100 text-yellow-700"
     : selectedCount > 0
-      ? "bg-blue-100 text-blue-700"
-      : "bg-gray-100 text-gray-600";
+      ? "bg-accent/15 text-accent-hover"
+      : "bg-surface-raised text-muted";
 
   return (
-    <main className="min-h-screen bg-white py-12">
+    <main className="min-h-screen bg-surface py-12">
       <div className="mx-auto max-w-4xl px-6">
         <Link
           href={`/property/${propertySlug}/review/success?reviewId=${reviewId}`}
-          className="inline-flex items-center rounded-lg px-1 py-0.5 text-sm font-medium text-blue-600 transition hover:text-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-200"
+          className="inline-flex items-center rounded-lg px-1 py-0.5 text-sm font-medium text-accent transition hover:text-accent-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/30"
         >
           ← Back to Review Status
         </Link>
 
-        <div className="mt-8 rounded-2xl border border-gray-200 bg-white p-8">
-          <p className="text-sm font-semibold uppercase tracking-wider text-blue-600">
+        <div className="mt-8 rounded-2xl border border-border-subtle bg-surface p-8">
+          <p className="text-sm font-semibold uppercase tracking-wider text-accent">
             Verify Your Stay
           </p>
 
-          <h1 className="mt-3 text-4xl font-bold tracking-tight text-gray-900">
+          <h1 className="mt-3 text-4xl font-bold tracking-tight text-foreground">
             Help renters trust your experience.
           </h1>
 
-          <p className="mt-4 text-lg leading-7 text-gray-600">
+          <p className="mt-4 text-lg leading-7 text-muted">
             Verification shows that you stayed at {propertyName}. It gives your
             review more credibility while keeping every renter&apos;s experience
             valued.
@@ -202,12 +202,12 @@ export default function VerifyStayForm({
         <form onSubmit={handleSubmit}>
           <input type="hidden" name="reviewId" value={reviewId} />
 
-          <section className="mt-8 rounded-2xl border border-gray-200 bg-white p-8">
-            <h2 className="text-2xl font-semibold text-gray-900">
+          <section className="mt-8 rounded-2xl border border-border-subtle bg-surface p-8">
+            <h2 className="text-2xl font-semibold text-foreground">
               Accepted documents
             </h2>
 
-            <p className="mt-2 text-gray-600">
+            <p className="mt-2 text-muted">
               {isSubmitted
                 ? "These are the document types we accept. Your submission is shown below."
                 : "Choose one document that helps us confirm your stay."}
@@ -223,31 +223,31 @@ export default function VerifyStayForm({
                     key={document.type}
                     className={`flex flex-col rounded-2xl border p-5 ${
                       isDocumentSubmitted
-                        ? "border-solid border-emerald-200 bg-emerald-50"
+                        ? "border-solid border-success/30 bg-success/10"
                         : selectedFile
-                          ? "border-solid border-blue-200 bg-blue-50"
-                          : "border-dashed border-gray-300 bg-gray-50"
+                          ? "border-solid border-accent/30 bg-accent/10"
+                          : "border-dashed border-border-subtle bg-surface-raised"
                     }`}
                   >
                     <div className="text-3xl" aria-hidden="true">
                       {isDocumentSubmitted ? "✅" : selectedFile ? "📎" : "📄"}
                     </div>
 
-                    <h3 className="mt-4 font-semibold text-gray-900">
+                    <h3 className="mt-4 font-semibold text-foreground">
                       {document.title}
                     </h3>
 
-                    <p className="mt-2 text-sm leading-6 text-gray-600">
+                    <p className="mt-2 text-sm leading-6 text-muted">
                       {document.description}
                     </p>
 
                     <div className="mt-5">
                       {isDocumentSubmitted ? (
-                        <p className="text-sm font-medium text-emerald-700">
+                        <p className="text-sm font-medium text-success">
                           Submitted
                         </p>
                       ) : isSubmitted ? (
-                        <p className="text-sm text-gray-500">Not submitted</p>
+                        <p className="text-sm text-muted">Not submitted</p>
                       ) : (
                         // The file input stays mounted whether or not a file
                         // has been chosen. It is uncontrolled — the file lives
@@ -262,23 +262,23 @@ export default function VerifyStayForm({
                         <div>
                           {selectedFile && (
                             <>
-                              <p className="break-all text-sm font-medium text-blue-700">
+                              <p className="break-all text-sm font-medium text-accent-hover">
                                 {selectedFile.name}
                               </p>
-                              <p className="mt-0.5 text-xs text-gray-600">
+                              <p className="mt-0.5 text-xs text-muted">
                                 {formatFileSize(selectedFile.size)} · ready to submit
                               </p>
                               <button
                                 type="button"
                                 onClick={() => handleRemove(document.type)}
-                                className="mt-2 mr-4 rounded-lg px-1 py-0.5 text-sm font-medium text-gray-600 underline underline-offset-4 transition hover:text-red-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-200"
+                                className="mt-2 mr-4 rounded-lg px-1 py-0.5 text-sm font-medium text-muted underline underline-offset-4 transition hover:text-red-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-200"
                               >
                                 Remove
                               </button>
                             </>
                           )}
                           <label
-                            className={`cursor-pointer text-sm font-medium text-blue-600 focus-within:underline hover:underline ${
+                            className={`cursor-pointer text-sm font-medium text-accent focus-within:underline hover:underline ${
                               selectedFile ? "inline-block" : "block"
                             }`}
                           >
@@ -304,23 +304,23 @@ export default function VerifyStayForm({
               })}
             </div>
 
-            <p className="mt-5 text-sm leading-6 text-gray-600">
+            <p className="mt-5 text-sm leading-6 text-muted">
               PDF, JPG or PNG, up to 5 MB each. If you have another document
               that reasonably proves your tenancy, you may upload it — our team
               will review it during verification.
             </p>
           </section>
 
-          <div className="mt-8 rounded-2xl border border-blue-100 bg-blue-50 p-6">
-            <h2 className="text-lg font-semibold text-gray-900">Privacy notice</h2>
+          <div className="mt-8 rounded-2xl border border-accent/25 bg-accent/10 p-6">
+            <h2 className="text-lg font-semibold text-foreground">Privacy notice</h2>
 
-            <p className="mt-3 leading-7 text-gray-700">
+            <p className="mt-3 leading-7 text-muted">
               Documents are used only to verify your stay and are never displayed publicly.
             </p>
           </div>
 
-          <div className="mt-8 rounded-2xl border border-gray-200 bg-white p-6">
-            <p className="text-sm uppercase tracking-wider text-gray-500">
+          <div className="mt-8 rounded-2xl border border-border-subtle bg-surface p-6">
+            <p className="text-sm uppercase tracking-wider text-muted">
               Verification status
             </p>
 
@@ -333,10 +333,10 @@ export default function VerifyStayForm({
               className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
             >
               <div>
-                <h2 className="text-xl font-semibold text-gray-900">
+                <h2 className="text-xl font-semibold text-foreground">
                   {isSubmitting ? "Submitting..." : statusHeading}
                 </h2>
-                <p className="mt-1 text-sm text-gray-600">
+                <p className="mt-1 text-sm text-muted">
                   {isSubmitting
                     ? "Uploading your documents. Please don't close this page."
                     : statusDetail}
@@ -352,7 +352,7 @@ export default function VerifyStayForm({
           </div>
 
           {error && (
-            <p role="alert" className="mt-4 text-sm text-red-600">
+            <p role="alert" className="mt-4 text-sm text-danger">
               {error}
             </p>
           )}
@@ -361,7 +361,7 @@ export default function VerifyStayForm({
             type="submit"
             disabled={!canSubmit}
             aria-busy={isSubmitting}
-            className="mt-8 w-full rounded-full bg-blue-600 px-6 py-4 text-sm font-medium text-white transition hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500 disabled:hover:bg-slate-200"
+            className="mt-8 w-full rounded-full bg-accent px-6 py-4 text-sm font-medium text-white transition hover:bg-accent-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/30 disabled:cursor-not-allowed disabled:bg-surface-raised disabled:text-muted disabled:hover:bg-surface-raised"
           >
             {isSubmitted
               ? "Verification Submitted"

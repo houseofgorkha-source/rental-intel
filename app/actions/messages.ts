@@ -164,4 +164,10 @@ export async function markMessagesRead(): Promise<void> {
     .update({ read_at: new Date().toISOString() })
     .eq("recipient_id", user.id)
     .is("read_at", null);
+
+  // The unread badge is computed in the root layout (app/layout.tsx), which
+  // the App Router does not automatically re-fetch on a same-tree client
+  // navigation. Without this, the database updates correctly but the badge
+  // a viewer is looking at stays stale until an unrelated full reload.
+  revalidatePath("/", "layout");
 }

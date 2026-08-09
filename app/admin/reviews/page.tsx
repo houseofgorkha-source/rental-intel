@@ -64,17 +64,17 @@ export default async function AdminReviewsPage() {
 
   return (
     <div className="flex flex-col gap-10">
-      <p className="max-w-2xl text-sm leading-6 text-slate-600">
+      <p className="max-w-2xl text-sm leading-6 text-muted">
         Reviews can be read here but never edited or removed — RentalIntel
         doesn&apos;t take down a truthful review, so the ability to do it
         doesn&apos;t exist in the product or the database.
       </p>
 
       <section aria-labelledby="attention">
-        <h2 id="attention" className="text-lg font-medium tracking-[-0.02em] text-slate-950">
+        <h2 id="attention" className="text-lg font-medium tracking-[-0.02em] text-foreground">
           Needs attention
         </h2>
-        <p className="mt-1 text-sm text-slate-500">
+        <p className="mt-1 text-sm text-muted">
           On a property that isn&apos;t published, or waiting on a verification
           decision.
         </p>
@@ -96,10 +96,10 @@ export default async function AdminReviewsPage() {
       </section>
 
       <section aria-labelledby="recent">
-        <h2 id="recent" className="text-lg font-medium tracking-[-0.02em] text-slate-950">
+        <h2 id="recent" className="text-lg font-medium tracking-[-0.02em] text-foreground">
           Most recent
         </h2>
-        <p className="mt-1 text-sm text-slate-500">The last {reviews.length} reviews written.</p>
+        <p className="mt-1 text-sm text-muted">The last {reviews.length} reviews written.</p>
 
         <div className="mt-4">
           {reviews.length === 0 ? (
@@ -124,11 +124,11 @@ function ReviewRow({ review }: { review: AdminReviewRow }) {
   const property = one(review.properties);
 
   return (
-    <li className="rounded-xl border border-slate-200 bg-white p-4">
+    <li className="rounded-xl border border-border-subtle bg-surface p-4">
       <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
         <div className="min-w-0">
-          <p className="text-sm font-medium text-slate-950">{review.title}</p>
-          <p className="mt-0.5 text-xs text-slate-500">
+          <p className="text-sm font-medium text-foreground">{review.title}</p>
+          <p className="mt-0.5 text-xs text-muted">
             {review.overall_rating}/5 · {review.is_anonymous ? "anonymous" : "attributed"} ·{" "}
             {formatDate(review.created_at)}
           </p>
@@ -147,12 +147,12 @@ function ReviewRow({ review }: { review: AdminReviewRow }) {
         </div>
       </div>
 
-      <p className="mt-3 line-clamp-3 text-sm leading-6 text-slate-700">{review.body}</p>
+      <p className="mt-3 line-clamp-3 text-sm leading-6 text-muted">{review.body}</p>
 
       {property && (
         <Link
           href={`/admin/properties/${property.slug}`}
-          className="mt-3 inline-flex text-sm font-medium text-blue-600 underline decoration-blue-200 underline-offset-4 transition hover:text-blue-700 hover:decoration-blue-400"
+          className="mt-3 inline-flex text-sm font-medium text-accent underline decoration-accent/40 underline-offset-4 transition hover:text-accent-hover hover:decoration-accent"
         >
           {property.name} →
         </Link>

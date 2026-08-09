@@ -28,14 +28,14 @@ export default function DualRangeSlider({
 
   return (
     <div>
-      <div className="flex items-center justify-between text-sm font-medium text-slate-900">
+      <div className="flex items-center justify-between text-sm font-medium text-foreground">
         <span>{formatValue(low)}</span>
         <span>{formatValue(high)}</span>
       </div>
       <div className="relative mt-3 h-5">
-        <div className="absolute top-1/2 h-1 w-full -translate-y-1/2 rounded-full bg-slate-200" />
+        <div className="absolute top-1/2 h-1 w-full -translate-y-1/2 rounded-full bg-surface-raised" />
         <div
-          className="absolute top-1/2 h-1 -translate-y-1/2 rounded-full bg-blue-600"
+          className="absolute top-1/2 h-1 -translate-y-1/2 rounded-full bg-accent"
           style={{ left: `${lowPercent}%`, right: `${100 - highPercent}%` }}
         />
         <input

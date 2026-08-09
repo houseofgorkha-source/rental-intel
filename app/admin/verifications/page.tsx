@@ -75,8 +75,8 @@ export default async function AdminVerificationsPage({
               aria-current={isActive ? "page" : undefined}
               className={`rounded-full border px-3.5 py-1.5 text-sm font-medium transition ${
                 isActive
-                  ? "border-slate-950 bg-slate-950 text-white"
-                  : "border-slate-200 bg-white text-slate-600 hover:border-slate-400 hover:text-slate-900"
+                  ? "border-accent bg-accent text-white"
+                  : "border-border-subtle bg-surface text-muted hover:border-muted hover:text-foreground"
               }`}
             >
               {filter.label}
@@ -100,13 +100,13 @@ export default async function AdminVerificationsPage({
               <li key={verification.id}>
                 <Link
                   href={`/admin/verifications/${verification.id}`}
-                  className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-xl border border-slate-200 bg-white px-4 py-3.5 transition hover:border-blue-500 hover:shadow-[0_18px_45px_-30px_rgba(15,23,42,0.45)] focus:outline-none focus-visible:border-blue-500 focus-visible:ring-2 focus-visible:ring-blue-100"
+                  className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-xl border border-border-subtle bg-surface px-4 py-3.5 transition hover:border-accent hover:shadow-[0_18px_45px_-30px_rgba(255, 90, 54,0.45)] focus:outline-none focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/25"
                 >
                   <span className="min-w-0">
-                    <span className="block truncate text-sm font-medium text-slate-950">
+                    <span className="block truncate text-sm font-medium text-foreground">
                       {property?.name ?? "Property"}
                     </span>
-                    <span className="mt-0.5 block truncate text-xs text-slate-500">
+                    <span className="mt-0.5 block truncate text-xs text-muted">
                       {property?.area} · “{review?.title}” · submitted{" "}
                       {formatDate(verification.submitted_at)}
                     </span>

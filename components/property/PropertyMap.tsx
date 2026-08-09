@@ -165,7 +165,7 @@ export default function PropertyMap({
         source: SOURCE_ID,
         filter: ["has", "point_count"],
         paint: {
-          "circle-color": "#2563eb",
+          "circle-color": "#ff5a36",
           "circle-radius": ["step", ["get", "point_count"], 16, 10, 20, 30, 24],
           "circle-opacity": 0.85,
         },
@@ -224,15 +224,15 @@ export default function PropertyMap({
         const node = document.createElement("div");
         node.className = "text-sm";
         const title = document.createElement("p");
-        title.className = "font-medium text-slate-950";
+        title.className = "font-medium text-foreground";
         title.textContent = name;
         const rentLine = document.createElement("p");
-        rentLine.className = "mt-0.5 text-slate-600";
+        rentLine.className = "mt-0.5 text-muted";
         rentLine.textContent = rent === null ? "Rent on request" : formatINRPerMonth(rent);
         const link = document.createElement("a");
         link.href = `/property/${slug}`;
         link.textContent = "View property →";
-        link.className = "mt-1.5 inline-block font-medium text-blue-600 hover:underline";
+        link.className = "mt-1.5 inline-block font-medium text-accent hover:underline";
         node.append(title, rentLine, link);
 
         popupRef.current = new Popup({ closeButton: true, offset: 12 })
@@ -300,9 +300,9 @@ export default function PropertyMap({
 
   if (hasError) {
     return (
-      <div className="flex h-full w-full flex-col items-center justify-center gap-1 rounded-2xl border border-slate-200 bg-slate-100 px-6 text-center">
-        <p className="text-sm font-medium text-slate-700">Map unavailable in this browser</p>
-        <p className="text-xs text-slate-500">
+      <div className="flex h-full w-full flex-col items-center justify-center gap-1 rounded-2xl border border-border-subtle bg-surface-raised px-6 text-center">
+        <p className="text-sm font-medium text-muted">Map unavailable in this browser</p>
+        <p className="text-xs text-muted">
           This browser doesn&apos;t support the graphics required to show the map. The
           property list below still works normally.
         </p>
@@ -311,15 +311,15 @@ export default function PropertyMap({
   }
 
   return (
-    <div className="relative h-full w-full overflow-hidden rounded-2xl border border-slate-200 bg-slate-100">
+    <div className="relative h-full w-full overflow-hidden rounded-2xl border border-border-subtle bg-surface-raised">
       <div ref={containerRef} className="h-full w-full" />
       {!isLoaded && (
-        <div className="absolute inset-0 flex items-center justify-center bg-slate-100">
-          <p className="text-sm font-medium text-slate-500">Loading map…</p>
+        <div className="absolute inset-0 flex items-center justify-center bg-surface-raised">
+          <p className="text-sm font-medium text-muted">Loading map…</p>
         </div>
       )}
       {isLoaded && !hasVisibleMarkers && (
-        <div className="pointer-events-none absolute inset-x-4 bottom-4 rounded-xl bg-white/95 px-4 py-3 text-center text-sm font-medium text-slate-600 shadow-sm">
+        <div className="pointer-events-none absolute inset-x-4 bottom-4 rounded-xl bg-surface/95 px-4 py-3 text-center text-sm font-medium text-muted shadow-sm">
           No properties to show on the map yet.
         </div>
       )}

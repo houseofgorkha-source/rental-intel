@@ -97,11 +97,11 @@ export default async function AdminPropertyPage({
       <div>
         <Link
           href="/admin/properties"
-          className="rounded-lg px-1 py-0.5 text-sm font-medium text-blue-600 underline decoration-blue-200 underline-offset-4 transition hover:text-blue-700 hover:decoration-blue-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-200"
+          className="rounded-lg px-1 py-0.5 text-sm font-medium text-accent underline decoration-accent/40 underline-offset-4 transition hover:text-accent-hover hover:decoration-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/30"
         >
           ← Back to properties
         </Link>
-        <h2 className="mt-4 text-2xl font-medium tracking-[-0.03em] text-slate-950">
+        <h2 className="mt-4 text-2xl font-medium tracking-[-0.03em] text-foreground">
           {property.name}
         </h2>
         <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -112,8 +112,8 @@ export default async function AdminPropertyPage({
         </div>
       </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-6">
-        <h3 className="text-base font-medium text-slate-950">Decision</h3>
+      <div className="rounded-2xl border border-border-subtle bg-surface p-6">
+        <h3 className="text-base font-medium text-foreground">Decision</h3>
         <div className="mt-4">
           <PropertyModerationActions slug={property.slug} status={property.status} />
         </div>
@@ -122,19 +122,19 @@ export default async function AdminPropertyPage({
       <div className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:items-start">
         <section
           aria-labelledby="submission-details"
-          className="min-w-0 rounded-2xl border border-slate-200 bg-white p-6"
+          className="min-w-0 rounded-2xl border border-border-subtle bg-surface p-6"
         >
-          <h3 id="submission-details" className="text-base font-medium text-slate-950">
+          <h3 id="submission-details" className="text-base font-medium text-foreground">
             What was submitted
           </h3>
           <dl className="mt-4 flex flex-col gap-3">
             {submission.map((item) => (
               <div
                 key={item.label}
-                className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 border-b border-slate-100 pb-3 last:border-0 last:pb-0"
+                className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 border-b border-border-subtle pb-3 last:border-0 last:pb-0"
               >
-                <dt className="text-sm text-slate-500">{item.label}</dt>
-                <dd className="min-w-0 break-words text-right text-sm font-medium text-slate-900">
+                <dt className="text-sm text-muted">{item.label}</dt>
+                <dd className="min-w-0 break-words text-right text-sm font-medium text-foreground">
                   {item.value}
                 </dd>
               </div>
@@ -146,7 +146,7 @@ export default async function AdminPropertyPage({
               href={property.maps_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-5 inline-flex text-sm font-medium text-blue-600 underline decoration-blue-200 underline-offset-4 transition hover:text-blue-700 hover:decoration-blue-400"
+              className="mt-5 inline-flex text-sm font-medium text-accent underline decoration-accent/40 underline-offset-4 transition hover:text-accent-hover hover:decoration-accent"
             >
               Open the submitted map link ↗
             </a>
@@ -156,17 +156,17 @@ export default async function AdminPropertyPage({
         <div className="flex min-w-0 flex-col gap-6">
           <section
             aria-labelledby="contributor"
-            className="rounded-2xl border border-slate-200 bg-white p-6"
+            className="rounded-2xl border border-border-subtle bg-surface p-6"
           >
-            <h3 id="contributor" className="text-base font-medium text-slate-950">
+            <h3 id="contributor" className="text-base font-medium text-foreground">
               Who submitted it
             </h3>
-            <p className="mt-3 text-sm font-medium text-slate-900">
+            <p className="mt-3 text-sm font-medium text-foreground">
               {contributor?.display_name ?? "Contributor no longer on RentalIntel"}
             </p>
-            <p className="mt-2 text-sm leading-6 text-slate-600">
+            <p className="mt-2 text-sm leading-6 text-muted">
               They described themselves as{" "}
-              <span className="font-medium text-slate-900">
+              <span className="font-medium text-foreground">
                 {roleLabel(property.submitted_as).toLowerCase()}
               </span>
               . This is a self-declared claim and has not been verified.
@@ -176,16 +176,16 @@ export default async function AdminPropertyPage({
           {isOwnerListing && (
             <section
               aria-labelledby="listing-details"
-              className="rounded-2xl border border-slate-200 bg-white p-6"
+              className="rounded-2xl border border-border-subtle bg-surface p-6"
             >
-              <h3 id="listing-details" className="text-base font-medium text-slate-950">
+              <h3 id="listing-details" className="text-base font-medium text-foreground">
                 Listing details
               </h3>
               <dl className="mt-4 flex flex-col gap-2.5">
                 {listing.map((item) => (
                   <div key={item.label} className="flex items-baseline justify-between gap-4">
-                    <dt className="text-sm text-slate-500">{item.label}</dt>
-                    <dd className="text-sm font-medium text-slate-900">{item.value}</dd>
+                    <dt className="text-sm text-muted">{item.label}</dt>
+                    <dd className="text-sm font-medium text-foreground">{item.value}</dd>
                   </div>
                 ))}
               </dl>
@@ -194,13 +194,13 @@ export default async function AdminPropertyPage({
 
           <section
             aria-labelledby="attached-reviews"
-            className="rounded-2xl border border-slate-200 bg-white p-6"
+            className="rounded-2xl border border-border-subtle bg-surface p-6"
           >
-            <h3 id="attached-reviews" className="text-base font-medium text-slate-950">
+            <h3 id="attached-reviews" className="text-base font-medium text-foreground">
               Reviews attached
             </h3>
             {(reviews ?? []).length === 0 ? (
-              <p className="mt-3 text-sm leading-6 text-slate-600">
+              <p className="mt-3 text-sm leading-6 text-muted">
                 None yet. Publishing this property makes any future reviews
                 visible to everyone.
               </p>
@@ -208,8 +208,8 @@ export default async function AdminPropertyPage({
               <ul className="mt-3 flex flex-col gap-2.5">
                 {(reviews ?? []).map((review) => (
                   <li key={review.id} className="text-sm">
-                    <span className="font-medium text-slate-900">{review.title}</span>
-                    <span className="mt-0.5 block text-xs text-slate-500">
+                    <span className="font-medium text-foreground">{review.title}</span>
+                    <span className="mt-0.5 block text-xs text-muted">
                       {review.overall_rating}/5 · {review.verification_status}
                     </span>
                   </li>
@@ -221,11 +221,11 @@ export default async function AdminPropertyPage({
       </div>
 
       <section aria-labelledby="submitted-images">
-        <h3 id="submitted-images" className="text-base font-medium text-slate-950">
+        <h3 id="submitted-images" className="text-base font-medium text-foreground">
           Images submitted
         </h3>
         {(images ?? []).length === 0 ? (
-          <p className="mt-3 text-sm text-slate-600">No images were uploaded.</p>
+          <p className="mt-3 text-sm text-muted">No images were uploaded.</p>
         ) : (
           <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {(images ?? []).map((image) => (
@@ -235,7 +235,7 @@ export default async function AdminPropertyPage({
                 key={image.storage_path}
                 src={getPropertyImageUrl(supabase, image.storage_path)}
                 alt={image.alt_text || property.name}
-                className="aspect-[4/3] w-full rounded-xl border border-slate-200 object-cover"
+                className="aspect-[4/3] w-full rounded-xl border border-border-subtle object-cover"
               />
             ))}
           </div>
@@ -245,7 +245,7 @@ export default async function AdminPropertyPage({
       {property.status === "published" && (
         <Link
           href={`/property/${property.slug}`}
-          className="inline-flex w-fit text-sm font-medium text-blue-600 underline decoration-blue-200 underline-offset-4 transition hover:text-blue-700 hover:decoration-blue-400"
+          className="inline-flex w-fit text-sm font-medium text-accent underline decoration-accent/40 underline-offset-4 transition hover:text-accent-hover hover:decoration-accent"
         >
           See the public property page →
         </Link>

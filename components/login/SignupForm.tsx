@@ -83,10 +83,10 @@ export default function SignupForm({ nextPath }: { nextPath?: string }) {
       </Button>
       </form>
 
-      {message && <p className="mt-4 text-sm text-green-700">{message}</p>}
-      {error && <p role="alert" className="mt-4 text-sm text-red-600">{error}</p>}
+      {message && <p className="mt-4 text-sm text-success">{message}</p>}
+      {error && <p role="alert" className="mt-4 text-sm text-danger">{error}</p>}
 
-      <p className="mt-8 text-center text-sm text-gray-500">
+      <p className="mt-8 text-center text-sm text-muted">
         Already have an account?
       </p>
 
@@ -94,7 +94,7 @@ export default function SignupForm({ nextPath }: { nextPath?: string }) {
 
         <Link
           href="/login"
-          className="font-medium text-blue-600 hover:underline"
+          className="font-medium text-accent hover:underline"
         >
           Sign In
         </Link>

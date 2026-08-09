@@ -68,21 +68,21 @@ export default function PropertyEditForm({ property }: { property: EditablePrope
           inputs. The name and address are not editable anywhere, by anyone —
           reviews are permanently attached to them (CLAUDE.md §26) — so the
           honest thing is to show them as fixed facts and say why. */}
-      <section className="rounded-2xl border border-slate-200 bg-white p-6">
-        <h2 className="text-sm font-medium text-slate-950">This property</h2>
-        <p className="mt-3 text-base font-medium text-slate-950">{property.name}</p>
-        <p className="mt-1 text-sm text-slate-600">
+      <section className="rounded-2xl border border-border-subtle bg-surface p-6">
+        <h2 className="text-sm font-medium text-foreground">This property</h2>
+        <p className="mt-3 text-base font-medium text-foreground">{property.name}</p>
+        <p className="mt-1 text-sm text-muted">
           {property.addressLine1}, {property.area}, {property.city}
         </p>
-        <p className="mt-4 text-sm leading-6 text-slate-500">
+        <p className="mt-4 text-sm leading-6 text-muted">
           A property&apos;s name and address can&apos;t be changed — reviews stay
           attached to them permanently. Everything below is yours to keep current.
         </p>
       </section>
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-6">
-        <h2 className="text-sm font-medium text-slate-950">About the property</h2>
-        <p className="mt-1 text-sm text-slate-500">
+      <section className="rounded-2xl border border-border-subtle bg-surface p-6">
+        <h2 className="text-sm font-medium text-foreground">About the property</h2>
+        <p className="mt-1 text-sm text-muted">
           Renters filter by these, so completing them helps this property be found.
         </p>
         <div className="mt-6">
@@ -107,9 +107,9 @@ export default function PropertyEditForm({ property }: { property: EditablePrope
       </section>
 
       {isOwnerListing && (
-        <section className="rounded-2xl border border-slate-200 bg-white p-6">
-          <h2 className="text-sm font-medium text-slate-950">Listing details</h2>
-          <p className="mt-1 text-sm text-slate-500">
+        <section className="rounded-2xl border border-border-subtle bg-surface p-6">
+          <h2 className="text-sm font-medium text-foreground">Listing details</h2>
+          <p className="mt-1 text-sm text-muted">
             What you&apos;re asking for this property.
           </p>
           <div className="mt-6 space-y-6">
@@ -143,7 +143,7 @@ export default function PropertyEditForm({ property }: { property: EditablePrope
                 the "Available for rent" badge and nothing else — the page, its
                 reviews and its history stay live and searchable, because a
                 property's rental history has to outlive any one tenancy. */}
-            <label className="flex items-center gap-2 text-slate-700">
+            <label className="flex items-center gap-2 text-muted">
               <input
                 type="checkbox"
                 name="isAvailable"
@@ -156,11 +156,11 @@ export default function PropertyEditForm({ property }: { property: EditablePrope
         </section>
       )}
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-6">
-        <h2 className="text-sm font-medium text-slate-950">
+      <section className="rounded-2xl border border-border-subtle bg-surface p-6">
+        <h2 className="text-sm font-medium text-foreground">
           How should interested renters reach you?
         </h2>
-        <p className="mt-1 text-sm text-slate-500">
+        <p className="mt-1 text-sm text-muted">
           Your choice controls what is shown. Contact details are never visible to
           signed-out visitors.
         </p>
@@ -174,7 +174,7 @@ export default function PropertyEditForm({ property }: { property: EditablePrope
       </section>
 
       {error && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="text-sm text-danger">
           {error}
         </p>
       )}
@@ -185,7 +185,7 @@ export default function PropertyEditForm({ property }: { property: EditablePrope
         </Button>
         <Link
           href="/account/properties"
-          className="text-sm font-medium text-slate-600 underline decoration-slate-300 underline-offset-4 transition hover:text-slate-900"
+          className="text-sm font-medium text-muted underline decoration-border-subtle underline-offset-4 transition hover:text-foreground"
         >
           Cancel
         </Link>

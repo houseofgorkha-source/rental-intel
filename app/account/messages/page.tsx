@@ -16,7 +16,10 @@ type MessageRow = {
   sender_id: string;
   recipient_id: string;
   property_id: string;
-  property: { slug: string; name: string } | { slug: string; name: string }[] | null;
+  property:
+    | { slug: string; name: string; created_by: string }
+    | { slug: string; name: string; created_by: string }[]
+    | null;
   sender: { display_name: string } | { display_name: string }[] | null;
 };
 
@@ -44,7 +47,7 @@ export default async function AccountMessagesPage() {
   const { data } = await supabase
     .from("property_messages")
     .select(
-      "id, body, created_at, read_at, sender_id, recipient_id, property_id, property:properties!property_messages_property_id_fkey(slug, name), sender:profiles!property_messages_sender_id_fkey(display_name)",
+      "id, body, created_at, read_at, sender_id, recipient_id, property_id, property:properties!property_messages_property_id_fkey(slug, name, created_by), sender:profiles!property_messages_sender_id_fkey(display_name)",
     )
     .order("created_at", { ascending: false });
 
@@ -79,22 +82,22 @@ export default async function AccountMessagesPage() {
         return (
           <li
             key={message.id}
-            className="rounded-2xl border border-slate-200 bg-white p-5"
+            className="rounded-2xl border border-border-subtle bg-surface p-5"
           >
             <div className="flex flex-wrap items-center justify-between gap-3">
               <StatusPill tone={isIncoming ? "success" : "neutral"}>
                 {isIncoming ? "Received" : "Sent"}
               </StatusPill>
-              <span className="text-xs text-slate-500">
+              <span className="text-xs text-muted">
                 {formatDate(message.created_at)}
               </span>
             </div>
 
             {property && (
-              <p className="mt-3 text-sm font-medium text-slate-950">
+              <p className="mt-3 text-sm font-medium text-foreground">
                 <Link
                   href={`/property/${property.slug}`}
-                  className="underline decoration-slate-300 underline-offset-4 transition hover:text-blue-700 hover:decoration-blue-400"
+                  className="underline decoration-border-subtle underline-offset-4 transition hover:text-accent-hover hover:decoration-accent"
                 >
                   {property.name}
                 </Link>
@@ -102,16 +105,22 @@ export default async function AccountMessagesPage() {
             )}
 
             {isIncoming && (
-              <p className="mt-1 text-xs text-slate-500">
+              <p className="mt-1 text-xs text-muted">
                 From {one(message.sender)?.display_name ?? "a RentalIntel member"}
               </p>
             )}
 
-            <p className="mt-3 whitespace-pre-line text-sm leading-6 text-slate-700">
+            <p className="mt-3 whitespace-pre-line text-sm leading-6 text-muted">
               {message.body}
             </p>
 
-            {isIncoming && (
+            {/* Reply is one-directional by design (20260811000000): only a
+                property's creator may use replyToPropertyMessage. An
+                "incoming" row here can also be the creator's own past reply
+                landing back in a renter's inbox — for that row `isIncoming`
+                is true but the viewer is not the creator, and offering Reply
+                there would render a button that always fails server-side. */}
+            {isIncoming && property?.created_by === user.id && (
               <MessageReplyForm
                 propertyId={message.property_id}
                 recipientId={message.sender_id}

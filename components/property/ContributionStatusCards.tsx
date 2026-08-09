@@ -21,8 +21,8 @@ function StatusCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
-      <p className="text-xs font-medium uppercase tracking-[0.1em] text-slate-500">{label}</p>
+    <div className="rounded-xl border border-border-subtle bg-surface px-4 py-3">
+      <p className="text-xs font-medium uppercase tracking-[0.1em] text-muted">{label}</p>
       <div className="mt-1.5 text-sm">{children}</div>
     </div>
   );
@@ -32,18 +32,18 @@ function PropertyStatusCard({ propertyStatus }: { propertyStatus: string }) {
   return (
     <StatusCard label="Property">
       {propertyStatus === "published" ? (
-        <span className="font-medium text-emerald-700">✅ Published</span>
+        <span className="font-medium text-success">✅ Published</span>
       ) : propertyStatus === "rejected" ? (
         <span className="font-medium text-red-700">❌ Not Approved</span>
       ) : (
-        <span className="font-medium text-amber-700">⏳ Pending Approval</span>
+        <span className="font-medium text-warning">⏳ Pending Approval</span>
       )}
     </StatusCard>
   );
 }
 
 const actionLinkClass =
-  "font-medium text-blue-600 underline decoration-blue-200 underline-offset-4 transition hover:text-blue-700 hover:decoration-blue-400";
+  "font-medium text-accent underline decoration-accent/40 underline-offset-4 transition hover:text-accent-hover hover:decoration-accent";
 
 // The property page's permanent, always-visible dashboard for the current
 // viewer's own contribution to this property. Never hidden behind a click —
@@ -76,16 +76,16 @@ export default function ContributionStatusCards({
             that has since been rewritten. The state is still shown, because
             it is real; it just isn't editable by anyone. */}
         <StatusCard label="Listing">
-          <p className="font-medium text-slate-700">
+          <p className="font-medium text-muted">
             {isAvailable ? "🟢 Available for rent" : "⚪ Not currently available"}
           </p>
-          <p className="mt-1 text-xs leading-5 text-slate-500">
+          <p className="mt-1 text-xs leading-5 text-muted">
             Listing details are fixed once submitted.
           </p>
         </StatusCard>
 
         <StatusCard label="Review">
-          <p className="text-xs leading-5 text-slate-500">
+          <p className="text-xs leading-5 text-muted">
             Owners can&apos;t review their own property. Reviews come from people
             who have lived here.
           </p>
@@ -100,7 +100,7 @@ export default function ContributionStatusCards({
         <PropertyStatusCard propertyStatus={propertyStatus} />
 
         <StatusCard label="Review">
-          <p className="text-xs leading-5 text-slate-500">
+          <p className="text-xs leading-5 text-muted">
             Thanks for adding this property. Reviews can only be written by
             someone who has lived here.
           </p>
@@ -119,24 +119,24 @@ export default function ContributionStatusCards({
             Write Review →
           </Link>
         ) : propertyStatus === "published" ? (
-          <span className="font-medium text-emerald-700">✅ Review Published</span>
+          <span className="font-medium text-success">✅ Review Published</span>
         ) : (
-          <span className="font-medium text-amber-700">⏳ Review Pending Approval</span>
+          <span className="font-medium text-warning">⏳ Review Pending Approval</span>
         )}
       </StatusCard>
 
       <StatusCard label="Stay Verification">
         {!ownReview ? (
-          <div className="text-slate-500">
-            <span className="font-medium text-slate-600">Verify My Stay</span>
+          <div className="text-muted">
+            <span className="font-medium text-muted">Verify My Stay</span>
             <p className="mt-1 text-xs leading-5">
               Write a review first. Verification is available after you&apos;ve submitted a review.
             </p>
           </div>
         ) : ownReview.verification_status === "verified" ? (
-          <span className="font-medium text-emerald-700">✅ Verified Tenant</span>
+          <span className="font-medium text-success">✅ Verified Tenant</span>
         ) : ownReview.verification_status === "pending" ? (
-          <span className="font-medium text-amber-700">⏳ Verification Pending</span>
+          <span className="font-medium text-warning">⏳ Verification Pending</span>
         ) : ownReview.verification_status === "rejected" ? (
           <span className="font-medium text-red-700">❌ Verification Rejected</span>
         ) : (

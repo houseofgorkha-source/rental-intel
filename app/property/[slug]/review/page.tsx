@@ -47,25 +47,25 @@ export default async function ReviewPage({
   }
 
   return (
-    <main className="min-h-screen bg-white py-12">
+    <main className="min-h-screen bg-surface py-12">
       <div className="mx-auto max-w-4xl px-6">
 
         <Link
           href={`/property/${property.slug}`}
-          className="inline-flex items-center text-sm font-medium text-blue-600 transition-colors hover:text-blue-700"
+          className="inline-flex items-center text-sm font-medium text-accent transition-colors hover:text-accent-hover"
         >
           ← Back to Property
         </Link>
 
-        <div className="mt-8 rounded-2xl border border-gray-200 bg-white p-8">
+        <div className="mt-8 rounded-2xl border border-border-subtle bg-surface p-8">
 
-          <h1 className="text-4xl font-bold tracking-tight text-gray-900">
+          <h1 className="text-4xl font-bold tracking-tight text-foreground">
             Share Your Experience
           </h1>
 
-          <p className="mt-3 text-gray-600">
+          <p className="mt-3 text-muted">
             Help future tenants by sharing your honest experience at{" "}
-            <span className="font-medium text-gray-900">
+            <span className="font-medium text-foreground">
               {property.name}
             </span>.
           </p>

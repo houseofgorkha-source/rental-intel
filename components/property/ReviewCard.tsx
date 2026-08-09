@@ -18,13 +18,13 @@ type ReviewCardProps = {
 
 export default function ReviewCard({ review }: ReviewCardProps) {
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-6">
+    <div className="rounded-2xl border border-border-subtle bg-surface p-6">
 
       <div className="flex items-center justify-between">
 
-        <h3 className="text-xl font-semibold text-gray-900">
+        <h3 className="text-xl font-semibold text-foreground">
           {review.title}
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="mt-1 text-sm text-muted">
   By {review.reviewer}
 </p>
         </h3>
@@ -33,14 +33,14 @@ export default function ReviewCard({ review }: ReviewCardProps) {
   <div className="text-yellow-500 text-lg">
     {"★".repeat(review.rating)}
   </div>
-  <div className="text-xs text-gray-500">
+  <div className="text-xs text-muted">
     {review.rating}/5
   </div>
 </div>
 
       </div>
 
-      <p className="mt-3 text-gray-700">
+      <p className="mt-3 text-muted">
         {review.review}
       </p>
 
@@ -50,7 +50,7 @@ export default function ReviewCard({ review }: ReviewCardProps) {
 
     <span
       className={`text-sm font-medium ${
-        review.wouldRecommend ? "text-green-600" : "text-red-600"
+        review.wouldRecommend ? "text-green-600" : "text-danger"
       }`}
     >
       {review.wouldRecommend
@@ -59,7 +59,7 @@ export default function ReviewCard({ review }: ReviewCardProps) {
     </span>
   </div>
 
-  <span className="text-sm text-gray-500">
+  <span className="text-sm text-muted">
     {review.stay}
   </span>
 </div>

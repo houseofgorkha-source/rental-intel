@@ -18,9 +18,9 @@ export default function TextAreaField({
   return (
     <div className="space-y-2">
 
-      <label className="block text-sm font-medium text-gray-800">
+      <label className="block text-sm font-medium text-foreground">
         {label}
-        {required && <span className="ml-1 text-red-500">*</span>}
+        {required && <span className="ml-1 text-danger">*</span>}
       </label>
 
       <textarea
@@ -31,24 +31,24 @@ export default function TextAreaField({
           w-full
           rounded-lg
           border
-          border-gray-200
-          bg-white
+          border-border-subtle
+          bg-surface
           px-4
           py-3
-          text-gray-900
-          placeholder:text-gray-400
+          text-foreground
+          placeholder:text-muted
           outline-none
           transition
-          hover:border-gray-400
-          focus:border-[#1B4332]
+          hover:border-muted
+          focus:border-accent
           focus:ring-2
-          focus:ring-green-100
+          focus:ring-accent/25
           resize-none
         "
       />
 
       {helperText && (
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-muted">
           {helperText}
         </p>
       )}

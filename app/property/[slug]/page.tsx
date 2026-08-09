@@ -268,20 +268,20 @@ export default async function PropertyPage({
   }));
 
   return (
-    <main className="min-h-screen bg-[#fbfbfa] pb-20 pt-28">
+    <main className="min-h-screen bg-background pb-20 pt-28">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
-        <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-2 text-sm text-slate-500">
-          <Link href="/" className="transition hover:text-slate-900">Home</Link>
+        <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-2 text-sm text-muted">
+          <Link href="/" className="transition hover:text-foreground">Home</Link>
           <span aria-hidden="true">/</span>
-          <Link href="/property" className="transition hover:text-slate-900">{property.city}</Link>
+          <Link href="/property" className="transition hover:text-foreground">{property.city}</Link>
           <span aria-hidden="true">/</span>
-          <Link href="/property" className="transition hover:text-slate-900">{property.area}</Link>
+          <Link href="/property" className="transition hover:text-foreground">{property.area}</Link>
           <span aria-hidden="true">/</span>
-          <span className="truncate text-slate-900">{property.name}</span>
+          <span className="truncate text-foreground">{property.name}</span>
         </nav>
 
         {verification === "submitted" && (
-          <p className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">
+          <p className="mt-6 rounded-xl border border-success/30 bg-success/10 px-4 py-3 text-sm font-medium text-success">
             Verification submitted. We&apos;ll review your documents.
           </p>
         )}
@@ -293,21 +293,21 @@ export default async function PropertyPage({
               the whole page sideways. Same fix HomeDiscovery already uses. */}
           <div className="min-w-0">
             <section aria-labelledby="property-title">
-              <p className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
+              <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted">
                 Rental property
               </p>
-              <h1 id="property-title" className="mt-4 max-w-4xl text-4xl font-medium tracking-[-0.045em] text-slate-950 sm:text-5xl">
+              <h1 id="property-title" className="mt-4 max-w-4xl text-4xl font-medium tracking-[-0.045em] text-foreground sm:text-5xl">
                 {property.name}
               </h1>
-              <p className="mt-4 text-base text-slate-600 sm:text-lg">
+              <p className="mt-4 text-base text-muted sm:text-lg">
                 {property.area} <span aria-hidden="true">•</span> {property.city}
               </p>
 
               <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-3 text-sm">
-                <span className="font-medium text-slate-950">
+                <span className="font-medium text-foreground">
                   {overallRating === null ? "No ratings yet" : `${overallRating.toFixed(1)} / 5 overall rating`}
                 </span>
-                <span className="text-slate-500">
+                <span className="text-muted">
                   {propertyReviews.length} {propertyReviews.length === 1 ? "review" : "reviews"}
                 </span>
                 {/* Only shown when a review on this property has actually
@@ -317,12 +317,12 @@ export default async function PropertyPage({
                     for the signal it uses, not a vaguer "Community
                     verified". */}
                 {hasVerifiedReview && (
-                  <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 font-medium text-emerald-700">
+                  <span className="rounded-full border border-success/30 bg-success/10 px-3 py-1.5 font-medium text-success">
                     ✓ Verified resident review
                   </span>
                 )}
                 {provenanceLabel && (
-                  <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5 font-medium text-slate-600">
+                  <span className="rounded-full border border-border-subtle bg-surface px-3 py-1.5 font-medium text-muted">
                     {provenanceLabel}
                   </span>
                 )}
@@ -343,71 +343,71 @@ export default async function PropertyPage({
 
             <PropertyGallery images={images} />
 
-            <section aria-labelledby="quick-facts-heading" className="mt-14 border-t border-slate-200 pt-10">
+            <section aria-labelledby="quick-facts-heading" className="mt-14 border-t border-border-subtle pt-10">
               <div className="max-w-2xl">
-                <p className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">At a glance</p>
-                <h2 id="quick-facts-heading" className="mt-3 text-3xl font-medium tracking-[-0.035em] text-slate-950">Quick facts</h2>
+                <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted">At a glance</p>
+                <h2 id="quick-facts-heading" className="mt-3 text-3xl font-medium tracking-[-0.035em] text-foreground">Quick facts</h2>
               </div>
-              <div className="mt-7 grid gap-px overflow-hidden rounded-2xl border border-slate-200 bg-slate-200 sm:grid-cols-2">
+              <div className="mt-7 grid gap-px overflow-hidden rounded-2xl border border-border-subtle bg-surface-raised sm:grid-cols-2">
                 {facts.map((fact) => (
-                  <div key={fact.label} className="bg-white p-5">
-                    <p className="text-xs font-medium uppercase tracking-[0.13em] text-slate-500">{fact.label}</p>
-                    <p className="mt-2 text-sm leading-6 text-slate-900">{fact.value}</p>
+                  <div key={fact.label} className="bg-surface p-5">
+                    <p className="text-xs font-medium uppercase tracking-[0.13em] text-muted">{fact.label}</p>
+                    <p className="mt-2 text-sm leading-6 text-foreground">{fact.value}</p>
                   </div>
                 ))}
                 {property.maps_url && (
-                  <a href={property.maps_url} target="_blank" rel="noreferrer" className="bg-white p-5 transition hover:bg-slate-50">
-                    <p className="text-xs font-medium uppercase tracking-[0.13em] text-slate-500">Maps</p>
-                    <p className="mt-2 text-sm font-medium text-slate-900 underline decoration-slate-300 underline-offset-4">Open location</p>
+                  <a href={property.maps_url} target="_blank" rel="noreferrer" className="bg-surface p-5 transition hover:bg-surface-raised">
+                    <p className="text-xs font-medium uppercase tracking-[0.13em] text-muted">Maps</p>
+                    <p className="mt-2 text-sm font-medium text-foreground underline decoration-border-subtle underline-offset-4">Open location</p>
                   </a>
                 )}
               </div>
             </section>
 
-            <section aria-labelledby="score-heading" className="mt-14 border-t border-slate-200 pt-10">
-              <p className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">RentalIntel score</p>
+            <section aria-labelledby="score-heading" className="mt-14 border-t border-border-subtle pt-10">
+              <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted">RentalIntel score</p>
               <div className="mt-3 flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
                 <div>
-                  <h2 id="score-heading" className="text-3xl font-medium tracking-[-0.035em] text-slate-950">The renter&apos;s view, in one place.</h2>
-                  <p className="mt-3 text-sm leading-6 text-slate-600">A clearer score is coming as this property receives more community input.</p>
+                  <h2 id="score-heading" className="text-3xl font-medium tracking-[-0.035em] text-foreground">The renter&apos;s view, in one place.</h2>
+                  <p className="mt-3 text-sm leading-6 text-muted">A clearer score is coming as this property receives more community input.</p>
                 </div>
-                <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-5 py-4 text-sm font-medium text-slate-600">Coming Soon</div>
+                <div className="rounded-2xl border border-dashed border-border-subtle bg-surface px-5 py-4 text-sm font-medium text-muted">Coming Soon</div>
               </div>
               <div className="mt-7 grid grid-cols-2 gap-3 sm:grid-cols-3">
                 {["Owner", "Deposit", "Water", "Noise", "Security", "Maintenance"].map((metric) => (
-                  <div key={metric} className="rounded-xl border border-slate-200 bg-white px-4 py-4">
-                    <p className="text-sm font-medium text-slate-700">{metric}</p>
-                    <p className="mt-2 text-xs text-slate-500">Coming Soon</p>
+                  <div key={metric} className="rounded-xl border border-border-subtle bg-surface px-4 py-4">
+                    <p className="text-sm font-medium text-muted">{metric}</p>
+                    <p className="mt-2 text-xs text-muted">Coming Soon</p>
                   </div>
                 ))}
               </div>
             </section>
 
-            <section aria-labelledby="highlights-heading" className="mt-14 border-t border-slate-200 pt-10">
-              <p className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">Community highlights</p>
-              <h2 id="highlights-heading" className="mt-3 text-3xl font-medium tracking-[-0.035em] text-slate-950">Built from lived experience.</h2>
-              <p className="mt-5 rounded-2xl border border-slate-200 bg-white px-5 py-6 text-sm leading-6 text-slate-600">Community insights will appear as more reviews are submitted.</p>
+            <section aria-labelledby="highlights-heading" className="mt-14 border-t border-border-subtle pt-10">
+              <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted">Community highlights</p>
+              <h2 id="highlights-heading" className="mt-3 text-3xl font-medium tracking-[-0.035em] text-foreground">Built from lived experience.</h2>
+              <p className="mt-5 rounded-2xl border border-border-subtle bg-surface px-5 py-6 text-sm leading-6 text-muted">Community insights will appear as more reviews are submitted.</p>
             </section>
 
-            <section id="reviews" aria-label="Property reviews" className="mt-14 border-t border-slate-200 pt-1">
+            <section id="reviews" aria-label="Property reviews" className="mt-14 border-t border-border-subtle pt-1">
               <ReviewSection propertySlug={property.slug} propertyReviews={propertyReviews} recommendationPercentage={recommendationPercentage} recommendedCount={recommendedCount} canWriteReview={(property.status === "published" || property.created_by === user?.id) && !(isOwnerListing && property.created_by === user?.id)} />
             </section>
 
-            <section aria-labelledby="timeline-heading" className="mt-14 border-t border-slate-200 pt-10">
-              <p className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">Timeline</p>
-              <h2 id="timeline-heading" className="mt-3 text-3xl font-medium tracking-[-0.035em] text-slate-950">Property history</h2>
-              <div className="mt-7 space-y-5 border-l border-slate-200 pl-5">
-                <div><p className="text-sm font-medium text-slate-900">Property added</p><p className="mt-1 text-sm text-slate-500">{formatDate(property.created_at)}</p></div>
-                {latestReview && <div><p className="text-sm font-medium text-slate-900">Latest review</p><p className="mt-1 text-sm text-slate-500">{formatDate(latestReview.date)}</p></div>}
-                <div><p className="text-sm font-medium text-slate-900">Last updated</p><p className="mt-1 text-sm text-slate-500">{formatDate(property.updated_at)}</p></div>
+            <section aria-labelledby="timeline-heading" className="mt-14 border-t border-border-subtle pt-10">
+              <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted">Timeline</p>
+              <h2 id="timeline-heading" className="mt-3 text-3xl font-medium tracking-[-0.035em] text-foreground">Property history</h2>
+              <div className="mt-7 space-y-5 border-l border-border-subtle pl-5">
+                <div><p className="text-sm font-medium text-foreground">Property added</p><p className="mt-1 text-sm text-muted">{formatDate(property.created_at)}</p></div>
+                {latestReview && <div><p className="text-sm font-medium text-foreground">Latest review</p><p className="mt-1 text-sm text-muted">{formatDate(latestReview.date)}</p></div>}
+                <div><p className="text-sm font-medium text-foreground">Last updated</p><p className="mt-1 text-sm text-muted">{formatDate(property.updated_at)}</p></div>
               </div>
             </section>
 
-            <p className="mt-14 border-t border-slate-200 pt-10 text-sm text-slate-600">
+            <p className="mt-14 border-t border-border-subtle pt-10 text-sm text-muted">
               Didn&apos;t find what you&apos;re looking for?{" "}
               <Link
                 href="/property"
-                className="font-medium text-blue-600 underline decoration-blue-200 underline-offset-4 transition hover:text-blue-700 hover:decoration-blue-400"
+                className="font-medium text-accent underline decoration-accent/40 underline-offset-4 transition hover:text-accent-hover hover:decoration-accent"
               >
                 Search more properties →
               </Link>
@@ -423,8 +423,8 @@ export default async function PropertyPage({
           </div>
 
           <aside className="hidden lg:sticky lg:top-8 lg:block">
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_20px_50px_-40px_rgba(15,23,42,0.4)]">
-              <p className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">Your next step</p>
+            <div className="rounded-2xl border border-border-subtle bg-surface p-6 shadow-[0_20px_50px_-40px_rgba(255, 90, 54,0.4)]">
+              <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted">Your next step</p>
               <div className="mt-5 flex flex-col gap-3">
                 <ContributionStatusCards
                   propertySlug={property.slug}
@@ -436,13 +436,13 @@ export default async function PropertyPage({
                 {viewerActions}
                 <PropertyShareButton propertyName={property.name} />
               </div>
-              <div className="mt-7 border-t border-slate-100 pt-6">
-                <p className="text-sm font-medium text-slate-950">RentalIntel Score</p>
-                <p className="mt-2 text-sm leading-6 text-slate-500">A property score will be available as more renter experiences are shared.</p>
+              <div className="mt-7 border-t border-border-subtle pt-6">
+                <p className="text-sm font-medium text-foreground">RentalIntel Score</p>
+                <p className="mt-2 text-sm leading-6 text-muted">A property score will be available as more renter experiences are shared.</p>
               </div>
-              <div className="mt-6 border-t border-slate-100 pt-6">
-                <p className="text-sm font-medium text-slate-950">{property.area}, {property.city}</p>
-                <p className="mt-2 text-sm text-slate-500">{formatRent(property.asking_rent)}</p>
+              <div className="mt-6 border-t border-border-subtle pt-6">
+                <p className="text-sm font-medium text-foreground">{property.area}, {property.city}</p>
+                <p className="mt-2 text-sm text-muted">{formatRent(property.asking_rent)}</p>
               </div>
             </div>
           </aside>

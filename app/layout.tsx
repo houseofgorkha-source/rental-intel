@@ -156,12 +156,12 @@ export default async function RootLayout({
               />
             ) : (
               <nav className="pointer-events-auto flex items-center gap-4 text-sm font-medium">
-                <Link href="/login" className="text-gray-700 hover:text-blue-600">
+                <Link href="/login" className="text-foreground transition-colors hover:text-accent">
                   Login
                 </Link>
                 <Link
                   href="/signup"
-                  className="rounded-full border border-gray-300 bg-white px-4 py-2 text-gray-900 hover:border-blue-600 hover:text-blue-600"
+                  className="glow-accent rounded-full border border-border-subtle bg-surface px-4 py-2 text-foreground transition-all duration-200 hover:-translate-y-0.5 hover:border-accent hover:text-accent"
                 >
                   Sign Up
                 </Link>

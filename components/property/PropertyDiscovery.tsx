@@ -160,7 +160,7 @@ export function countActiveFilters(filters: PropertyFilters): number {
 // filter for real now, so they get the same live treatment as every other
 // control in the panel.
 const fieldInputClass =
-  "min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100";
+  "min-w-0 flex-1 rounded-lg border border-border-subtle bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/25";
 
 // The single filtering implementation shared by the property list and the
 // map — both must derive from calling this once with the same state, never
@@ -294,7 +294,7 @@ function FilterField({
 }) {
   return (
     <div>
-      <p className="mb-3 text-xs font-medium uppercase tracking-[0.1em] text-slate-500">
+      <p className="mb-3 text-xs font-medium uppercase tracking-[0.1em] text-muted">
         {label}
       </p>
       {children}
@@ -328,8 +328,8 @@ function ToggleGroup<T extends string>({
             aria-pressed={isSelected}
             className={`rounded-full border px-3.5 py-1.5 text-sm font-medium transition ${
               isSelected
-                ? "border-blue-600 bg-blue-600 text-white"
-                : "border-slate-200 bg-white text-slate-700 hover:border-blue-200 hover:text-blue-600"
+                ? "border-accent bg-accent text-white"
+                : "border-border-subtle bg-surface text-muted hover:border-accent/30 hover:text-accent"
             }`}
           >
             {labelFor ? labelFor(option) : option}
@@ -354,7 +354,7 @@ function ToggleCheckboxGrid<T extends string>({
   return (
     <div className={`grid gap-2.5 ${columns === 2 ? "grid-cols-2" : "grid-cols-1"}`}>
       {options.map((option) => (
-        <label key={option} className="flex cursor-pointer items-center gap-2 text-sm text-slate-700">
+        <label key={option} className="flex cursor-pointer items-center gap-2 text-sm text-muted">
           <input
             type="checkbox"
             checked={selected.includes(option)}
@@ -428,7 +428,7 @@ function FiltersPanel({
         width: position.width,
         maxHeight: position.maxHeight,
       }}
-      className="fixed z-30 flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl"
+      className="fixed z-30 flex flex-col overflow-hidden rounded-2xl border border-border-subtle bg-surface shadow-2xl"
     >
       <div className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain p-6">
         <FilterField label="Monthly rent">
@@ -484,7 +484,7 @@ function FiltersPanel({
             selected={amenities}
             onToggle={toggleAmenity}
           />
-          <p className="mt-2 text-xs text-slate-500">Amenity details are coming soon.</p>
+          <p className="mt-2 text-xs text-muted">Amenity details are coming soon.</p>
         </FilterField>
         <FilterField label="Minimum area">
           <div className="flex items-center gap-2">
@@ -508,7 +508,7 @@ function FiltersPanel({
               }}
               className={fieldInputClass}
             />
-            <span className="text-sm text-slate-500">sq.ft</span>
+            <span className="text-sm text-muted">sq.ft</span>
           </div>
         </FilterField>
         <FilterField label="Listed on">
@@ -525,7 +525,7 @@ function FiltersPanel({
               </option>
             ))}
           </select>
-          <p className="mt-2 text-xs text-slate-500">
+          <p className="mt-2 text-xs text-muted">
             When the property was added to RentalIntel.
           </p>
         </FilterField>
@@ -544,7 +544,7 @@ function FiltersPanel({
         </FilterField>
         <FilterField label="Only show">
           <div className="space-y-2.5">
-            <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-700">
+            <label className="flex cursor-pointer items-center gap-2 text-sm text-muted">
               <input
                 type="checkbox"
                 checked={filters.onlyShow.reviewsOnly}
@@ -558,7 +558,7 @@ function FiltersPanel({
               />
               Properties with reviews
             </label>
-            <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-700">
+            <label className="flex cursor-pointer items-center gap-2 text-sm text-muted">
               <input
                 type="checkbox"
                 checked={filters.onlyShow.photosOnly}
@@ -575,26 +575,26 @@ function FiltersPanel({
           </div>
         </FilterField>
       </div>
-      <div className="shrink-0 space-y-3 border-t border-slate-100 p-4">
+      <div className="shrink-0 space-y-3 border-t border-border-subtle p-4">
         {/* Every filter applies as it is changed, so there is no "Apply" any
             more — a button that applied nothing was part of why the panel
             looked like it worked. "Reset all" is what the old Apply slot is
             worth: the one action the panel could not otherwise offer. */}
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-muted">
           Filters apply as you change them. Amenities are still coming soon.
         </p>
         <div className="flex items-center justify-between gap-3">
           <button
             type="button"
             onClick={() => onFiltersChange(DEFAULT_FILTERS)}
-            className="text-sm font-medium text-slate-600 hover:text-slate-900"
+            className="text-sm font-medium text-muted hover:text-foreground"
           >
             Reset all
           </button>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-xl bg-slate-950 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800"
+            className="rounded-xl bg-accent px-5 py-2.5 text-sm font-medium text-white transition hover:bg-accent-hover"
           >
             Close
           </button>
@@ -680,8 +680,8 @@ export function FiltersButton({ filters, onFiltersChange }: FiltersButtonProps) 
         aria-controls="filters-panel"
         className={`inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-sm font-medium transition ${
           isFiltersOpen
-            ? "border-blue-600 bg-blue-600 text-white shadow-[0_8px_20px_-8px_rgba(37,99,235,0.45)]"
-            : "border-slate-200 bg-white text-slate-700 shadow-[0_1px_2px_rgba(15,23,42,0.04)] hover:border-blue-200 hover:text-blue-600"
+            ? "border-accent bg-accent text-white shadow-[0_8px_20px_-8px_rgba(37,99,235,0.45)]"
+            : "border-border-subtle bg-surface text-muted shadow-[0_1px_2px_rgba(255, 90, 54,0.04)] hover:border-accent/30 hover:text-accent"
         }`}
       >
         <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4 fill-none stroke-current stroke-[1.8]">
@@ -694,7 +694,7 @@ export function FiltersButton({ filters, onFiltersChange }: FiltersButtonProps) 
           <span
             aria-label={`${activeCount} active ${activeCount === 1 ? "filter" : "filters"}`}
             className={`ml-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-xs font-semibold ${
-              isFiltersOpen ? "bg-white text-blue-600" : "bg-blue-600 text-white"
+              isFiltersOpen ? "bg-surface text-accent" : "bg-accent text-white"
             }`}
           >
             {activeCount}
@@ -750,20 +750,20 @@ export function PropertyList({
           }}
           onMouseEnter={() => onSelectProperty?.(property.slug)}
           onFocus={() => onSelectProperty?.(property.slug)}
-          className={`overflow-hidden rounded-xl border bg-white transition hover:border-slate-300 hover:shadow-[0_18px_45px_-30px_rgba(15,23,42,0.45)] focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100 ${
+          className={`overflow-hidden rounded-xl border bg-surface transition-all duration-200 hover:-translate-y-1 hover:border-accent/60 hover:shadow-[0_18px_45px_-20px_rgba(255,90,54,0.5)] focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/25 ${
             selectedSlug === property.slug
-              ? "border-blue-500 ring-2 ring-blue-100"
-              : "border-slate-200"
+              ? "border-accent ring-2 ring-accent/25"
+              : "border-border-subtle"
           }`}
         >
           <Link href={`/property/${property.slug}`} className="block focus:outline-none">
-          <div className="relative aspect-[5/2] bg-slate-100">
+          <div className="relative aspect-[5/2] bg-surface-raised">
             {/* Only shown for owner listings: a tenant contributing the flat
                 they live in isn't advertising a vacancy, so badging it
                 "Available for rent" would be false. Legacy rows have a null
                 submittedAs and correctly show nothing. */}
             {property.submittedAs === "owner" && property.isAvailable && (
-              <span className="absolute right-2 top-2 z-10 inline-flex items-center gap-1 rounded-full bg-white/95 px-2 py-0.5 text-[10px] font-medium text-emerald-700 shadow-sm ring-1 ring-inset ring-emerald-600/20">
+              <span className="absolute right-2 top-2 z-10 inline-flex items-center gap-1 rounded-full bg-surface/95 px-2 py-0.5 text-[10px] font-medium text-success shadow-sm ring-1 ring-inset ring-emerald-600/20">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                 Available for rent
               </span>
@@ -777,32 +777,32 @@ export function PropertyList({
                 className="h-full w-full object-cover"
               />
             ) : (
-              <div className="flex h-full items-end bg-[linear-gradient(145deg,#e2e8f0,#f8fafc_58%,#dbeafe)] p-3">
-                <span className="text-xs font-medium text-slate-500">
+              <div className="flex h-full items-end bg-[linear-gradient(145deg,#fff1e6,#fffaf6_58%,#ffe0cf)] p-3">
+                <span className="text-xs font-medium text-muted">
                   Property image coming soon
                 </span>
               </div>
             )}
           </div>
           <div className="p-3">
-            <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-slate-500">
+            <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted">
               {property.area}, {property.city}
             </p>
-            <h3 className="mt-1 line-clamp-2 text-sm font-medium tracking-[-0.02em] text-slate-950">
+            <h3 className="mt-1 line-clamp-2 text-sm font-medium tracking-[-0.02em] text-foreground">
               {property.name}
             </h3>
             <div className="mt-2 flex items-center justify-between gap-3 text-xs">
-              <span className="font-medium text-slate-900">
+              <span className="font-medium text-foreground">
                 {property.averageRating === null
                   ? "New"
                   : `${property.averageRating.toFixed(1)} / 5`}
               </span>
-              <span className="text-slate-500">
+              <span className="text-muted">
                 {property.reviewCount}{" "}
                 {property.reviewCount === 1 ? "review" : "reviews"}
               </span>
             </div>
-            <p className="mt-2 text-sm font-medium text-slate-900">
+            <p className="mt-2 text-sm font-medium text-foreground">
               {formatRent(property.askingRent)}
             </p>
           </div>
@@ -818,20 +818,20 @@ export function PropertyList({
         <div>
           <h2
             id="property-results-heading"
-            className="text-2xl font-medium tracking-[-0.03em] text-slate-950"
+            className="text-2xl font-medium tracking-[-0.03em] text-foreground"
           >
             {heading}
           </h2>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-muted">
             {visibleProperties.length} {visibleProperties.length === 1 ? "property" : "properties"}
           </p>
         </div>
       </div>
 
       {visibleProperties.length === 0 ? (
-        <div className="mt-6 rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
-          <p className="font-medium text-slate-900">No properties found here yet.</p>
-          <p className="mt-2 text-sm text-slate-500">
+        <div className="mt-6 rounded-2xl border border-dashed border-border-subtle bg-surface px-6 py-12 text-center">
+          <p className="font-medium text-foreground">No properties found here yet.</p>
+          <p className="mt-2 text-sm text-muted">
             Try another locality or check back as the community grows.
           </p>
         </div>
@@ -913,9 +913,9 @@ export default function PropertyDiscovery({
     selectedAreas.length === 1 ? `${selectedAreas[0]}, ${selectedCity}` : `${selectedCity} properties`;
 
   return (
-    <main className="min-h-screen bg-[#fbfbfa] pb-16 pt-28">
+    <main className="min-h-screen bg-background pb-16 pt-28">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
-        <h1 className="text-3xl font-medium tracking-[-0.03em] text-slate-950 sm:text-4xl">
+        <h1 className="text-3xl font-medium tracking-[-0.03em] text-foreground sm:text-4xl">
           {resultsHeading}
         </h1>
 
@@ -934,7 +934,7 @@ export default function PropertyDiscovery({
         </div>
 
         {cityProperties.length === 0 && (
-          <p className="mt-4 text-sm text-slate-500">
+          <p className="mt-4 text-sm text-muted">
             {selectedCity === DEFAULT_CITY
               ? "No properties are available yet."
               : `${selectedCity} is coming soon. Try ${DEFAULT_CITY} for now.`}
@@ -942,8 +942,8 @@ export default function PropertyDiscovery({
         )}
 
         <div className="mt-12 grid gap-10 lg:grid-cols-[minmax(13rem,1fr)_minmax(0,3fr)] lg:gap-14">
-          <aside className="rounded-2xl border border-slate-200 bg-white p-5 lg:self-start">
-            <p className="text-xs font-medium uppercase tracking-[0.15em] text-slate-500">
+          <aside className="rounded-2xl border border-border-subtle bg-surface p-5 lg:self-start">
+            <p className="text-xs font-medium uppercase tracking-[0.15em] text-muted">
               Locality explorer
             </p>
             <div className="mt-4 space-y-1">
@@ -952,8 +952,8 @@ export default function PropertyDiscovery({
                 onClick={() => setSelectedAreas([])}
                 className={`w-full rounded-xl px-3 py-2.5 text-left text-sm transition ${
                   selectedAreas.length === 0
-                    ? "bg-slate-950 font-medium text-white"
-                    : "text-slate-700 hover:bg-slate-50"
+                    ? "bg-accent font-medium text-white"
+                    : "text-muted hover:bg-surface-raised"
                 }`}
               >
                 All {selectedCity}
@@ -965,8 +965,8 @@ export default function PropertyDiscovery({
                   onClick={() => setSelectedAreas([locality])}
                   className={`w-full rounded-xl px-3 py-2.5 text-left text-sm transition ${
                     selectedAreas.length === 1 && selectedAreas[0] === locality
-                      ? "bg-slate-950 font-medium text-white"
-                      : "text-slate-700 hover:bg-slate-50"
+                      ? "bg-accent font-medium text-white"
+                      : "text-muted hover:bg-surface-raised"
                   }`}
                 >
                   {locality}

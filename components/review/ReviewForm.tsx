@@ -24,11 +24,11 @@ type YesNoFieldProps = {
 function YesNoField({ label, value, onChange }: YesNoFieldProps) {
   return (
     <fieldset>
-      <legend className="mb-3 font-medium text-gray-900">{label}</legend>
+      <legend className="mb-3 font-medium text-foreground">{label}</legend>
 
       <div className="flex gap-6">
         {(["yes", "no"] as const).map((option) => (
-          <label key={option} className="flex items-center text-gray-700">
+          <label key={option} className="flex items-center text-muted">
             <input
               type="radio"
               name={label}
@@ -130,10 +130,10 @@ export default function ReviewForm({ propertyId, propertyArea }: ReviewFormProps
   };
 
   return (
-    <div className="mx-auto max-w-4xl rounded-2xl border border-gray-200 bg-white p-8">
+    <div className="mx-auto max-w-4xl rounded-2xl border border-border-subtle bg-surface p-8">
       <div className="space-y-10">
         <section>
-          <h2 className="text-2xl font-semibold text-gray-900">
+          <h2 className="text-2xl font-semibold text-foreground">
             Overall Experience
           </h2>
 
@@ -147,7 +147,7 @@ export default function ReviewForm({ propertyId, propertyArea }: ReviewFormProps
                 }
               />
               {isNearProperty && (
-                <p className="mt-1.5 text-sm font-medium text-emerald-700">
+                <p className="mt-1.5 text-sm font-medium text-success">
                   ✓ You&apos;re currently near this property.
                 </p>
               )}
@@ -166,7 +166,7 @@ export default function ReviewForm({ propertyId, propertyArea }: ReviewFormProps
             />
 
             <fieldset>
-              <legend className="mb-3 font-medium text-gray-900">
+              <legend className="mb-3 font-medium text-foreground">
                 Would you rent this property again?
               </legend>
 
@@ -176,8 +176,8 @@ export default function ReviewForm({ propertyId, propertyArea }: ReviewFormProps
                     key={option}
                     className={`cursor-pointer rounded-full px-4 py-2 text-sm font-medium transition ${
                       wouldRentAgain === option
-                        ? "bg-blue-600 text-white"
-                        : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-100"
+                        ? "bg-accent text-white"
+                        : "border border-border-subtle bg-surface text-muted hover:bg-surface-raised"
                     }`}
                   >
                     <input
@@ -197,7 +197,7 @@ export default function ReviewForm({ propertyId, propertyArea }: ReviewFormProps
         </section>
 
         <section>
-          <h2 className="text-2xl font-semibold text-gray-900">
+          <h2 className="text-2xl font-semibold text-foreground">
             Quick Ratings
           </h2>
 
@@ -219,7 +219,7 @@ export default function ReviewForm({ propertyId, propertyArea }: ReviewFormProps
         </section>
 
         <section>
-          <h2 className="text-2xl font-semibold text-gray-900">
+          <h2 className="text-2xl font-semibold text-foreground">
             Owner Behaviour
           </h2>
 
@@ -231,7 +231,7 @@ export default function ReviewForm({ propertyId, propertyArea }: ReviewFormProps
             />
 
             <div>
-              <h3 className="font-medium text-gray-900">Positive traits</h3>
+              <h3 className="font-medium text-foreground">Positive traits</h3>
 
               <div className="mt-3 flex flex-wrap gap-3">
                 {positiveOwnerTraits.map((trait) => (
@@ -239,8 +239,8 @@ export default function ReviewForm({ propertyId, propertyArea }: ReviewFormProps
                     key={trait}
                     className={`cursor-pointer rounded-full px-4 py-2 text-sm font-medium transition ${
                       positiveTraits.includes(trait)
-                        ? "bg-blue-600 text-white"
-                        : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-100"
+                        ? "bg-accent text-white"
+                        : "border border-border-subtle bg-surface text-muted hover:bg-surface-raised"
                     }`}
                   >
                     <input
@@ -256,7 +256,7 @@ export default function ReviewForm({ propertyId, propertyArea }: ReviewFormProps
             </div>
 
             <div>
-              <h3 className="font-medium text-gray-900">Negative traits</h3>
+              <h3 className="font-medium text-foreground">Negative traits</h3>
 
               <div className="mt-3 flex flex-wrap gap-3">
                 {negativeOwnerTraits.map((trait) => (
@@ -264,8 +264,8 @@ export default function ReviewForm({ propertyId, propertyArea }: ReviewFormProps
                     key={trait}
                     className={`cursor-pointer rounded-full px-4 py-2 text-sm font-medium transition ${
                       negativeTraits.includes(trait)
-                        ? "bg-blue-600 text-white"
-                        : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-100"
+                        ? "bg-accent text-white"
+                        : "border border-border-subtle bg-surface text-muted hover:bg-surface-raised"
                     }`}
                   >
                     <input
@@ -283,7 +283,7 @@ export default function ReviewForm({ propertyId, propertyArea }: ReviewFormProps
         </section>
 
         <section>
-          <h2 className="text-2xl font-semibold text-gray-900">
+          <h2 className="text-2xl font-semibold text-foreground">
             Security Deposit
           </h2>
 
@@ -296,9 +296,9 @@ export default function ReviewForm({ propertyId, propertyArea }: ReviewFormProps
           </div>
 
           {depositTaken === "yes" && (
-            <div className="mt-6 space-y-6 rounded-2xl border border-gray-200 bg-gray-50 p-6">
+            <div className="mt-6 space-y-6 rounded-2xl border border-border-subtle bg-surface-raised p-6">
               <div>
-                <label className="mb-2 block font-medium text-gray-900">
+                <label className="mb-2 block font-medium text-foreground">
                   Deposit amount (months of rent)
                 </label>
 
@@ -309,7 +309,7 @@ export default function ReviewForm({ propertyId, propertyArea }: ReviewFormProps
                   value={depositMonths}
                   onChange={(event) => setDepositMonths(event.target.value)}
                   placeholder="For example, 2"
-                  className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none transition-colors focus:border-blue-600"
+                  className="w-full rounded-xl border border-border-subtle bg-surface px-4 py-3 text-foreground outline-none transition-colors focus:border-accent"
                 />
               </div>
 
@@ -340,7 +340,7 @@ export default function ReviewForm({ propertyId, propertyArea }: ReviewFormProps
               {additionalDeductions === "yes" && (
                 <div className="grid gap-6 md:grid-cols-2">
                   <div>
-                    <label className="mb-2 block font-medium text-gray-900">
+                    <label className="mb-2 block font-medium text-foreground">
                       Deduction reason
                     </label>
 
@@ -349,12 +349,12 @@ export default function ReviewForm({ propertyId, propertyArea }: ReviewFormProps
                       value={deductionReason}
                       onChange={(event) => setDeductionReason(event.target.value)}
                       placeholder="For example, repair charges"
-                      className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none transition-colors focus:border-blue-600"
+                      className="w-full rounded-xl border border-border-subtle bg-surface px-4 py-3 text-foreground outline-none transition-colors focus:border-accent"
                     />
                   </div>
 
                   <div>
-                    <label className="mb-2 block font-medium text-gray-900">
+                    <label className="mb-2 block font-medium text-foreground">
                       Approximate deduction amount
                     </label>
 
@@ -364,7 +364,7 @@ export default function ReviewForm({ propertyId, propertyArea }: ReviewFormProps
                       value={deductionAmount}
                       onChange={(event) => setDeductionAmount(event.target.value)}
                       placeholder="Amount in ₹"
-                      className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none transition-colors focus:border-blue-600"
+                      className="w-full rounded-xl border border-border-subtle bg-surface px-4 py-3 text-foreground outline-none transition-colors focus:border-accent"
                     />
                   </div>
                 </div>
@@ -380,7 +380,7 @@ export default function ReviewForm({ propertyId, propertyArea }: ReviewFormProps
         </section>
 
         <section>
-          <h2 className="text-2xl font-semibold text-gray-900">
+          <h2 className="text-2xl font-semibold text-foreground">
             Additional Comments
           </h2>
 
@@ -389,19 +389,19 @@ export default function ReviewForm({ propertyId, propertyArea }: ReviewFormProps
             value={comment}
             onChange={(event) => setComment(event.target.value)}
             placeholder="Share anything else future tenants should know..."
-            className="mt-6 w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none transition-colors focus:border-blue-600"
+            className="mt-6 w-full rounded-xl border border-border-subtle bg-surface px-4 py-3 text-foreground outline-none transition-colors focus:border-accent"
           />
         </section>
       </div>
 
-      <div className="mt-10 rounded-2xl border border-gray-200 bg-gray-50 p-5">
-        <h2 className="font-semibold text-gray-900">
+      <div className="mt-10 rounded-2xl border border-border-subtle bg-surface-raised p-5">
+        <h2 className="font-semibold text-foreground">
           Current Verification Status
         </h2>
 
-        <p className="mt-2 text-gray-700">⚪ Unverified</p>
+        <p className="mt-2 text-muted">⚪ Unverified</p>
 
-        <p className="mt-2 text-sm text-gray-600">
+        <p className="mt-2 text-sm text-muted">
           You can verify later by uploading supporting documents.
         </p>
       </div>
@@ -411,13 +411,13 @@ export default function ReviewForm({ propertyId, propertyArea }: ReviewFormProps
         onClick={handleSubmit}
         disabled={isSubmitting}
         aria-busy={isSubmitting}
-        className="mt-10 w-full rounded-full bg-blue-600 px-6 py-4 text-sm font-medium text-white transition-colors hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500 disabled:hover:bg-slate-200"
+        className="mt-10 w-full rounded-full bg-accent px-6 py-4 text-sm font-medium text-white transition-colors hover:bg-accent-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/30 disabled:cursor-not-allowed disabled:bg-surface-raised disabled:text-muted disabled:hover:bg-surface-raised"
       >
         {isSubmitting ? "Publishing..." : "Publish My Experience"}
       </button>
 
       {submissionError && (
-        <p role="alert" className="mt-4 text-sm text-red-600">
+        <p role="alert" className="mt-4 text-sm text-danger">
           {submissionError}
         </p>
       )}

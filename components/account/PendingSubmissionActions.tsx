@@ -46,12 +46,12 @@ export default function PendingSubmissionActions({
         <button
           type="button"
           onClick={() => setIsConfirming(true)}
-          className="rounded-lg px-2 py-1 text-sm font-medium text-slate-600 underline decoration-slate-300 underline-offset-4 transition hover:text-red-700 hover:decoration-red-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-200"
+          className="rounded-lg px-2 py-1 text-sm font-medium text-muted underline decoration-border-subtle underline-offset-4 transition hover:text-red-700 hover:decoration-red-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-200"
         >
           Remove
         </button>
         {error && (
-          <p role="alert" className="max-w-xs text-xs leading-5 text-red-600">
+          <p role="alert" className="max-w-xs text-xs leading-5 text-danger">
             {error}
           </p>
         )}
@@ -61,8 +61,8 @@ export default function PendingSubmissionActions({
 
   return (
     <div className="flex flex-col items-start gap-2">
-      <p className="text-xs leading-5 text-slate-600">
-        Remove <span className="font-medium text-slate-900">{name}</span>? This
+      <p className="text-xs leading-5 text-muted">
+        Remove <span className="font-medium text-foreground">{name}</span>? This
         can&apos;t be undone.
       </p>
       <div className="flex items-center gap-2">
@@ -70,7 +70,7 @@ export default function PendingSubmissionActions({
           type="button"
           onClick={() => setIsConfirming(false)}
           disabled={isPending}
-          className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:border-slate-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-lg border border-border-subtle px-3 py-1.5 text-sm font-medium text-muted transition hover:border-border-subtle focus:outline-none focus-visible:ring-2 focus-visible:ring-border-subtle disabled:cursor-not-allowed disabled:opacity-50"
         >
           Cancel
         </button>

@@ -1,28 +1,92 @@
 @import "tailwindcss";
 
+/* ---------------------------------------------------------------------------
+   RentalIntel light theme -- v2. The first pass went dark and read as a
+   generic dev-tool skin, not a consumer trust product; this reverts to a
+   warm, light base with ONE bold, confidently-saturated color doing the
+   work (coral, --accent) the way a reference the product owner liked
+   (findghosla.com) uses hot pink -- not a shy accent on a neutral page, the
+   color IS the identity. --accent-warm is repurposed as a complementary
+   BLUE pop (not warm-toned despite the variable name, kept to avoid
+   touching every call site) so the palette reads as genuinely two-color
+   colorful rather than monochrome-orange, the same way Ghosla pairs pink
+   headlines with blue map markers. Semantic colours (success/warning/
+   danger) keep their existing hue meaning, just retuned for a light,
+   warm-cream surface instead of a dark one.
+   --------------------------------------------------------------------------- */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #fff8f3;
+  --surface: #ffffff;
+  --surface-raised: #fff1e6;
+  --border-subtle: #f0ddcc;
+  --foreground: #2b1e16;
+  --muted: #7a6659;
+  --accent: #ff5a36;
+  --accent-hover: #e8451f;
+  --accent-warm: #2f6fed;
+  --success: #15803d;
+  --warning: #b45309;
+  --danger: #dc2626;
 }
 
 @theme inline {
   --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-border-subtle: var(--border-subtle);
   --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-warm: var(--accent-warm);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}
+
+/* The redesign's one recurring signature (frontend-design skill: "spend
+   boldness in one place") -- an accent-tinted glow on hover, used on buttons,
+   cards and links throughout instead of a different hover trick per
+   component. Kept to shadow + a small lift, never color-only, so it reads
+   under prefers-reduced-motion too (the transform is what's suppressed
+   below, the glow itself is not motion). */
+.glow-accent {
+  transition: box-shadow 200ms ease, transform 200ms ease, border-color 200ms ease;
+}
+.glow-accent:hover {
+  box-shadow: 0 0 0 1px var(--accent), 0 8px 24px -8px rgba(255, 90, 54, 0.4);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Tailwind's preflight sets `button { cursor: default }` to match native
+   browser behaviour, which is correct for a native OS control but wrong for
+   every button in this app -- they all act like links. Every clickable
+   control gets a hand cursor; `disabled:cursor-not-allowed` classes already
+   used throughout the app win over this via specificity, so disabled state
+   is unaffected. */
+button:not(:disabled),
+[role="button"]:not(:disabled),
+summary,
+a {
+  cursor: pointer;
 }
 
 .scroll-thin {
@@ -58,7 +122,7 @@ body {
   height: 18px;
   border-radius: 9999px;
   background: #fff;
-  border: 2px solid rgb(37 99 235);
+  border: 2px solid rgb(255 90 54);
   box-shadow: 0 1px 3px rgba(15, 23, 42, 0.25);
   cursor: pointer;
 }
@@ -69,7 +133,7 @@ body {
   height: 18px;
   border-radius: 9999px;
   background: #fff;
-  border: 2px solid rgb(37 99 235);
+  border: 2px solid rgb(255 90 54);
   box-shadow: 0 1px 3px rgba(15, 23, 42, 0.25);
   cursor: pointer;
 }

@@ -36,7 +36,7 @@ export default function PropertyShareButton({
     <button
       type="button"
       onClick={shareProperty}
-      className="flex w-full items-center justify-center rounded-xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-800 transition hover:bg-slate-50"
+      className="flex w-full items-center justify-center rounded-xl border border-border-subtle px-4 py-3 text-sm font-medium text-foreground transition hover:bg-surface-raised"
     >
       {label}
     </button>

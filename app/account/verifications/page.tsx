@@ -64,13 +64,13 @@ export default async function AccountVerificationsPage() {
         return (
           <li
             key={verification.id}
-            className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-5 sm:flex-row sm:items-center sm:justify-between"
+            className="flex flex-col gap-3 rounded-2xl border border-border-subtle bg-surface p-5 sm:flex-row sm:items-center sm:justify-between"
           >
             <div className="min-w-0">
-              <h2 className="truncate text-base font-medium text-slate-950">
+              <h2 className="truncate text-base font-medium text-foreground">
                 {property?.name ?? "Property"}
               </h2>
-              <p className="mt-1 text-sm text-slate-500">
+              <p className="mt-1 text-sm text-muted">
                 Submitted {formatDate(verification.submitted_at)}
               </p>
               <div className="mt-2.5">
@@ -79,7 +79,7 @@ export default async function AccountVerificationsPage() {
                 </StatusPill>
               </div>
               {verification.rejection_reason && (
-                <p className="mt-2 text-sm text-slate-600">
+                <p className="mt-2 text-sm text-muted">
                   {verification.rejection_reason}
                 </p>
               )}
@@ -88,7 +88,7 @@ export default async function AccountVerificationsPage() {
             {property && (
               <Link
                 href={`/property/${property.slug}`}
-                className="shrink-0 text-sm font-medium text-blue-600 underline decoration-blue-200 underline-offset-4 transition hover:text-blue-700 hover:decoration-blue-400"
+                className="shrink-0 text-sm font-medium text-accent underline decoration-accent/40 underline-offset-4 transition hover:text-accent-hover hover:decoration-accent"
               >
                 View property
               </Link>

@@ -79,7 +79,7 @@ export default function ContactContributor({
   }
 
   const buttonClass =
-    "inline-flex w-full items-center justify-center rounded-xl bg-slate-950 px-4 py-3 text-sm font-medium text-white transition hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 disabled:cursor-not-allowed disabled:bg-slate-400";
+    "inline-flex w-full items-center justify-center rounded-xl bg-accent px-4 py-3 text-sm font-medium text-white transition hover:bg-accent-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-border-subtle disabled:cursor-not-allowed disabled:bg-muted";
 
   if (!isSignedIn) {
     return (
@@ -87,7 +87,7 @@ export default function ContactContributor({
         <button type="button" onClick={handleGuestClick} className={buttonClass}>
           {label}
         </button>
-        <p className="text-xs leading-5 text-slate-500">
+        <p className="text-xs leading-5 text-muted">
           Sign in to see how this contributor prefers to be contacted.
         </p>
       </div>
@@ -106,7 +106,7 @@ export default function ContactContributor({
             {label}
           </button>
         )}
-        <p className="text-xs leading-5 text-slate-500">
+        <p className="text-xs leading-5 text-muted">
           {isRevealed && phone
             ? "Shared by the contributor. Please be considerate about when you call."
             : "Shows a phone number the contributor chose to share."}
@@ -127,7 +127,7 @@ export default function ContactContributor({
             {label}
           </button>
         )}
-        <p className="text-xs leading-5 text-slate-500">
+        <p className="text-xs leading-5 text-muted">
           {isRevealed && email
             ? "Shared by the contributor."
             : "Shows an email address the contributor chose to share."}
@@ -139,14 +139,15 @@ export default function ContactContributor({
   if (isSent) {
     return (
       <div className="flex flex-col gap-2">
-        <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">
+        <p className="rounded-xl border border-success/30 bg-success/10 px-4 py-3 text-sm font-medium text-success">
           Message sent. Their reply will come from them directly.
         </p>
-        <p className="text-xs leading-5 text-slate-500">
+        <p className="text-xs leading-5 text-muted">
           You can find this under{" "}
           <Link
             href="/account/messages"
-            className="font-medium text-blue-700 underline decoration-blue-300 underline-offset-4 hover:text-blue-800"
+            prefetch={false}
+            className="font-medium text-accent-hover underline decoration-accent/50 underline-offset-4 hover:text-accent-hover"
           >
             Account → Messages
           </Link>{" "}
@@ -167,7 +168,7 @@ export default function ContactContributor({
         </button>
       ) : (
         <>
-          <label htmlFor="contact-message" className="text-xs font-medium text-slate-700">
+          <label htmlFor="contact-message" className="text-xs font-medium text-muted">
             Your message
           </label>
           <textarea
@@ -177,7 +178,7 @@ export default function ContactContributor({
             rows={4}
             maxLength={2000}
             placeholder="Is the property still available? I'd like to know about the deposit terms."
-            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+            className="w-full rounded-xl border border-border-subtle bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/25"
           />
           <button
             type="button"
@@ -188,13 +189,13 @@ export default function ContactContributor({
           >
             {isPending ? "Sending..." : "Send message"}
           </button>
-          <p className="text-xs leading-5 text-slate-500">
+          <p className="text-xs leading-5 text-muted">
             Sent inside RentalIntel. Your email address isn&apos;t shared.
           </p>
         </>
       )}
       {error && (
-        <p role="alert" className="text-xs leading-5 text-red-600">
+        <p role="alert" className="text-xs leading-5 text-danger">
           {error}
         </p>
       )}

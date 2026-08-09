@@ -77,7 +77,7 @@ export default function UseMyLocationButton({
         type="button"
         onClick={handleClick}
         disabled={status === "loading"}
-        className={`inline-flex items-center gap-1.5 font-medium text-blue-600 transition hover:text-blue-700 disabled:cursor-wait disabled:opacity-60 ${
+        className={`inline-flex items-center gap-1.5 font-medium text-accent transition hover:text-accent-hover disabled:cursor-wait disabled:opacity-60 ${
           compact ? "text-sm" : "text-sm"
         }`}
       >
@@ -97,13 +97,13 @@ export default function UseMyLocationButton({
       </button>
 
       {message && (
-        <div className="absolute left-0 top-full z-10 mt-1.5 w-72 rounded-lg bg-white p-2.5 shadow-md">
-          <p className="text-sm text-slate-500">{message}</p>
+        <div className="absolute left-0 top-full z-10 mt-1.5 w-72 rounded-lg bg-surface p-2.5 shadow-md">
+          <p className="text-sm text-muted">{message}</p>
           {status !== "unsupported" && (
             <button
               type="button"
               onClick={handleClick}
-              className="mt-1.5 text-sm font-medium text-blue-600 hover:text-blue-700"
+              className="mt-1.5 text-sm font-medium text-accent hover:text-accent-hover"
             >
               Try again
             </button>
@@ -111,7 +111,7 @@ export default function UseMyLocationButton({
         </div>
       )}
       {!compact && !message && (
-        <p className="absolute left-0 top-full mt-1.5 w-64 text-xs text-slate-400">
+        <p className="absolute left-0 top-full mt-1.5 w-64 text-xs text-muted">
           {DEFAULT_PRIVACY_NOTE}
         </p>
       )}

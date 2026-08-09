@@ -66,11 +66,11 @@ export default async function EditPropertyPage({ params }: EditPropertyPageProps
       <div>
         <Link
           href="/account/properties"
-          className="text-sm font-medium text-slate-600 underline decoration-slate-300 underline-offset-4 transition hover:text-slate-900"
+          className="text-sm font-medium text-muted underline decoration-border-subtle underline-offset-4 transition hover:text-foreground"
         >
           ← My properties
         </Link>
-        <h1 className="mt-3 text-2xl font-medium tracking-[-0.03em] text-slate-950">
+        <h1 className="mt-3 text-2xl font-medium tracking-[-0.03em] text-foreground">
           Edit property
         </h1>
         {/* Editing does not send a published property back for re-approval:
@@ -78,7 +78,7 @@ export default async function EditPropertyPage({ params }: EditPropertyPageProps
             identity, and re-queuing a live listing every time a rent changed
             would make the listing unusable. Moderation state is untouched by
             this form — the database enforces that, not this page. */}
-        <p className="mt-2 text-sm leading-6 text-slate-600">
+        <p className="mt-2 text-sm leading-6 text-muted">
           Changes here go live immediately. Approval only applies to a property
           being added, not to keeping its details current.
         </p>

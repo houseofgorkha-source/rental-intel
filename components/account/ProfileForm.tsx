@@ -33,7 +33,7 @@ export default function ProfileForm({ displayName, email }: ProfileFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-md rounded-2xl border border-slate-200 bg-white p-6">
+    <form onSubmit={handleSubmit} className="max-w-md rounded-2xl border border-border-subtle bg-surface p-6">
       <div className="space-y-6">
         <InputField
           label="Display Name"
@@ -45,24 +45,24 @@ export default function ProfileForm({ displayName, email }: ProfileFormProps) {
         />
 
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-800">Email</label>
-          <p className="rounded-lg border border-gray-200 bg-slate-50 px-4 py-3 text-sm text-slate-500">
+          <label className="block text-sm font-medium text-foreground">Email</label>
+          <p className="rounded-lg border border-border-subtle bg-surface-raised px-4 py-3 text-sm text-muted">
             {email}
           </p>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-muted">
             Your email is managed by your sign-in method and can&apos;t be changed here.
           </p>
         </div>
       </div>
 
       {error && (
-        <p role="alert" className="mt-5 text-sm text-red-600">
+        <p role="alert" className="mt-5 text-sm text-danger">
           {error}
         </p>
       )}
 
       {isSaved && !error && (
-        <p className="mt-5 text-sm font-medium text-emerald-700">Profile updated.</p>
+        <p className="mt-5 text-sm font-medium text-success">Profile updated.</p>
       )}
 
       <Button type="submit" variant="primary" disabled={isSubmitting} className="mt-6">

@@ -12,8 +12,8 @@ export default function StarRating({
   onChange,
 }: StarRatingProps) {
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-      <h3 className="mb-3 text-lg font-semibold text-gray-900">
+    <div className="rounded-2xl border border-border-subtle bg-surface p-5 shadow-sm">
+      <h3 className="mb-3 text-lg font-semibold text-foreground">
         {label}
       </h3>
 
@@ -31,7 +31,7 @@ export default function StarRating({
               className={
                 star <= value
                   ? "text-yellow-400"
-                  : "text-gray-300"
+                  : "text-muted"
               }
             >
               ★

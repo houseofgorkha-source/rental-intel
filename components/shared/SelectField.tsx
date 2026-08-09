@@ -32,9 +32,9 @@ export default function SelectField({
 }: SelectFieldProps) {
   return (
     <div className="space-y-2">
-      <label className="block text-sm font-medium text-gray-800">
+      <label className="block text-sm font-medium text-foreground">
         {label}
-        {required && <span className="ml-1 text-red-500">*</span>}
+        {required && <span className="ml-1 text-danger">*</span>}
       </label>
 
       <select
@@ -47,28 +47,28 @@ export default function SelectField({
           w-full
           rounded-lg
           border
-          border-gray-200
-          bg-white
+          border-border-subtle
+          bg-surface
           px-4
           py-3
-          text-gray-900
+          text-foreground
           outline-none
           transition
-          hover:border-gray-400
-          focus:border-blue-600
+          hover:border-muted
+          focus:border-accent
           focus:ring-2
-          focus:ring-blue-100
+          focus:ring-accent/25
         "
       >
-        <option value="">{placeholder}</option>
+        <option value="" className="bg-surface text-foreground">{placeholder}</option>
         {options.map((option) => (
-          <option key={option} value={option}>
+          <option key={option} value={option} className="bg-surface text-foreground">
             {option}
           </option>
         ))}
       </select>
 
-      {helperText && <p className="text-sm text-gray-500">{helperText}</p>}
+      {helperText && <p className="text-sm text-muted">{helperText}</p>}
     </div>
   );
 }

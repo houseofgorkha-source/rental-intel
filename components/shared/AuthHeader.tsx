@@ -12,15 +12,15 @@ export default function AuthHeader({
 
       <div className="text-5xl">🏠</div>
 
-      <p className="mt-5 text-sm font-semibold uppercase tracking-[0.2em] text-blue-600">
+      <p className="mt-5 text-sm font-semibold uppercase tracking-[0.2em] text-accent">
         RentalIntel
       </p>
 
-      <h1 className="mt-3 text-3xl font-bold tracking-tight text-gray-900">
+      <h1 className="mt-3 text-3xl font-bold tracking-tight text-foreground">
         {title}
       </h1>
 
-      <p className="mt-3 text-gray-600">
+      <p className="mt-3 text-muted">
         {description}
       </p>
 

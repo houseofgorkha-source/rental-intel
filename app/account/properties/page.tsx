@@ -76,7 +76,7 @@ export default async function AccountPropertiesPage() {
           mistake is to remove the submission while it is still pending and
           add it again. Saying so here prevents the "where is the edit
           button?" dead end. */}
-      <p className="text-sm leading-6 text-slate-600">
+      <p className="text-sm leading-6 text-muted">
         You can keep a property&apos;s details, rent and availability current at any
         time — its name and address can&apos;t change, because reviews stay attached
         to them. You can remove a property while it&apos;s still pending approval;
@@ -98,8 +98,8 @@ export default async function AccountPropertiesPage() {
                   Remove control — and a button nested inside an anchor is
                   both invalid and unusable. Remove sits above the overlay on
                   its own stacking level, so it can never navigate. */}
-              <article className="relative flex h-full flex-col overflow-hidden rounded-xl border border-slate-200 bg-white transition hover:border-slate-300 hover:shadow-[0_18px_45px_-30px_rgba(15,23,42,0.45)] focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100">
-                <div className="relative aspect-[5/2] bg-slate-100">
+              <article className="relative flex h-full flex-col overflow-hidden rounded-xl border border-border-subtle bg-surface transition hover:border-border-subtle hover:shadow-[0_18px_45px_-30px_rgba(255, 90, 54,0.45)] focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/25">
+                <div className="relative aspect-[5/2] bg-surface-raised">
                   <span className="absolute right-2 top-2 z-10">
                     <StatusPill tone={propertyStatusTone(property.status)}>
                       {propertyStatusLabel(property.status)}
@@ -110,8 +110,8 @@ export default async function AccountPropertiesPage() {
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={image.src} alt={image.alt} className="h-full w-full object-cover" />
                   ) : (
-                    <div className="flex h-full items-end bg-[linear-gradient(145deg,#e2e8f0,#f8fafc_58%,#dbeafe)] p-3">
-                      <span className="text-xs font-medium text-slate-500">
+                    <div className="flex h-full items-end bg-[linear-gradient(145deg,#fff1e6,#fffaf6_58%,#ffe0cf)] p-3">
+                      <span className="text-xs font-medium text-muted">
                         No image added
                       </span>
                     </div>
@@ -119,10 +119,10 @@ export default async function AccountPropertiesPage() {
                 </div>
 
                 <div className="flex flex-1 flex-col p-3">
-                  <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-slate-500">
+                  <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted">
                     {property.area}, {property.city}
                   </p>
-                  <h2 className="mt-1 text-sm font-medium tracking-[-0.02em] text-slate-950">
+                  <h2 className="mt-1 text-sm font-medium tracking-[-0.02em] text-foreground">
                     <Link
                       href={`/property/${property.slug}`}
                       className="line-clamp-2 rounded-sm before:absolute before:inset-0 before:content-[''] focus:outline-none"
@@ -141,7 +141,7 @@ export default async function AccountPropertiesPage() {
                   </div>
 
                   {isOwnerListing && property.asking_rent !== null && (
-                    <p className="mt-2 text-sm font-medium text-slate-900">
+                    <p className="mt-2 text-sm font-medium text-foreground">
                       {formatINRPerMonth(property.asking_rent)}
                     </p>
                   )}
@@ -157,7 +157,7 @@ export default async function AccountPropertiesPage() {
                   <div className="relative z-10 mt-auto flex flex-wrap items-center gap-3 pt-3">
                     <Link
                       href={`/account/properties/${property.slug}/edit`}
-                      className="rounded-lg px-2 py-1 text-sm font-medium text-blue-600 underline decoration-blue-200 underline-offset-4 transition hover:text-blue-700 hover:decoration-blue-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-200"
+                      className="rounded-lg px-2 py-1 text-sm font-medium text-accent underline decoration-accent/40 underline-offset-4 transition hover:text-accent-hover hover:decoration-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/30"
                     >
                       Edit
                     </Link>

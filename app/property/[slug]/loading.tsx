@@ -1,7 +1,7 @@
 export default function Loading() {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[#fbfbfa]">
-      <p className="text-sm font-medium text-slate-500">Loading property…</p>
+    <main className="flex min-h-screen items-center justify-center bg-background">
+      <p className="text-sm font-medium text-muted">Loading property…</p>
     </main>
   );
 }

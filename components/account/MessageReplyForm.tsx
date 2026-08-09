@@ -26,7 +26,7 @@ export default function MessageReplyForm({
 
   if (isSent) {
     return (
-      <p className="mt-3 text-xs font-medium text-emerald-700">
+      <p className="mt-3 text-xs font-medium text-success">
         Reply sent to {recipientLabel}.
       </p>
     );
@@ -37,7 +37,7 @@ export default function MessageReplyForm({
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className="mt-3 text-xs font-medium text-blue-700 underline decoration-blue-300 underline-offset-4 hover:text-blue-800"
+        className="mt-3 text-xs font-medium text-accent-hover underline decoration-accent/50 underline-offset-4 hover:text-accent-hover"
       >
         Reply
       </button>
@@ -70,7 +70,7 @@ export default function MessageReplyForm({
         rows={3}
         maxLength={2000}
         placeholder={`Reply to ${recipientLabel}...`}
-        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+        className="w-full rounded-xl border border-border-subtle bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/25"
       />
       <div className="flex items-center gap-3">
         <button
@@ -78,20 +78,20 @@ export default function MessageReplyForm({
           onClick={handleSend}
           disabled={isPending || body.trim().length < 10}
           aria-busy={isPending}
-          className="inline-flex items-center justify-center rounded-xl bg-slate-950 px-4 py-2 text-xs font-medium text-white transition hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 disabled:cursor-not-allowed disabled:bg-slate-400"
+          className="inline-flex items-center justify-center rounded-xl bg-accent px-4 py-2 text-xs font-medium text-white transition hover:bg-accent-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-border-subtle disabled:cursor-not-allowed disabled:bg-muted"
         >
           {isPending ? "Sending..." : "Send reply"}
         </button>
         <button
           type="button"
           onClick={() => setIsOpen(false)}
-          className="text-xs font-medium text-slate-500 hover:text-slate-700"
+          className="text-xs font-medium text-muted hover:text-muted"
         >
           Cancel
         </button>
       </div>
       {error && (
-        <p role="alert" className="text-xs leading-5 text-red-600">
+        <p role="alert" className="text-xs leading-5 text-danger">
           {error}
         </p>
       )}

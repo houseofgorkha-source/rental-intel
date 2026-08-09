@@ -69,8 +69,8 @@ export default function ContactPreferenceFields({
               key={choice.value}
               className={`flex cursor-pointer gap-3 rounded-xl border p-4 transition ${
                 isSelected
-                  ? "border-blue-600 bg-blue-50/60"
-                  : "border-gray-200 bg-white hover:border-gray-400"
+                  ? "border-accent bg-accent/10/60"
+                  : "border-border-subtle bg-surface hover:border-muted"
               }`}
             >
               <input
@@ -82,10 +82,10 @@ export default function ContactPreferenceFields({
                 className="mt-1 accent-blue-600"
               />
               <span>
-                <span className="block text-sm font-medium text-gray-900">
+                <span className="block text-sm font-medium text-foreground">
                   {choice.title}
                 </span>
-                <span className="mt-1 block text-sm text-gray-600">
+                <span className="mt-1 block text-sm text-muted">
                   {choice.description}
                 </span>
               </span>
@@ -121,9 +121,9 @@ export default function ContactPreferenceFields({
       {/* Nothing is collected for "message here" — the sender's account is the
           address, so there is no detail to store. */}
       {method === "message" && (
-        <p className="rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600">
+        <p className="rounded-xl border border-border-subtle bg-surface-raised p-4 text-sm text-muted">
           Messages arrive in your account under{" "}
-          <span className="font-medium text-gray-900">Messages</span>. Nothing else
+          <span className="font-medium text-foreground">Messages</span>. Nothing else
           about you is shared.
         </p>
       )}

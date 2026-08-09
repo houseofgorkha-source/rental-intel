@@ -27,10 +27,10 @@ export default function SectionNav({
             key={section.href}
             href={section.href}
             aria-current={isActive ? "page" : undefined}
-            className={`rounded-full border px-4 py-2 text-sm font-medium transition ${
+            className={`rounded-full border px-4 py-2 text-sm font-medium transition-all duration-200 ${
               isActive
-                ? "border-blue-600 bg-blue-600 text-white"
-                : "border-slate-200 bg-white text-slate-700 hover:border-blue-200 hover:text-blue-600"
+                ? "border-accent bg-accent text-white shadow-[0_6px_18px_-6px_rgba(255,90,54,0.6)]"
+                : "border-border-subtle bg-surface text-muted hover:-translate-y-0.5 hover:border-accent hover:text-accent"
             }`}
           >
             {section.label}

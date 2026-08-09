@@ -86,7 +86,7 @@ export default function DetailPageSearch({ properties }: DetailPageSearchProps) 
       <button
         type="button"
         onClick={handleSearch}
-        className="inline-flex items-center justify-center rounded-full bg-blue-600 px-5 py-2 text-sm font-medium text-white transition hover:bg-blue-700"
+        className="inline-flex items-center justify-center rounded-full bg-accent px-5 py-2 text-sm font-medium text-white transition hover:bg-accent-hover"
       >
         Search
       </button>
