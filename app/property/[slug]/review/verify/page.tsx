@@ -18,7 +18,7 @@ export default async function VerifyStayPage({
   const supabase = await createClient();
 
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect(`/login?next=/property/${slug}/review/verify?reviewId=${reviewId ?? ""}`);
+  if (!user) redirect(`/login?next=${encodeURIComponent(`/property/${slug}/review/verify?reviewId=${reviewId ?? ""}`)}`);
 
 const { data: property, error } = await supabase
   .from("properties")
