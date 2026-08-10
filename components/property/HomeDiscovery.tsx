@@ -172,7 +172,7 @@ export default function HomeDiscovery({ properties, children }: HomeDiscoveryPro
                 transparent rental community.
               </p>
               <Link
-                href="/add-property"
+                href="/review"
                 className="mt-4 inline-flex text-sm font-medium text-accent underline decoration-accent/40 underline-offset-4 transition hover:text-accent-hover hover:decoration-accent"
               >
                 Review Your Current Rental Property
@@ -184,10 +184,10 @@ export default function HomeDiscovery({ properties, children }: HomeDiscoveryPro
               the toolbar, the map, and the property list. */}
           <section className="min-w-0" aria-label="Property discovery">
             <div className="overflow-hidden rounded-2xl bg-surface shadow-[0_1px_2px_rgba(14,143,94,0.04)]">
-              <div className="flex flex-wrap items-center justify-between gap-4 p-5 sm:p-6">
+              <div className="flex flex-col gap-3 p-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-4 sm:p-6">
                 <UseMyLocationButton onLocated={handleLocated} compact />
 
-                <div className="flex flex-1 flex-wrap items-start justify-end gap-3">
+                <div className="flex flex-col gap-3 sm:flex-1 sm:flex-row sm:flex-wrap sm:items-start sm:justify-end sm:gap-3">
                   <HomeSearch
                     properties={searchProperties}
                     city={selectedCity}
@@ -198,20 +198,29 @@ export default function HomeDiscovery({ properties, children }: HomeDiscoveryPro
                     query={searchQuery}
                     onQueryChange={setSearchQuery}
                   />
-                  <FiltersButton filters={filters} onFiltersChange={setFilters} />
+                  {/* On mobile this same control renders instead beside the
+                      "{city} properties" heading (via PropertyList's
+                      headerAction below), where it stays visible on the
+                      sticky bar while cards scroll — hidden here so it
+                      isn't shown twice. */}
+                  <div className="hidden sm:block">
+                    <FiltersButton filters={filters} onFiltersChange={setFilters} />
+                  </div>
                 </div>
               </div>
 
               {cityProperties.length === 0 && (
-                <p className="px-5 pb-2 text-sm text-muted sm:px-6">
+                <p className="px-4 pb-2 text-sm text-muted sm:px-6">
                   {selectedCity === DEFAULT_CITY
                     ? "No properties are available yet. Try adding the first one."
                     : `${selectedCity} is coming soon. Try ${DEFAULT_CITY} for now.`}
                 </p>
               )}
 
-              {/* Map and list touch — one divider, no gap, same height. */}
-              <div className="grid divide-border-subtle lg:h-[30rem] lg:grid-cols-[3fr_2fr] lg:divide-x">
+              {/* Map and list touch — one divider (horizontal on mobile
+                  where they stack, vertical at lg where they sit side by
+                  side), no gap, same height. */}
+              <div className="grid divide-y divide-border-subtle lg:h-[30rem] lg:grid-cols-[3fr_2fr] lg:divide-x lg:divide-y-0">
                 <div className="h-[22rem] lg:h-full">
                   <PropertyMap
                     properties={visibleProperties}
@@ -225,7 +234,11 @@ export default function HomeDiscovery({ properties, children }: HomeDiscoveryPro
                   />
                 </div>
 
-                <div className="scroll-thin overflow-y-auto p-5 sm:p-6 lg:h-full">
+                {/* Bounded height + its own scrollbar on mobile, so the
+                    property list reads as one clearly-scoped panel rather
+                    than bleeding into the page's own scroll — matches the
+                    bounded `lg:h-full` behavior it already had at lg. */}
+                <div className="scroll-thin max-h-[28rem] overflow-y-auto p-4 sm:p-6 lg:h-full lg:max-h-none">
                   <PropertyList
                     properties={visibleProperties}
                     heading={`${selectedCity} properties`}
@@ -233,6 +246,11 @@ export default function HomeDiscovery({ properties, children }: HomeDiscoveryPro
                     selectedSlug={selectedSlug}
                     onSelectProperty={setSelectedSlug}
                     onActivateProperty={(slug) => setPopupRequest({ slug, token: Date.now() })}
+                    headerAction={
+                      <div className="sm:hidden">
+                        <FiltersButton filters={filters} onFiltersChange={setFilters} />
+                      </div>
+                    }
                   />
                 </div>
               </div>

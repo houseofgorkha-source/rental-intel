@@ -141,7 +141,7 @@ export default async function RootLayout({
     >
       <body className="relative min-h-full flex flex-col">
         <header className="pointer-events-none absolute inset-x-0 top-0 z-20 px-6 py-5">
-          <div className="mx-auto flex max-w-6xl items-center justify-between">
+          <div className="mx-auto flex max-w-6xl items-baseline justify-between">
             <Logo className="pointer-events-auto" />
             {user ? (
               <AccountMenu
@@ -155,17 +155,21 @@ export default async function RootLayout({
                 sampleOwnProperty={sampleOwnProperty}
               />
             ) : (
-              <nav className="pointer-events-auto flex items-center gap-4 text-sm font-medium">
-                <Link href="/login" className="text-foreground transition-colors hover:text-accent">
-                  Login
-                </Link>
-                <Link
-                  href="/signup"
-                  className="glow-accent rounded-full border border-border-subtle bg-surface px-4 py-2 text-foreground transition-all duration-200 hover:-translate-y-0.5 hover:border-accent hover:text-accent"
-                >
-                  Sign Up
-                </Link>
-              </nav>
+              // One combined action, not separate Login/Sign Up links — /login
+              // itself offers a "Create Account" path onward, so a single
+              // entry point covers both without a second route or component.
+              <Link
+                href="/login"
+                // Same box/color treatment as AccountMenu's summary button
+                // (border-border-subtle, bg-surface, text-foreground,
+                // accent-on-hover) — not a solid accent-filled button — so
+                // the two read as the same control regardless of auth state,
+                // and their identical box model keeps them on the same
+                // centerline next to the logo.
+                className="pointer-events-auto rounded-full border border-border-subtle bg-surface px-4 py-2 text-sm font-medium text-foreground transition-all duration-200 hover:-translate-y-0.5 hover:border-accent hover:text-accent hover:shadow-[0_6px_18px_-6px_rgba(14,143,94,0.5)]"
+              >
+                Login / Sign up
+              </Link>
             )}
           </div>
         </header>

@@ -111,7 +111,9 @@ export default function AreaMultiSelect({
   return (
     <div
       ref={selectorRef}
-      className={variant === "embedded-middle" ? "relative h-full shrink-0" : "relative"}
+      className={
+        variant === "embedded-middle" ? "relative h-full flex-1 sm:flex-none sm:shrink-0" : "relative"
+      }
     >
       <button
         type="button"
@@ -121,7 +123,7 @@ export default function AreaMultiSelect({
         aria-controls="area-multi-options"
         className={
           variant === "embedded-middle"
-            ? `flex h-full items-center gap-1.5 border-r border-border-subtle px-4 text-sm font-medium transition ${
+            ? `flex h-full w-full items-center justify-center gap-1.5 border-r border-border-subtle px-4 text-sm font-medium transition sm:w-auto sm:justify-start ${
                 value.length > 0 ? "text-accent" : "text-muted hover:bg-accent/10"
               }`
             : `inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition ${

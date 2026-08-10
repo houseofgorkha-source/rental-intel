@@ -19,6 +19,10 @@ type HomeSearchProps = {
   onAreasChange: (areas: string[]) => void;
   query: string;
   onQueryChange: (query: string) => void;
+  // Passed straight through to SearchBar — see its own comment. Undefined by
+  // default, so every existing caller keeps today's "navigate to the
+  // property page" behavior unchanged.
+  onSelectProperty?: (slug: string) => void;
 };
 
 // The homepage's single search entry point: City, Area, and free-text
@@ -35,13 +39,15 @@ export default function HomeSearch({
   onAreasChange,
   query,
   onQueryChange,
+  onSelectProperty,
 }: HomeSearchProps) {
   return (
-    <div className="min-w-[18rem] flex-1">
+    <div className="w-full min-w-0 sm:w-auto sm:min-w-[18rem] sm:flex-1">
       <SearchBar
         properties={properties}
         query={query}
         onQueryChange={onQueryChange}
+        onSelectProperty={onSelectProperty}
         showCityPicker={false}
         compact
         leadingContent={

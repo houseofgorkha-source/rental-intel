@@ -32,30 +32,13 @@ export default function ListYourPropertySection() {
       className="mt-16 lg:mt-24"
     >
       <div className="grid gap-10 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] lg:items-center lg:gap-8">
-        {/* Left: the tinted panel, mirroring the hero's right-hand panel. */}
-        <div className="rounded-2xl bg-surface p-5 shadow-[0_1px_2px_rgba(14,143,94,0.04)] sm:p-6">
-          <div className="grid gap-3 sm:grid-cols-3">
-            {roles.map((role) => (
-              <Link
-                key={role.href}
-                href={role.href}
-                className="flex flex-col rounded-xl border border-transparent bg-surface p-5 transition-all duration-200 hover:-translate-y-1 hover:border-accent/60 hover:shadow-[0_18px_45px_-20px_rgba(14,143,94,0.5)]"
-              >
-                <span className="text-2xl" aria-hidden="true">
-                  {role.icon}
-                </span>
-                <span className="mt-3 text-sm font-medium text-foreground">
-                  {role.title}
-                </span>
-                <span className="mt-1.5 text-sm leading-6 text-muted">
-                  {role.description}
-                </span>
-              </Link>
-            ))}
-          </div>
-        </div>
-
-        {/* Right: plain-background copy, pixel-aligned to the panel. */}
+        {/* DOM order is heading-first so it reads as a proper section
+            heading on mobile (single-column stack) instead of the role
+            cards appearing with no heading above them. `lg:order-last`
+            below puts it back on the right at `lg`+, restoring the
+            original "tinted panel left, copy right" desktop layout — the
+            panel needs no matching `lg:order-first` since it keeps its
+            default order (0), which already sorts before `order-last`. */}
         <div className="max-w-md lg:order-last">
           <h2
             id="list-your-property-heading"
@@ -68,6 +51,37 @@ export default function ListYourPropertySection() {
             start by telling us your connection to the property. It goes live
             as soon as you submit it.
           </p>
+        </div>
+
+        {/* The tinted panel, mirroring the hero's right-hand panel. */}
+        <div className="rounded-2xl bg-surface p-5 shadow-[0_1px_2px_rgba(14,143,94,0.04)] sm:p-6">
+          {/* All three in one row at every width, including mobile — cards
+              go compact (centered icon+title, description hidden) below
+              `sm` purely because there isn't room for the full card at a
+              third of a phone's width; `sm`+ is untouched from before. */}
+          <div className="grid grid-cols-3 gap-2 sm:gap-3">
+            {roles.map((role) => (
+              <Link
+                key={role.href}
+                href={role.href}
+                // Visible border + shadow at rest on mobile (touch has no
+                // hover to reveal the accent border with) so these read as
+                // tappable cards, not plain icon/text stacks; desktop keeps
+                // the original hover-reveal treatment unchanged.
+                className="flex flex-col items-center rounded-xl border border-border-subtle bg-surface p-3 text-center shadow-[0_1px_2px_rgba(14,143,94,0.04)] transition-all duration-200 hover:-translate-y-1 hover:border-accent/60 hover:shadow-[0_18px_45px_-20px_rgba(14,143,94,0.5)] sm:items-start sm:border-transparent sm:p-5 sm:text-left sm:shadow-none"
+              >
+                <span className="text-xl sm:text-2xl" aria-hidden="true">
+                  {role.icon}
+                </span>
+                <span className="mt-2 text-xs font-medium leading-tight text-foreground sm:mt-3 sm:text-sm sm:leading-normal">
+                  {role.title}
+                </span>
+                <span className="mt-1.5 hidden text-sm leading-6 text-muted sm:block">
+                  {role.description}
+                </span>
+              </Link>
+            ))}
+          </div>
         </div>
       </div>
     </section>

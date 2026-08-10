@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { markMessagesRead } from "@/app/actions/messages";
 import { EmptyState, StatusPill } from "@/components/shared/StatusPrimitives";
 import MessageReplyForm from "@/components/account/MessageReplyForm";
+import MarkMessagesReadOnMount from "@/components/account/MarkMessagesReadOnMount";
 import { one } from "@/lib/embedded";
 
 export const dynamic = "force-dynamic";
@@ -54,24 +54,26 @@ export default async function AccountMessagesPage() {
   const messages = (data ?? []) as MessageRow[];
 
   // Visiting the inbox is what "read" means here — see markMessagesRead's own
-  // comment. Runs after the fetch above so this render still shows messages
-  // with their true pre-visit read_at (the unread badge on the Account menu
-  // is computed the same way, before this call, so the two never disagree).
-  await markMessagesRead();
-
+  // comment. This render still shows messages with their true pre-visit
+  // read_at, since the mount effect fires after this render commits (same
+  // ordering the previous inline `await` gave us).
   if (messages.length === 0) {
     return (
-      <EmptyState
-        title="No messages yet."
-        description="Renters can message you about a property when you choose “Message here” as your contact preference."
-        actionHref="/account/properties"
-        actionLabel="Manage my properties →"
-      />
+      <>
+        <MarkMessagesReadOnMount />
+        <EmptyState
+          title="No messages yet."
+          description="Renters can message you about a property when you choose “Message here” as your contact preference."
+          actionHref="/account/properties"
+          actionLabel="Manage my properties →"
+        />
+      </>
     );
   }
 
   return (
     <ul className="flex flex-col gap-3">
+      <MarkMessagesReadOnMount />
       {messages.map((message) => {
         // `one()` because PostgREST returns a many-to-one embed as an object —
         // indexing it as an array is how this project has silently mislabelled

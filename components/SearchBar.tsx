@@ -33,6 +33,12 @@ type SearchBarProps = {
   // Slimmer bar (used by HomeSearch's unified search) instead of the
   // default 68px height. Defaults to false so existing callers are unaffected.
   compact?: boolean;
+  // Overrides what happens when a suggestion is picked (click, Enter, or the
+  // search icon) — used by ReviewPropertyFinder to go straight to a
+  // property's review form instead of its detail page. Undefined by default,
+  // which keeps every existing caller's behavior (navigate to the property
+  // page) exactly as it was.
+  onSelectProperty?: (slug: string) => void;
 };
 
 type DropdownPosition = {
@@ -51,6 +57,7 @@ export default function SearchBar({
   showCityPicker = true,
   leadingContent,
   compact = false,
+  onSelectProperty,
 }: SearchBarProps) {
   const [internalSearch, setInternalSearch] = useState("");
   const search = externalQuery ?? internalSearch;
@@ -117,6 +124,10 @@ export default function SearchBar({
   }, []);
 
   function selectProperty(property: SearchProperty) {
+    if (onSelectProperty) {
+      onSelectProperty(property.slug);
+      return;
+    }
     router.push(`/property/${property.slug}`);
   }
 
@@ -216,50 +227,67 @@ export default function SearchBar({
   return (
     <div ref={searchRef} className="w-full">
       <div
-        className={`flex overflow-visible rounded-2xl border border-border-subtle bg-surface shadow-[0_16px_35px_-20px_rgba(14,143,94,0.3)] transition focus-within:border-accent focus-within:ring-4 focus-within:ring-accent/25 ${
-          compact ? "h-11" : "h-[68px]"
+        className={`flex flex-col overflow-visible rounded-2xl border border-border-subtle bg-surface shadow-[0_16px_35px_-20px_rgba(14,143,94,0.3)] transition focus-within:border-accent focus-within:ring-4 focus-within:ring-accent/25 sm:flex-row ${
+          compact ? "sm:h-11" : "sm:h-[68px]"
         }`}
       >
-        {showCityPicker ? <CitySelector value={city} onChange={onCityChange} /> : leadingContent}
-        <input
-          type="text"
-          value={search}
-          onChange={(event) => {
-            setSearch(event.target.value);
-            setIsDropdownOpen(true);
-            setHighlightedIndex(-1);
-          }}
-          onFocus={() => search && setIsDropdownOpen(true)}
-          onKeyDown={handleKeyDown}
-          placeholder="Search locality, society, apartment..."
-          role="combobox"
-          aria-autocomplete="list"
-          aria-expanded={shouldShowDropdown}
-          aria-controls="property-search-results"
-          aria-activedescendant={
-            highlightedIndex >= 0 ? `search-option-${highlightedIndex}` : undefined
-          }
-          className={`min-w-0 flex-1 bg-transparent text-foreground placeholder:text-muted outline-none ${
-            compact ? "px-3.5 text-sm" : "px-5 text-[15px]"
-          }`}
-        />
-        <button
-          type="button"
-          onClick={performSearch}
-          aria-label="Search properties"
-          className={`flex shrink-0 items-center justify-center rounded-xl text-muted transition hover:bg-accent/10 hover:text-accent ${
-            compact ? "m-1 h-9 w-9" : "m-2 h-12 w-12"
-          }`}
-        >
-          <svg
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-            className={compact ? "h-4 w-4 fill-none stroke-current stroke-[1.8]" : "h-5 w-5 fill-none stroke-current stroke-[1.8]"}
+        {/* Below `sm`, City/Area (leadingContent) render as their own full-width
+            row above the text input — `sm:contents` then removes this
+            wrapper's own box entirely at `sm`+, so its children rejoin the
+            single-row flex layout exactly as before (no wrapper, no extra
+            border) and desktop is unaffected. */}
+        {showCityPicker ? (
+          <CitySelector value={city} onChange={onCityChange} />
+        ) : (
+          <div
+            className={`flex border-b border-border-subtle sm:contents ${
+              compact ? "h-11" : "h-[68px]"
+            }`}
           >
-            <circle cx="11" cy="11" r="6" />
-            <path d="m16 16 4 4" />
-          </svg>
-        </button>
+            {leadingContent}
+          </div>
+        )}
+        <div className={`flex sm:contents ${compact ? "h-11" : "h-[68px]"}`}>
+          <input
+            type="text"
+            value={search}
+            onChange={(event) => {
+              setSearch(event.target.value);
+              setIsDropdownOpen(true);
+              setHighlightedIndex(-1);
+            }}
+            onFocus={() => search && setIsDropdownOpen(true)}
+            onKeyDown={handleKeyDown}
+            placeholder="Search locality, society, apartment..."
+            role="combobox"
+            aria-autocomplete="list"
+            aria-expanded={shouldShowDropdown}
+            aria-controls="property-search-results"
+            aria-activedescendant={
+              highlightedIndex >= 0 ? `search-option-${highlightedIndex}` : undefined
+            }
+            className={`min-w-0 flex-1 bg-transparent text-foreground placeholder:text-muted outline-none ${
+              compact ? "px-3.5 text-sm" : "px-5 text-[15px]"
+            }`}
+          />
+          <button
+            type="button"
+            onClick={performSearch}
+            aria-label="Search properties"
+            className={`flex shrink-0 items-center justify-center rounded-xl text-muted transition hover:bg-accent/10 hover:text-accent ${
+              compact ? "m-1 h-9 w-9" : "m-2 h-12 w-12"
+            }`}
+          >
+            <svg
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+              className={compact ? "h-4 w-4 fill-none stroke-current stroke-[1.8]" : "h-5 w-5 fill-none stroke-current stroke-[1.8]"}
+            >
+              <circle cx="11" cy="11" r="6" />
+              <path d="m16 16 4 4" />
+            </svg>
+          </button>
+        </div>
       </div>
       {typeof document !== "undefined" && dropdown}
     </div>

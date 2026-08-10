@@ -77,7 +77,11 @@ export default function UseMyLocationButton({
         type="button"
         onClick={handleClick}
         disabled={status === "loading"}
-        className={`inline-flex items-center gap-1.5 font-medium text-accent transition hover:text-accent-hover disabled:cursor-wait disabled:opacity-60 ${
+        // -my-2/py-2 expands the actual tap target on mobile (where there's
+        // no hover to compensate for a thin text-only hit area) without
+        // shifting surrounding layout — the negative margin cancels the
+        // padding's effect on the box other elements flow around.
+        className={`-my-3 inline-flex items-center gap-1.5 py-3 font-medium text-accent transition hover:text-accent-hover disabled:cursor-wait disabled:opacity-60 sm:my-0 sm:py-0 ${
           compact ? "text-sm" : "text-sm"
         }`}
       >

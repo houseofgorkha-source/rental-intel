@@ -38,9 +38,19 @@ type PropertyFormProps = {
   // homepage "List Your Property" entry points. Always re-shown as a
   // selection they can change, never hidden.
   initialRole?: SubmitterRole | null;
+  // From /add-property?intent=review (the /review page's "can't find your
+  // property" fallback): send a successful submission straight to its
+  // review form instead of the property page. Only applied when the
+  // submitted role can actually review — an owner submission still lands on
+  // the property page, since an owner reviewing their own listing is
+  // blocked server-side anyway (see /property/[slug]/review's own check).
+  redirectToReviewAfterSubmit?: boolean;
 };
 
-export default function PropertyForm({ initialRole = null }: PropertyFormProps) {
+export default function PropertyForm({
+  initialRole = null,
+  redirectToReviewAfterSubmit = false,
+}: PropertyFormProps) {
   const [submissionError, setSubmissionError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [role, setRole] = useState<SubmitterRole | null>(initialRole);
@@ -101,7 +111,8 @@ export default function PropertyForm({ initialRole = null }: PropertyFormProps) 
         setSubmissionError(result.error);
         return;
       }
-      router.push(`/property/${result.slug}`);
+      const goToReview = redirectToReviewAfterSubmit && role !== "owner";
+      router.push(goToReview ? `/property/${result.slug}/review` : `/property/${result.slug}`);
     } catch {
       setSubmissionError("Unable to submit your property. Please try again.");
     } finally {

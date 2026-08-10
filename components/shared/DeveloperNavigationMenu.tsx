@@ -56,6 +56,7 @@ export default function DeveloperNavigationMenu({
       routes: [
         { label: "Home", route: "/", href: "/", kind: "page" },
         { label: "Search Properties", route: "/property", href: "/property", kind: "page" },
+        { label: "Find a Property to Review", route: "/review", href: "/review", kind: "page" },
         {
           label: "Property Details",
           route: "/property/[slug]",

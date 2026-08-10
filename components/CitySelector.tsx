@@ -79,7 +79,7 @@ export default function CitySelector({ value, onChange, variant = "embedded" }: 
   return (
     <div
       ref={selectorRef}
-      className={variant === "embedded" ? "relative h-full shrink-0" : "relative"}
+      className={variant === "embedded" ? "relative h-full flex-1 sm:flex-none sm:shrink-0" : "relative"}
       onKeyDown={handleKeyDown}
     >
       <button
@@ -93,7 +93,7 @@ export default function CitySelector({ value, onChange, variant = "embedded" }: 
         aria-controls="city-options"
         className={
           variant === "embedded"
-            ? "flex h-full items-center rounded-l-[0.9375rem] border-r border-border-subtle bg-surface-raised px-4 text-sm font-medium text-muted transition hover:bg-accent/10"
+            ? "flex h-full flex-1 items-center justify-center rounded-tl-[0.9375rem] border-r border-border-subtle bg-surface-raised px-4 text-sm font-medium text-muted transition hover:bg-accent/10 sm:flex-none sm:justify-start sm:rounded-l-[0.9375rem]"
             : "inline-flex items-center rounded-full border border-border-subtle bg-surface px-4 py-2 text-sm font-medium text-muted shadow-[0_1px_2px_rgba(14,143,94,0.04)] transition hover:border-accent/30 hover:text-accent"
         }
       >

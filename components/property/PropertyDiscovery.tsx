@@ -65,6 +65,12 @@ type PropertyListProps = {
   // the stronger "I mean this one" signal that opens the map popup. Optional
   // because /property's PropertyList has no map to react to it.
   onActivateProperty?: (slug: string) => void;
+  // Rendered on the right side of the (sticky, when compact) heading row —
+  // used by HomeDiscovery to put a mobile-only Filters trigger next to the
+  // results it filters, instead of duplicating a second copy of the toolbar's
+  // FiltersButton state. Undefined everywhere else, including /property's
+  // own PropertyList, which keeps its Filters button in the toolbar only.
+  headerAction?: React.ReactNode;
 };
 
 export type OnlyShowFilters = {
@@ -683,7 +689,7 @@ export function FiltersButton({ filters, onFiltersChange }: FiltersButtonProps) 
         onClick={() => setIsFiltersOpen((open) => !open)}
         aria-expanded={isFiltersOpen}
         aria-controls="filters-panel"
-        className={`inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-sm font-medium transition ${
+        className={`inline-flex items-center gap-1.5 rounded-full border px-4 py-2.5 text-sm font-medium transition sm:py-2 ${
           isFiltersOpen
             ? "border-accent bg-accent text-white shadow-[0_8px_20px_-8px_rgba(37,99,235,0.45)]"
             : "border-border-subtle bg-surface text-muted shadow-[0_1px_2px_rgba(14,143,94,0.04)] hover:border-accent/30 hover:text-accent"
@@ -727,6 +733,7 @@ export function PropertyList({
   selectedSlug = null,
   onSelectProperty,
   onActivateProperty,
+  headerAction,
 }: PropertyListProps) {
   const cardRefs = useRef<Record<string, HTMLElement | null>>({});
 
@@ -740,7 +747,7 @@ export function PropertyList({
   }, [selectedSlug]);
 
   const grid = (
-    <div className={`grid gap-3 sm:grid-cols-2 ${compact ? "" : "xl:grid-cols-3"}`}>
+    <div className={`grid grid-cols-2 gap-2 sm:gap-3 ${compact ? "" : "xl:grid-cols-3"}`}>
       {visibleProperties.map((property) => (
         // The card body is a click target for map preview (mouse-only — see
         // onActivateProperty) but deliberately NOT itself a link: an earlier
@@ -794,14 +801,14 @@ export function PropertyList({
               </div>
             )}
           </div>
-          <div className="p-3">
-            <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted">
+          <div className="p-2 sm:p-3">
+            <p className="text-[9px] font-medium uppercase tracking-[0.08em] text-muted sm:text-[11px] sm:tracking-[0.12em]">
               {property.area}, {property.city}
             </p>
-            <h3 className="mt-1 line-clamp-2 text-sm font-medium tracking-[-0.02em] text-foreground">
+            <h3 className="mt-1 line-clamp-2 text-xs font-medium tracking-[-0.01em] text-foreground sm:text-sm sm:tracking-[-0.02em]">
               {property.name}
             </h3>
-            <div className="mt-2 flex items-center justify-between gap-3 text-xs">
+            <div className="mt-1.5 flex items-center justify-between gap-2 text-[10px] sm:mt-2 sm:gap-3 sm:text-xs">
               <span className="font-medium text-foreground">
                 {property.averageRating === null
                   ? "New"
@@ -812,12 +819,12 @@ export function PropertyList({
                 {property.reviewCount === 1 ? "review" : "reviews"}
               </span>
             </div>
-            <p className="mt-2 text-sm font-medium text-foreground">
+            <p className="mt-1.5 text-xs font-medium text-foreground sm:mt-2 sm:text-sm">
               {formatRent(property.askingRent)}
             </p>
             <Link
               href={`/property/${property.slug}`}
-              className="group/view mt-3 inline-flex items-center gap-1 rounded-full bg-accent/10 px-3 py-1.5 text-sm font-medium text-accent transition-all duration-200 hover:gap-2 hover:bg-accent hover:text-white"
+              className="group/view mt-2 inline-flex items-center gap-1 rounded-full bg-accent/10 px-2.5 py-1 text-xs font-medium text-accent transition-all duration-200 hover:gap-2 hover:bg-accent hover:text-white sm:mt-3 sm:px-3 sm:py-1.5 sm:text-sm"
             >
               View property
               <span aria-hidden="true" className="transition-transform duration-200 group-hover/view:translate-x-0.5">
@@ -832,33 +839,43 @@ export function PropertyList({
 
   return (
     <section aria-labelledby="property-results-heading">
-      <div className="flex items-end justify-between gap-4">
+      {/* `compact` is exactly the homepage's bounded-scroll usage (see
+          HomeDiscovery), so it doubles as the signal for "this list lives
+          inside a scrollable panel and its heading should stay frozen at
+          the top of it" — /property's own (non-compact, page-scrolled)
+          PropertyList is unaffected. */}
+      <div
+        className={`flex items-end justify-between gap-4 ${
+          compact ? "sticky top-0 z-10 bg-surface pb-3" : ""
+        }`}
+      >
         <div>
           <h2
             id="property-results-heading"
-            className="text-2xl font-medium tracking-[-0.03em] text-foreground"
+            className="text-lg font-medium tracking-[-0.02em] text-foreground sm:text-2xl sm:tracking-[-0.03em]"
           >
             {heading}
           </h2>
-          <p className="mt-1 text-sm text-muted">
+          <p className="mt-1 text-xs text-muted sm:text-sm">
             {visibleProperties.length} {visibleProperties.length === 1 ? "property" : "properties"}
           </p>
         </div>
+        {headerAction}
       </div>
 
       {visibleProperties.length === 0 ? (
-        <div className="mt-6 rounded-2xl border border-dashed border-border-subtle bg-surface px-6 py-12 text-center">
+        <div className="mt-4 rounded-2xl border border-dashed border-border-subtle bg-surface px-6 py-8 text-center sm:mt-6 sm:py-12">
           <p className="font-medium text-foreground">No properties found here yet.</p>
           <p className="mt-2 text-sm text-muted">
             Try another locality or check back as the community grows.
           </p>
         </div>
       ) : scrollable ? (
-        <div className="scroll-thin mt-6 lg:-mb-8 lg:-mr-8 lg:max-h-[21.75rem] lg:overflow-y-auto">
+        <div className="scroll-thin mt-4 sm:mt-6 lg:-mb-8 lg:-mr-8 lg:max-h-[21.75rem] lg:overflow-y-auto">
           <div className="lg:pr-8">{grid}</div>
         </div>
       ) : (
-        <div className="mt-6">{grid}</div>
+        <div className="mt-4 sm:mt-6">{grid}</div>
       )}
     </section>
   );
