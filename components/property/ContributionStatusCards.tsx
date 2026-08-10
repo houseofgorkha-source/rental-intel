@@ -125,29 +125,32 @@ export default function ContributionStatusCards({
         )}
       </StatusCard>
 
-      <StatusCard label="Stay Verification">
-        {!ownReview ? (
-          <div className="text-muted">
-            <span className="font-medium text-muted">Verify My Stay</span>
-            <p className="mt-1 text-xs leading-5">
-              Write a review first. Verification is available after you&apos;ve submitted a review.
-            </p>
-          </div>
-        ) : ownReview.verification_status === "verified" ? (
-          <span className="font-medium text-success">✅ Verified Tenant</span>
-        ) : ownReview.verification_status === "pending" ? (
-          <span className="font-medium text-warning">⏳ Verification Pending</span>
-        ) : ownReview.verification_status === "rejected" ? (
-          <span className="font-medium text-red-700">❌ Verification Rejected</span>
-        ) : (
-          <Link
-            href={`/property/${propertySlug}/review/verify?reviewId=${ownReview.id}`}
-            className={actionLinkClass}
-          >
-            Verify My Stay →
-          </Link>
-        )}
-      </StatusCard>
+      {/* Adding a property requires no verification of any kind -- this card
+          used to render unconditionally, showing "Verify My Stay" (disabled,
+          "write a review first") the instant Add Property finished, before
+          a review even existed to verify. That read as Add Property itself
+          demanding verification, which it never has and still doesn't:
+          submission succeeds regardless of this card. Stay verification is
+          real and untouched here -- it only becomes relevant, and only
+          appears, once there is an actual review to attach it to. */}
+      {ownReview && (
+        <StatusCard label="Stay Verification">
+          {ownReview.verification_status === "verified" ? (
+            <span className="font-medium text-success">✅ Verified Tenant</span>
+          ) : ownReview.verification_status === "pending" ? (
+            <span className="font-medium text-warning">⏳ Verification Pending</span>
+          ) : ownReview.verification_status === "rejected" ? (
+            <span className="font-medium text-red-700">❌ Verification Rejected</span>
+          ) : (
+            <Link
+              href={`/property/${propertySlug}/review/verify?reviewId=${ownReview.id}`}
+              className={actionLinkClass}
+            >
+              Verify My Stay →
+            </Link>
+          )}
+        </StatusCard>
+      )}
     </>
   );
 }
