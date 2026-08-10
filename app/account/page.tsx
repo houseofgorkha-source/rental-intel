@@ -54,7 +54,7 @@ export default async function AccountOverviewPage() {
         <h2 className="text-base font-medium text-foreground">Add to RentalIntel</h2>
         <p className="mt-2 max-w-xl text-sm leading-6 text-muted">
           List a property you own, add the place you live in, or add one on
-          someone&apos;s behalf. Every submission is reviewed before it&apos;s published.
+          someone&apos;s behalf. It goes live as soon as you submit it.
         </p>
         <Link
           href="/add-property"

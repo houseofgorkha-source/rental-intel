@@ -62,7 +62,7 @@ export default async function AccountPropertiesPage() {
     return (
       <EmptyState
         title="You haven't added a property yet."
-        description="Add a property you own, one you live in, or one you know about. Every submission is reviewed before it's published."
+        description="Add a property you own, one you live in, or one you know about. It goes live as soon as you submit it."
         actionHref="/add-property"
         actionLabel="Add a property →"
       />

@@ -242,7 +242,10 @@ export async function createProperty(
       // landmark by name instead of accepting it inside a free-text notes
       // field. The column and its existing data are untouched.
       landmark: getTextValue(formData, "landmark") || null,
-      status: "pending",
+      // Publishes immediately -- adding a property has no moderation gate.
+      // (Review verification is unrelated and untouched; see migration
+      // 20260813000000.)
+      status: "published",
       submitted_as: submittedAs,
       asking_rent: askingRent.value,
       security_deposit: securityDeposit.value,

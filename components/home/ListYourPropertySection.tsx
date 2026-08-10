@@ -65,8 +65,8 @@ export default function ListYourPropertySection() {
           </h2>
           <p className="mt-4 text-sm leading-6 text-muted sm:text-base sm:leading-7">
             Whether you own it, live in it, or are adding it for someone else —
-            start by telling us your connection to the property. Every
-            submission is reviewed before it goes live.
+            start by telling us your connection to the property. It goes live
+            as soon as you submit it.
           </p>
         </div>
       </div>

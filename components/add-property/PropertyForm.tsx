@@ -129,9 +129,8 @@ export default function PropertyForm({ initialRole = null }: PropertyFormProps) 
       <div className="mt-10">
 
         <InfoCard title="Before you begin">
-          Every property submitted is manually reviewed before it is published.
-          This helps prevent duplicate listings and keeps RentalIntel
-          trustworthy.
+          Your property goes live as soon as you submit it. You can keep its
+          details, rent and availability current any time from your account.
         </InfoCard>
 
       </div>
