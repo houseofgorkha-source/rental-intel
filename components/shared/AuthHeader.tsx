@@ -10,13 +10,13 @@ export default function AuthHeader({
   return (
     <div className="text-center">
 
-      <div className="text-5xl">🏠</div>
-
-      <p className="mt-5 text-sm font-semibold uppercase tracking-[0.2em] text-accent">
-        RentalIntel
-      </p>
-
-      <h1 className="mt-3 text-3xl font-bold tracking-tight text-foreground">
+      {/* The 🏠 emoji + "RentalIntel" label that used to live here was a
+          leftover from before the site had a real header logo — it now sits
+          close enough to the persistent global header's own logo (Logo.tsx)
+          to visually overlap/duplicate it, especially on mobile where
+          there's less vertical room. Removed rather than kept as
+          redundant branding. */}
+      <h1 className="text-3xl font-bold tracking-tight text-foreground">
         {title}
       </h1>
 

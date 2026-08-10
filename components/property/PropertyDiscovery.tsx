@@ -648,9 +648,22 @@ export function FiltersButton({ filters, onFiltersChange }: FiltersButtonProps) 
     const openAbove = spaceBelow < 280 && spaceAbove > spaceBelow;
     const maxHeight = Math.max(200, Math.min(560, openAbove ? spaceAbove : spaceBelow));
 
+    // `right` right-aligns the panel to the button, but on a narrow viewport
+    // that alignment can push the panel's implied LEFT edge past 0 if the
+    // button isn't flush against the viewport's own right edge (e.g. the
+    // button sits inside a padded card, not glued to the screen edge) — the
+    // panel is wide enough that anchoring purely by "distance from the
+    // button" ignores how much room is actually left for it. Capping `right`
+    // at `innerWidth - width - 12` guarantees a 12px left margin no matter
+    // where the button is.
+    const right = Math.max(
+      12,
+      Math.min(window.innerWidth - rect.right, window.innerWidth - width - 12),
+    );
+
     setPosition({
       top: openAbove ? Math.max(12, rect.top - maxHeight - 12) : rect.bottom + 12,
-      right: Math.max(12, window.innerWidth - rect.right),
+      right,
       width,
       maxHeight,
     });
@@ -689,13 +702,13 @@ export function FiltersButton({ filters, onFiltersChange }: FiltersButtonProps) 
         onClick={() => setIsFiltersOpen((open) => !open)}
         aria-expanded={isFiltersOpen}
         aria-controls="filters-panel"
-        className={`inline-flex items-center gap-1.5 rounded-full border px-4 py-2.5 text-sm font-medium transition sm:py-2 ${
+        className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-1.5 text-xs font-medium transition sm:gap-1.5 sm:px-4 sm:py-2 sm:text-sm ${
           isFiltersOpen
             ? "border-accent bg-accent text-white shadow-[0_8px_20px_-8px_rgba(37,99,235,0.45)]"
             : "border-border-subtle bg-surface text-muted shadow-[0_1px_2px_rgba(14,143,94,0.04)] hover:border-accent/30 hover:text-accent"
         }`}
       >
-        <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4 fill-none stroke-current stroke-[1.8]">
+        <svg viewBox="0 0 24 24" aria-hidden="true" className="h-3.5 w-3.5 fill-none stroke-current stroke-[1.8] sm:h-4 sm:w-4">
           <path d="M4 5h16l-6.5 8v5.5L10.5 21v-8L4 5z" strokeLinejoin="round" />
         </svg>
         Filters
@@ -838,21 +851,21 @@ export function PropertyList({
   );
 
   return (
-    <section aria-labelledby="property-results-heading">
-      {/* `compact` is exactly the homepage's bounded-scroll usage (see
-          HomeDiscovery), so it doubles as the signal for "this list lives
-          inside a scrollable panel and its heading should stay frozen at
-          the top of it" — /property's own (non-compact, page-scrolled)
-          PropertyList is unaffected. */}
-      <div
-        className={`flex items-end justify-between gap-4 ${
-          compact ? "sticky top-0 z-10 bg-surface pb-3" : ""
-        }`}
-      >
-        <div>
+    <section
+      aria-labelledby="property-results-heading"
+      // `compact` is exactly the homepage's bounded-scroll usage (see
+      // HomeDiscovery). This is a flex column specifically so the heading
+      // below can take its own natural height and the scrollable grid box
+      // further down can claim exactly what's left via `flex-1` — no
+      // `position: sticky` involved anywhere. /property's own (non-compact,
+      // page-scrolled) PropertyList is unaffected (no className below).
+      className={compact ? "flex flex-col lg:h-full lg:min-h-0" : undefined}
+    >
+      <div className={`flex items-end justify-between gap-1.5 sm:gap-4 ${compact ? "pb-3" : ""}`}>
+        <div className="min-w-0">
           <h2
             id="property-results-heading"
-            className="text-lg font-medium tracking-[-0.02em] text-foreground sm:text-2xl sm:tracking-[-0.03em]"
+            className="truncate text-sm font-medium tracking-[-0.01em] text-foreground sm:text-2xl sm:tracking-[-0.03em]"
           >
             {heading}
           </h2>
@@ -864,11 +877,28 @@ export function PropertyList({
       </div>
 
       {visibleProperties.length === 0 ? (
-        <div className="mt-4 rounded-2xl border border-dashed border-border-subtle bg-surface px-6 py-8 text-center sm:mt-6 sm:py-12">
+        <div
+          className={`rounded-2xl border border-dashed border-border-subtle bg-surface px-6 py-8 text-center sm:py-12 ${
+            compact ? "" : "mt-4 sm:mt-6"
+          }`}
+        >
           <p className="font-medium text-foreground">No properties found here yet.</p>
           <p className="mt-2 text-sm text-muted">
             Try another locality or check back as the community grows.
           </p>
+        </div>
+      ) : compact ? (
+        // The heading above is a normal, statically-positioned element —
+        // never part of the scrolling area. Only this box scrolls, so a
+        // card can never render above the heading no matter what: they're
+        // not in the same scroll region, there's nothing for a card to
+        // "escape" out of. Deliberately not `position: sticky` — sticky
+        // inside a scrolling container that's also a CSS Grid cell (see
+        // HomeDiscovery's map|list grid) is a known trouble spot where
+        // scrolled content can intermittently render above the "stuck"
+        // element instead of staying hidden behind it.
+        <div className="scroll-thin max-h-[24rem] flex-1 overflow-y-auto lg:max-h-none lg:min-h-0">
+          {grid}
         </div>
       ) : scrollable ? (
         <div className="scroll-thin mt-4 sm:mt-6 lg:-mb-8 lg:-mr-8 lg:max-h-[21.75rem] lg:overflow-y-auto">

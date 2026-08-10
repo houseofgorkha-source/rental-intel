@@ -234,11 +234,18 @@ export default function HomeDiscovery({ properties, children }: HomeDiscoveryPro
                   />
                 </div>
 
-                {/* Bounded height + its own scrollbar on mobile, so the
-                    property list reads as one clearly-scoped panel rather
-                    than bleeding into the page's own scroll — matches the
-                    bounded `lg:h-full` behavior it already had at lg. */}
-                <div className="scroll-thin max-h-[28rem] overflow-y-auto p-4 sm:p-6 lg:h-full lg:max-h-none">
+                {/* No scrolling here anymore — PropertyList (compact mode)
+                    owns that itself, scoped to just its card grid, with the
+                    heading living outside the scroll region entirely. This
+                    div still needs `lg:overflow-hidden`, though, for a real
+                    CSS Grid reason: a grid item without its own `overflow`
+                    keeps its "automatic minimum size" content-based, so the
+                    implicit row track just grows to fit everything instead
+                    of respecting the grid's explicit `lg:h-[30rem]` — which
+                    is exactly what silently broke `lg:h-full` below. Setting
+                    `overflow` (even hidden, since nothing needs to visibly
+                    escape this box) is what makes the row size stick. */}
+                <div className="p-4 sm:p-6 lg:h-full lg:overflow-hidden">
                   <PropertyList
                     properties={visibleProperties}
                     heading={`${selectedCity} properties`}

@@ -64,7 +64,10 @@ export default function AccountMenu({
 
   return (
     <details ref={menuRef} className="pointer-events-auto relative">
-      <summary className="cursor-pointer list-none rounded-full border border-border-subtle bg-surface px-4 py-2 text-sm font-medium text-foreground transition-all duration-200 hover:-translate-y-0.5 hover:border-accent hover:text-accent hover:shadow-[0_6px_18px_-6px_rgba(14,143,94,0.5)]">
+      {/* Plain text at rest — no pill/border/background — matching the
+          logged-out Login/Sign up control; the lift + color animation
+          still shows on hover/press. */}
+      <summary className="cursor-pointer list-none text-sm font-medium text-foreground transition-all duration-200 hover:-translate-y-0.5 hover:text-accent">
         Account
         {unreadMessageCount > 0 && (
           <span className="ml-1.5 inline-flex h-5 min-w-5 animate-pulse items-center justify-center rounded-full bg-accent-warm px-1 text-[11px] font-semibold text-white">
