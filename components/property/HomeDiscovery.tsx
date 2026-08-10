@@ -245,7 +245,15 @@ export default function HomeDiscovery({ properties, children }: HomeDiscoveryPro
                     is exactly what silently broke `lg:h-full` below. Setting
                     `overflow` (even hidden, since nothing needs to visibly
                     escape this box) is what makes the row size stick. */}
-                <div className="p-4 sm:p-6 lg:h-full lg:overflow-hidden">
+                {/* Small horizontal padding on mobile (not the old 16px) —
+                    the map directly above has none at all, so matching
+                    padding here made the heading/cards look narrower than
+                    the map right above them and wasted width. Kept at 8px
+                    rather than 0 so corner cards don't visually clip against
+                    this panel's own rounded-2xl corner. Vertical padding
+                    (py-4) stays for breathing room. Unchanged at `sm`+
+                    (still p-6, matches the toolbar above it). */}
+                <div className="px-2 py-4 sm:p-6 lg:h-full lg:overflow-hidden">
                   <PropertyList
                     properties={visibleProperties}
                     heading={`${selectedCity} properties`}

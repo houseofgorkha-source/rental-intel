@@ -125,9 +125,10 @@ export default function PropertyForm({
 
       <div className="text-center">
 
-        <div className="text-5xl">🏠</div>
-
-        <h1 className="mt-5 text-3xl font-bold tracking-tight text-foreground">
+        {/* Same fix as AuthHeader.tsx: this standalone 🏠 emoji predates the
+            site having a real header logo and now sits close enough to the
+            persistent global header's own Logo to overlap/duplicate it. */}
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">
           Add a Property
         </h1>
 
