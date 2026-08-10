@@ -9,10 +9,17 @@ import InfoCard from "./InfoCard";
 import RoleSelector from "./RoleSelector";
 import PropertyAttributeFields from "./PropertyAttributeFields";
 import ContactPreferenceFields from "./ContactPreferenceFields";
+import PropertyLocationField from "./PropertyLocationField";
 import type { SubmitterRole } from "@/lib/property-roles";
 import Button from "../shared/Button";
 import UseMyLocationButton from "../shared/UseMyLocationButton";
-import { findNearestArea, findNearestCity, type Coordinates } from "@/lib/area-coordinates";
+import {
+  findNearestArea,
+  findNearestCity,
+  getAreaCoordinates,
+  getCityCoordinates,
+  type Coordinates,
+} from "@/lib/area-coordinates";
 
 const maxFileSize = 5 * 1024 * 1024;
 const maxFileCount = 5;
@@ -37,10 +44,16 @@ export default function PropertyForm({ initialRole = null }: PropertyFormProps) 
   const [submissionError, setSubmissionError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [role, setRole] = useState<SubmitterRole | null>(initialRole);
+  const [addressLine1, setAddressLine1] = useState("");
+  const [addressLine2, setAddressLine2] = useState("");
   const [city, setCity] = useState("");
   const [area, setArea] = useState("");
   const [locationResult, setLocationResult] = useState<string | null>(null);
   const router = useRouter();
+
+  // addressLine1/addressLine2 gain an onChange below purely to track their
+  // live value for PropertyLocationField's auto-locate step — they stay
+  // uncontrolled inputs (no `value` prop), so form submission is unaffected.
 
   // Suggests city/area from the user's location — never stores the
   // coordinates themselves; only the resulting text values, which the user
@@ -172,6 +185,7 @@ export default function PropertyForm({ initialRole = null }: PropertyFormProps) 
             label="Address"
             placeholder="#31, C/o Anna PG, 27th Main Road"
             name="addressLine1"
+            onChange={(event) => setAddressLine1(event.target.value)}
             helperText="House number, building, street or anything that helps identify the property."
             required
           />
@@ -183,6 +197,7 @@ export default function PropertyForm({ initialRole = null }: PropertyFormProps) 
             label="Address Line 2"
             placeholder="Apartment, floor, block or tower"
             name="addressLine2"
+            onChange={(event) => setAddressLine2(event.target.value)}
           />
 
           <InputField
@@ -230,6 +245,19 @@ export default function PropertyForm({ initialRole = null }: PropertyFormProps) 
             placeholder="Opposite BDA Complex, behind Empire Restaurant"
             name="landmark"
             helperText="The nearest well-known place. This is often how people find a property."
+          />
+
+          {/* Auto-locates from the full typed address (debounced inside the
+              component) and falls back to the area/city centroid whenever
+              that fails or nothing has been typed yet. Nothing here is
+              submitted until the viewer actually confirms a point
+              themselves — see PropertyLocationField. */}
+          <PropertyLocationField
+            fallbackCenter={getAreaCoordinates(area) ?? getCityCoordinates(city)}
+            addressLine1={addressLine1}
+            addressLine2={addressLine2}
+            area={area}
+            city={city}
           />
 
           <InputField

@@ -114,6 +114,31 @@ function getContactPreference(formData: FormData): {
   return { method, phone: null, email: null };
 }
 
+// Both-or-neither, and silently so: a lone latitude or longitude isn't a
+// usable point, and this field is optional in the first place (see
+// PropertyLocationField), so malformed/partial input becomes "no pin" rather
+// than a hard submission error over a field nobody was required to touch.
+function getCoordinates(
+  formData: FormData,
+): { latitude: number | null; longitude: number | null } {
+  const rawLat = getTextValue(formData, "latitude");
+  const rawLng = getTextValue(formData, "longitude");
+  if (!rawLat || !rawLng) return { latitude: null, longitude: null };
+
+  const latitude = Number(rawLat);
+  const longitude = Number(rawLng);
+  if (
+    !Number.isFinite(latitude) ||
+    !Number.isFinite(longitude) ||
+    Math.abs(latitude) > 90 ||
+    Math.abs(longitude) > 180
+  ) {
+    return { latitude: null, longitude: null };
+  }
+
+  return { latitude, longitude };
+}
+
 function createSlug(name: string) {
   const baseSlug = name
     .toLowerCase()
@@ -159,6 +184,7 @@ export async function createProperty(
 
   const attributes = getAttributes(formData);
   const contact = getContactPreference(formData);
+  const coordinates = getCoordinates(formData);
 
   const amountError = askingRent.error ?? securityDeposit.error ?? contact.error;
   if (amountError) return { error: amountError };
@@ -223,6 +249,8 @@ export async function createProperty(
       is_available: isAvailable,
       ...attributes,
       contact_method: contact.method,
+      latitude: coordinates.latitude,
+      longitude: coordinates.longitude,
       created_by: user.id,
     })
     .select("id, slug")
@@ -467,12 +495,16 @@ export async function updateProperty(
   const amountError = askingRent.error ?? securityDeposit.error ?? contact.error;
   if (amountError) return { error: amountError };
 
+  const coordinates = getCoordinates(formData);
+
   const { data: updated, error: updateError } = await supabase
     .from("properties")
     .update({
       ...getAttributes(formData),
       landmark: getTextValue(formData, "landmark") || null,
       contact_method: contact.method,
+      latitude: coordinates.latitude,
+      longitude: coordinates.longitude,
       ...(isOwnerListing
         ? {
             asking_rent: askingRent.value,

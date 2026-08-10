@@ -25,7 +25,7 @@ export default async function EditPropertyPage({ params }: EditPropertyPageProps
   const { data: property } = await supabase
     .from("properties")
     .select(
-      "id, slug, name, area, city, address_line_1, submitted_as, landmark, configuration, property_type, furnishing, carpet_area_sqft, asking_rent, security_deposit, is_available, contact_method",
+      "id, slug, name, area, city, address_line_1, submitted_as, landmark, configuration, property_type, furnishing, carpet_area_sqft, asking_rent, security_deposit, is_available, contact_method, latitude, longitude",
     )
     .eq("slug", slug)
     .eq("created_by", user.id)
@@ -59,6 +59,8 @@ export default async function EditPropertyPage({ params }: EditPropertyPageProps
       : "none",
     contactPhone: contact?.phone ?? null,
     contactEmail: contact?.email ?? null,
+    latitude: property.latitude,
+    longitude: property.longitude,
   };
 
   return (

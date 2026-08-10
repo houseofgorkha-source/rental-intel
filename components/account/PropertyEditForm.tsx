@@ -8,6 +8,8 @@ import InputField from "@/components/shared/InputField";
 import Button from "@/components/shared/Button";
 import PropertyAttributeFields from "@/components/add-property/PropertyAttributeFields";
 import ContactPreferenceFields from "@/components/add-property/ContactPreferenceFields";
+import PropertyLocationField from "@/components/add-property/PropertyLocationField";
+import { getAreaCoordinates, getCityCoordinates } from "@/lib/area-coordinates";
 import type { ContactMethod } from "@/lib/property-attributes";
 
 export type EditableProperty = {
@@ -28,6 +30,8 @@ export type EditableProperty = {
   contactMethod: ContactMethod;
   contactPhone: string | null;
   contactEmail: string | null;
+  latitude: number | null;
+  longitude: number | null;
 };
 
 // Amending a property, reusing the exact field fragments the Add Property form
@@ -102,6 +106,25 @@ export default function PropertyEditForm({ property }: { property: EditablePrope
             name="landmark"
             defaultValue={property.landmark ?? undefined}
             helperText="The nearest well-known place. This is often how people find a property."
+          />
+        </div>
+        <div className="mt-6">
+          <PropertyLocationField
+            defaultCoordinates={
+              property.latitude !== null && property.longitude !== null
+                ? { lat: property.latitude, lng: property.longitude }
+                : null
+            }
+            fallbackCenter={getAreaCoordinates(property.area) ?? getCityCoordinates(property.city)}
+            // Static values, not live-typed input: addressLine1/area/city
+            // are frozen here (§26 identity immutability — this field never
+            // unlocks them, only reads them). If a confirmed pin already
+            // exists, PropertyLocationField skips geocoding entirely and
+            // keeps it; otherwise this runs once to offer a better starting
+            // point than the raw area centroid.
+            addressLine1={property.addressLine1}
+            area={property.area}
+            city={property.city}
           />
         </div>
       </section>

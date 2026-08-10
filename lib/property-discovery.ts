@@ -70,6 +70,8 @@ type ListingRow = {
   furnishing: Furnishing | null;
   carpet_area_sqft: number | null;
   security_deposit: number | null;
+  latitude: number | null;
+  longitude: number | null;
 };
 
 export async function getDiscoveryProperties(
@@ -121,7 +123,7 @@ export async function getDiscoveryProperties(
         supabase
           .from("properties")
           .select(
-            "id, is_available, submitted_as, configuration, property_type, furnishing, carpet_area_sqft, security_deposit",
+            "id, is_available, submitted_as, configuration, property_type, furnishing, carpet_area_sqft, security_deposit, latitude, longitude",
           )
           .in("id", propertyIds),
       ])
@@ -178,7 +180,15 @@ export async function getDiscoveryProperties(
       carpetAreaSqft: listing?.carpet_area_sqft ?? null,
       securityDeposit: listing?.security_deposit ?? null,
       createdAt: property.created_at,
-      coordinates: getAreaCoordinates(property.area),
+      // An exact pin (see PropertyLocationField) wins whenever both values
+      // are present; otherwise the area centroid, same as before this
+      // column existed. Never a partial pin — one coordinate without the
+      // other isn't a usable point, and the write side (getCoordinates in
+      // app/actions/property.ts) already only ever stores both or neither.
+      coordinates:
+        listing?.latitude != null && listing?.longitude != null
+          ? { lat: listing.latitude, lng: listing.longitude }
+          : getAreaCoordinates(property.area),
     };
   });
 }
