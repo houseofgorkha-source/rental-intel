@@ -32,6 +32,9 @@ type HomeDiscoveryProps = {
 
 const CITY_ZOOM = 11;
 const AREA_ZOOM = 14;
+// Closer than AREA_ZOOM: this is the user's own reported position, not an
+// approximate area centroid, so the map can afford to sit nearer to it.
+const MY_LOCATION_ZOOM = 15;
 
 // Single source of truth for the homepage's search/filter/map state. The
 // unified Search (city + multi-area + text), the Filters panel, and the map
@@ -52,6 +55,11 @@ export default function HomeDiscovery({ properties, children }: HomeDiscoveryPro
   // already-selected card twice in a row still reopens the popup — see
   // PropertyMap's own comment on why token, not slug alone, is watched.
   const [popupRequest, setPopupRequest] = useState<{ slug: string; token: number } | null>(null);
+  // The browser's real reported coordinates, set only by "Use my current
+  // location" — never an area/city centroid. Cleared whenever the user
+  // manually changes city/area afterward, so the "you are here" marker can't
+  // sit somewhere no longer related to what's on screen.
+  const [userLocation, setUserLocation] = useState<Coordinates | null>(null);
   const [mapView, setMapView] = useState<{ center: Coordinates; zoom: number }>({
     center: getCityCoordinates(DEFAULT_CITY),
     zoom: CITY_ZOOM,
@@ -90,6 +98,9 @@ export default function HomeDiscovery({ properties, children }: HomeDiscoveryPro
     // Clear any area selections that don't belong to the new city.
     setSelectedAreas([]);
     setSelectedSlug(null);
+    // A manual city change moves away from wherever "Use my current location"
+    // last pointed at, so that marker should no longer show.
+    setUserLocation(null);
     setMapView({ center: getCityCoordinates(city), zoom: CITY_ZOOM });
   }, []);
 
@@ -97,6 +108,7 @@ export default function HomeDiscovery({ properties, children }: HomeDiscoveryPro
     (areas: string[]) => {
       setSelectedAreas(areas);
       setSelectedSlug(null);
+      setUserLocation(null);
       // Fly to the most recently added area, or back to the city view once
       // the last one is removed.
       const lastArea = areas[areas.length - 1];
@@ -114,18 +126,25 @@ export default function HomeDiscovery({ properties, children }: HomeDiscoveryPro
     lastUserMapView.current = view;
   }, []);
 
-  // Reuses the exact same city/area-change handlers a dropdown selection
-  // would trigger — no separate "located" code path for city/map/list state.
-  const handleLocated = useCallback(
-    (coordinates: Coordinates) => {
-      const nearestCity = findNearestCity(coordinates);
-      if (!nearestCity) return;
-      handleCityChange(nearestCity);
-      const nearestArea = findNearestArea(coordinates, nearestCity);
-      if (nearestArea) handleAreasChange([nearestArea]);
-    },
-    [handleCityChange, handleAreasChange],
-  );
+  // The map centers on the browser's actual coordinates — never an area or
+  // city centroid — and a "you are here" marker renders at that exact point
+  // (see PropertyMap). City/area selection still updates from the same
+  // coordinates, purely so the property list/filters reflect where the user
+  // actually is; that lookup is deliberately NOT routed through
+  // handleCityChange/handleAreasChange, since both of those re-center the
+  // map on a centroid, which would immediately overwrite the real position
+  // this handler just set.
+  const handleLocated = useCallback((coordinates: Coordinates) => {
+    setUserLocation(coordinates);
+    setSelectedSlug(null);
+    setMapView({ center: coordinates, zoom: MY_LOCATION_ZOOM });
+
+    const nearestCity = findNearestCity(coordinates);
+    if (!nearestCity) return;
+    setSelectedCity(nearestCity);
+    const nearestArea = findNearestArea(coordinates, nearestCity);
+    setSelectedAreas(nearestArea ? [nearestArea] : []);
+  }, []);
 
   return (
     <main className="min-w-0 bg-background">
@@ -201,6 +220,7 @@ export default function HomeDiscovery({ properties, children }: HomeDiscoveryPro
                     selectedSlug={selectedSlug}
                     onSelectProperty={setSelectedSlug}
                     popupRequest={popupRequest}
+                    userLocation={userLocation}
                     onMoveEnd={handleMoveEnd}
                   />
                 </div>

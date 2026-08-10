@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
   Map as MapLibreMap,
+  Marker,
   NavigationControl,
   Popup,
   type GeoJSONSource,
@@ -26,6 +27,12 @@ type PropertyMapProps = {
   // marker itself would open, so a card click and a marker click land on
   // the exact same result.
   popupRequest?: { slug: string; token: number } | null;
+  // The browser's actual reported position (see lib/geolocation.ts) — real
+  // GPS/network coordinates, never an area or city centroid. Renders a
+  // distinct "you are here" marker, separate from property pins. Null
+  // whenever nothing has been located yet, or the user has since navigated
+  // away from it (see HomeDiscovery).
+  userLocation?: Coordinates | null;
   // Fires once the user finishes moving the map (drag/zoom end) — reports
   // the resulting view without feeding it back into `center`/`zoom`, so
   // dragging never triggers a city/area change on its own. This is exactly
@@ -34,7 +41,9 @@ type PropertyMapProps = {
 };
 
 // OpenStreetMap's standard raster tiles — no Mapbox/Google, no API key.
-const OSM_STYLE: StyleSpecification = {
+// Exported for reuse by PropertyLocationField (the Add/Edit Property pin
+// picker) so the two maps can never end up on different tile styles.
+export const OSM_STYLE: StyleSpecification = {
   version: 8,
   sources: {
     osm: {
@@ -126,11 +135,13 @@ export default function PropertyMap({
   selectedSlug,
   onSelectProperty,
   popupRequest,
+  userLocation,
   onMoveEnd,
 }: PropertyMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const popupRef = useRef<Popup | null>(null);
+  const userMarkerRef = useRef<Marker | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   // MapLibre requires WebGL2 and throws (synchronously from the constructor,
   // or asynchronously via an "error" event) when it's unavailable —
@@ -294,6 +305,7 @@ export default function PropertyMap({
 
     return () => {
       popupRef.current?.remove();
+      userMarkerRef.current?.remove();
       map.remove();
       mapRef.current = null;
     };
@@ -342,6 +354,32 @@ export default function PropertyMap({
       .addTo(mapRef.current);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [popupRequest?.slug, popupRequest?.token, isLoaded, properties]);
+
+  // The "you are here" marker — a plain MapLibre Marker (not a source/layer
+  // like the property pins) since there is ever only one of these, deliberately
+  // rendered in a color no property marker uses so it can never be mistaken
+  // for a listing. Re-runs whenever userLocation changes, including to null
+  // (HomeDiscovery clears it once the viewer navigates away from it), which
+  // removes the marker rather than leaving a stale one behind.
+  useEffect(() => {
+    if (!isLoaded || !mapRef.current) return;
+    userMarkerRef.current?.remove();
+    userMarkerRef.current = null;
+    if (!userLocation) return;
+
+    const el = document.createElement("div");
+    el.setAttribute("role", "img");
+    el.setAttribute("aria-label", "Your current location");
+    el.className = "relative flex h-4 w-4 items-center justify-center";
+    el.innerHTML = `
+      <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-blue-500 opacity-60"></span>
+      <span class="relative inline-flex h-3.5 w-3.5 rounded-full border-2 border-white bg-blue-600 shadow-[0_1px_4px_rgba(15,23,42,0.45)]"></span>
+    `;
+
+    userMarkerRef.current = new Marker({ element: el })
+      .setLngLat([userLocation.lng, userLocation.lat])
+      .addTo(mapRef.current);
+  }, [userLocation, isLoaded]);
 
   const hasVisibleMarkers = properties.some((property) => property.coordinates !== null);
 
