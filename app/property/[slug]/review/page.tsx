@@ -47,8 +47,12 @@ export default async function ReviewPage({
   }
 
   return (
-    <main className="min-h-screen bg-surface py-12">
-      <div className="mx-auto max-w-4xl px-6">
+    // `pt-28`, matching the header-clearance convention used elsewhere
+    // (account/admin/property-detail) — `py-12` (48px) wasn't enough to
+    // clear the absolutely-positioned header. `px-4` on mobile (was px-6)
+    // widens the form; sm:px-6 unchanged.
+    <main className="min-h-screen bg-surface pb-12 pt-28">
+      <div className="mx-auto max-w-4xl px-4 sm:px-6">
 
         <Link
           href={`/property/${property.slug}`}

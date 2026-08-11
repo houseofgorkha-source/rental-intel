@@ -33,7 +33,7 @@ export default function ProfileForm({ displayName, email }: ProfileFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-md rounded-2xl border border-border-subtle bg-surface p-6">
+    <form onSubmit={handleSubmit} className="max-w-md rounded-2xl border border-border-subtle bg-surface p-4 sm:p-6">
       <div className="space-y-6">
         <InputField
           label="Display Name"

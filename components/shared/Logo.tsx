@@ -30,7 +30,7 @@ export default function Logo({ className = "" }: LogoProps) {
   return (
     <Link
       href="/"
-      className={`inline-flex items-baseline gap-2 text-foreground transition-colors hover:text-accent ${className}`}
+      className={`inline-flex items-baseline gap-0.5 text-foreground transition-colors hover:text-accent ${className}`}
     >
       <span className="sr-only">RentalIntel</span>
       <Image
@@ -39,6 +39,16 @@ export default function Logo({ className = "" }: LogoProps) {
         width={533}
         height={536}
         priority
+        // The image's own bottom edge is what `items-baseline` uses to
+        // align it with the wordmark's text baseline — but that edge
+        // includes the artwork's soft drop shadow beneath the house, which
+        // extends a couple of pixels below the house's actual solid-color
+        // base. Measured directly (color-distance from the background, to
+        // exclude the shadow): the solid wall's true bottom sits ~1.25px
+        // above the text baseline. This nudges just the image down by that
+        // amount so the house's real base — not its shadow — lines up with
+        // "RENTAL"'s baseline.
+        style={{ transform: "translateY(1.25px)" }}
         className="h-9 w-auto shrink-0 sm:h-10"
       />
       <span

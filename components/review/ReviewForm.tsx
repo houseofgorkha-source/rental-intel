@@ -130,7 +130,7 @@ export default function ReviewForm({ propertyId, propertyArea }: ReviewFormProps
   };
 
   return (
-    <div className="mx-auto max-w-4xl rounded-2xl border border-border-subtle bg-surface p-8">
+    <div className="mx-auto max-w-4xl rounded-2xl border border-border-subtle bg-surface p-5 sm:p-8">
       <div className="space-y-10">
         <section>
           <h2 className="text-2xl font-semibold text-foreground">

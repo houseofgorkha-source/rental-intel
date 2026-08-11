@@ -64,16 +64,17 @@ export default function ListYourPropertySection() {
               <Link
                 key={role.href}
                 href={role.href}
-                // Visible border + shadow at rest on mobile (touch has no
-                // hover to reveal the accent border with) so these read as
-                // tappable cards, not plain icon/text stacks; desktop keeps
-                // the original hover-reveal treatment unchanged.
-                className="flex flex-col items-center rounded-xl border border-border-subtle bg-surface p-3 text-center shadow-[0_1px_2px_rgba(14,143,94,0.04)] transition-all duration-200 hover:-translate-y-1 hover:border-accent/60 hover:shadow-[0_18px_45px_-20px_rgba(14,143,94,0.5)] sm:items-start sm:border-transparent sm:p-5 sm:text-left sm:shadow-none"
+                // Visible accent-green border + shadow at rest on mobile
+                // (touch has no hover to reveal an accent border with) so
+                // these read clearly as tappable cards; desktop keeps the
+                // original hover-reveal treatment unchanged (transparent at
+                // rest, accent border only on hover).
+                className="flex flex-col items-center rounded-xl border-2 border-accent bg-surface p-4 text-center shadow-[0_1px_2px_rgba(14,143,94,0.04)] transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_18px_45px_-20px_rgba(14,143,94,0.5)] sm:border sm:border-transparent sm:p-5 sm:text-left sm:shadow-none sm:hover:border-accent/60"
               >
-                <span className="text-xl sm:text-2xl" aria-hidden="true">
+                <span className="text-2xl" aria-hidden="true">
                   {role.icon}
                 </span>
-                <span className="mt-2 text-xs font-medium leading-tight text-foreground sm:mt-3 sm:text-sm sm:leading-normal">
+                <span className="mt-2 text-sm font-medium leading-tight text-foreground sm:mt-3 sm:leading-normal">
                   {role.title}
                 </span>
                 <span className="mt-1.5 hidden text-sm leading-6 text-muted sm:block">

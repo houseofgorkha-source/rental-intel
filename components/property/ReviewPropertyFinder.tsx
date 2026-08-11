@@ -45,7 +45,7 @@ export default function ReviewPropertyFinder({ properties }: ReviewPropertyFinde
         </p>
       </div>
 
-      <div className="mt-10 rounded-2xl border border-border-subtle bg-surface p-6 shadow-sm">
+      <div className="mt-10">
         <HomeSearch
           properties={searchProperties}
           city={city}

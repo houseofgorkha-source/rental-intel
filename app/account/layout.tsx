@@ -16,7 +16,7 @@ export default async function AccountLayout({
 
   return (
     <main className="min-h-screen bg-background pb-20 pt-28">
-      <div className="mx-auto max-w-5xl px-6 lg:px-8">
+      <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
         <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted">
           Your account
         </p>

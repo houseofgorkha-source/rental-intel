@@ -121,7 +121,13 @@ export default function PropertyForm({
   };
 
   return (
-    <div className="mx-auto max-w-2xl px-6 py-12">
+    // `pt-28`, not `py-12` — matches the header-clearance convention every
+    // other page uses (account/admin/property-detail/review); `py-12`
+    // (48px) wasn't enough to clear the absolutely-positioned header, so
+    // this heading sat right underneath — and often touching — the logo.
+    // `px-4` (was `px-6`) on mobile widens the form's usable width; sm:px-6
+    // unchanged.
+    <div className="mx-auto max-w-2xl px-4 pb-12 pt-28 sm:px-6">
 
       <div className="text-center">
 
