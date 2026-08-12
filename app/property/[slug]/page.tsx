@@ -10,10 +10,18 @@ import { isContactMethod } from "@/lib/property-attributes";
 import RelatedProperties from "@/components/property/RelatedProperties";
 import type { Review } from "@/components/property/ReviewCard";
 import { createClient } from "@/lib/supabase/server";
-import { calculateAverageRating, formatINRPerMonth, getPropertyImageUrl } from "@/lib/property-format";
+import {
+  aggregateCategoryRatings,
+  aggregateDepositInsights,
+  calculateAverageRating,
+  formatINRPerMonth,
+  getPropertyImageUrl,
+  type CategoryRatingRow,
+} from "@/lib/property-format";
 import { getDiscoveryProperties } from "@/lib/property-discovery";
 import { one } from "@/lib/embedded";
 import { DEFAULT_CITY } from "@/lib/cities";
+import { formatVerifiedVia } from "@/lib/verification";
 
 type PropertyPageProps = {
   params: Promise<{ slug: string }>;
@@ -31,7 +39,22 @@ type ReviewRow = {
   stay_end_date: string | null;
   created_at: string;
   is_anonymous: boolean;
+  deposit_taken: boolean | null;
+  deposit_months: number | null;
+  deposit_returned: boolean | null;
+  deposit_returned_on_time: boolean | null;
+  deposit_additional_deductions: boolean | null;
+  deposit_deduction_reason: string | null;
+  deposit_experience_rating: number | null;
   author: { display_name: string } | { display_name: string }[] | null;
+};
+
+type CategoryRatingQueryRow = {
+  rating: number;
+  category:
+    | { slug: string; label: string; sort_order: number }
+    | { slug: string; label: string; sort_order: number }[]
+    | null;
 };
 
 function formatStay(stayStartDate: string | null, stayEndDate: string | null) {
@@ -87,7 +110,7 @@ export default async function PropertyPage({
     supabase
       .from("reviews")
       .select(
-        "id, title, body, overall_rating, recommendation, verification_status, stay_start_date, stay_end_date, created_at, is_anonymous, author:profiles!reviews_author_id_fkey(display_name)",
+        "id, title, body, overall_rating, recommendation, verification_status, stay_start_date, stay_end_date, created_at, is_anonymous, deposit_taken, deposit_months, deposit_returned, deposit_returned_on_time, deposit_additional_deductions, deposit_deduction_reason, deposit_experience_rating, author:profiles!reviews_author_id_fkey(display_name)",
       )
       .eq("property_id", property.id)
       .order("created_at", { ascending: false }),
@@ -139,6 +162,28 @@ export default async function PropertyPage({
       alt: image.alt_text ?? property.name,
     })) ?? [];
 
+  // What backs a "Verified Tenant" badge, not just that it's shown. Reads
+  // from a narrow view (review_verified_document_types) rather than
+  // verification_documents directly — that table's own RLS is rightly
+  // restricted to the request's own creator and admins, since storage_path
+  // on those rows points into the private verification-documents bucket. The
+  // view exposes only document_type, and only for requests already
+  // 'verified', so this query returns nothing extra a visitor couldn't
+  // already infer from the review's own public verification_status.
+  const verifiedDocumentTypesByReview = new Map<string, string[]>();
+  if ((reviewRows ?? []).length > 0) {
+    const { data: verifiedDocRows } = await supabase
+      .from("review_verified_document_types")
+      .select("review_id, document_types")
+      .in(
+        "review_id",
+        (reviewRows as ReviewRow[]).map((review) => review.id),
+      );
+    (verifiedDocRows ?? []).forEach((row) => {
+      verifiedDocumentTypesByReview.set(row.review_id, row.document_types ?? []);
+    });
+  }
+
   const propertyReviews: Review[] = ((reviewRows ?? []) as ReviewRow[]).map(
     (review) => ({
       id: review.id,
@@ -153,6 +198,9 @@ export default async function PropertyPage({
       review: review.body,
       stay: formatStay(review.stay_start_date, review.stay_end_date),
       verified: review.verification_status === "verified",
+      verifiedVia: formatVerifiedVia(
+        verifiedDocumentTypesByReview.get(review.id) ?? [],
+      ),
       date: review.created_at,
       wouldRecommend: review.recommendation === "yes",
     }),
@@ -169,6 +217,75 @@ export default async function PropertyPage({
     propertyReviews.map((review) => review.rating),
   );
   const latestReview = propertyReviews[0];
+
+  // The "RentalIntel score" and "Community highlights" sections below are a
+  // separate synthesis from `overallRating` above — that one only reflects
+  // the single "how was your stay" question per review; this one reflects
+  // the full category breakdown (owner behaviour, water supply, security,
+  // etc.) collected on every review. A second query, not the initial
+  // Promise.all, since it needs the review ids just computed above. Same RLS
+  // shape as `reviews` itself (scoped to the review's own property being
+  // published), so this returns nothing extra for a viewer who couldn't
+  // already see the reviews it's built from.
+  const { data: categoryRatingRows } =
+    propertyReviews.length > 0
+      ? await supabase
+          .from("review_category_ratings")
+          .select("rating, category:review_categories(slug, label, sort_order)")
+          .in(
+            "review_id",
+            propertyReviews.map((review) => review.id),
+          )
+      : { data: [] as CategoryRatingQueryRow[] };
+
+  const { overallScore, categories: categoryScores } = aggregateCategoryRatings(
+    ((categoryRatingRows ?? []) as CategoryRatingQueryRow[])
+      .map((row) => {
+        // `one()` because PostgREST returns this many-to-one embed as an
+        // object — see lib/embedded.ts.
+        const category = one(row.category);
+        return category
+          ? {
+              slug: category.slug,
+              label: category.label,
+              sortOrder: category.sort_order,
+              rating: row.rating,
+            }
+          : null;
+      })
+      .filter((row): row is CategoryRatingRow => row !== null),
+  );
+
+  // Highlighting a "highest" and "lowest" category from a single review would
+  // just be restating that one person's opinion as if it were a community
+  // signal — require at least a second review and a second distinct category
+  // before showing either.
+  const hasEnoughForHighlights = propertyReviews.length > 1 && categoryScores.length > 1;
+  const highestRatedCategory = hasEnoughForHighlights
+    ? categoryScores.reduce((best, current) => (current.average > best.average ? current : best))
+    : null;
+  const lowestRatedCategory = hasEnoughForHighlights
+    ? categoryScores.reduce((worst, current) => (current.average < worst.average ? current : worst))
+    : null;
+
+  // The single most-requested, least-available fact in Indian rental
+  // decisions ("will I actually get my deposit back?"), already collected on
+  // every review's deposit questionnaire and — until now — never surfaced
+  // anywhere. Built from the same `reviewRows` already fetched above, not a
+  // new query. Reviews that never took a deposit are excluded entirely, not
+  // counted as "deposit not returned" — see aggregateDepositInsights' own
+  // comment for why.
+  const depositInsights = aggregateDepositInsights(
+    ((reviewRows ?? []) as ReviewRow[]).map((review) => ({
+      depositTaken: review.deposit_taken,
+      depositMonths: review.deposit_months,
+      depositReturned: review.deposit_returned,
+      depositReturnedOnTime: review.deposit_returned_on_time,
+      depositAdditionalDeductions: review.deposit_additional_deductions,
+      depositDeductionReason: review.deposit_deduction_reason,
+      depositExperienceRating: review.deposit_experience_rating,
+    })),
+  );
 
   // Rent and deposit are only shown as listing facts when they came from an
   // owner listing — that's the only context in which they're an offer rather
@@ -227,6 +344,9 @@ export default async function PropertyPage({
     ...(property.furnishing ? [{ label: "Furnishing", value: property.furnishing }] : []),
     ...(property.carpet_area_sqft
       ? [{ label: "Built-up area", value: `${property.carpet_area_sqft} sq.ft` }]
+      : []),
+    ...(property.amenities && property.amenities.length > 0
+      ? [{ label: "Amenities", value: property.amenities.join(", ") }]
       : []),
     { label: "Area", value: property.area },
     { label: "Address", value: property.address_line_1 },
@@ -369,24 +489,112 @@ export default async function PropertyPage({
               <div className="mt-3 flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
                 <div>
                   <h2 id="score-heading" className="text-3xl font-medium tracking-[-0.035em] text-foreground">The renter&apos;s view, in one place.</h2>
-                  <p className="mt-3 text-sm leading-6 text-muted">A clearer score is coming as this property receives more community input.</p>
+                  <p className="mt-3 text-sm leading-6 text-muted">
+                    {overallScore === null
+                      ? "A score will appear once the first review's category ratings are in."
+                      : `Synthesized from ${categoryRatingRows?.length ?? 0} category ratings across ${propertyReviews.length} ${propertyReviews.length === 1 ? "review" : "reviews"}.`}
+                  </p>
                 </div>
-                <div className="rounded-2xl border border-dashed border-border-subtle bg-surface px-5 py-4 text-sm font-medium text-muted">Coming Soon</div>
+                <div
+                  className={
+                    overallScore === null
+                      ? "rounded-2xl border border-dashed border-border-subtle bg-surface px-5 py-4 text-sm font-medium text-muted"
+                      : "rounded-2xl border border-accent/30 bg-accent/10 px-5 py-4 text-2xl font-medium text-accent"
+                  }
+                >
+                  {overallScore === null ? "Not enough data yet" : `${overallScore.toFixed(1)} / 5`}
+                </div>
               </div>
-              <div className="mt-7 grid grid-cols-2 gap-3 sm:grid-cols-3">
-                {["Owner", "Deposit", "Water", "Noise", "Security", "Maintenance"].map((metric) => (
-                  <div key={metric} className="rounded-xl border border-border-subtle bg-surface px-4 py-4">
-                    <p className="text-sm font-medium text-muted">{metric}</p>
-                    <p className="mt-2 text-xs text-muted">Coming Soon</p>
-                  </div>
-                ))}
-              </div>
+              {categoryScores.length > 0 && (
+                <div className="mt-7 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  {categoryScores.map((category) => (
+                    <div key={category.slug} className="rounded-xl border border-border-subtle bg-surface px-4 py-4">
+                      <p className="text-sm font-medium text-foreground">{category.label}</p>
+                      <p className="mt-2 text-sm font-medium text-muted">
+                        {category.average.toFixed(1)} / 5{" "}
+                        <span className="text-xs">
+                          ({category.count} {category.count === 1 ? "rating" : "ratings"})
+                        </span>
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
             </section>
+
+            {/* Omitted entirely — not shown as "Coming Soon" — when no review
+                on this property mentions taking a deposit at all, same
+                honesty rule as the score/highlights sections above. */}
+            {depositInsights && (
+              <section aria-labelledby="deposit-heading" className="mt-14 border-t border-border-subtle pt-10">
+                <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted">Security deposit</p>
+                <h2 id="deposit-heading" className="mt-3 text-3xl font-medium tracking-[-0.035em] text-foreground">What happens to your deposit.</h2>
+                <p className="mt-3 text-sm leading-6 text-muted">
+                  Based on {depositInsights.reviewsWithDeposit} {depositInsights.reviewsWithDeposit === 1 ? "review" : "reviews"} that paid a security deposit here.
+                </p>
+                <div className="mt-7 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  {depositInsights.returnedPercentage !== null && (
+                    <div className="rounded-xl border border-border-subtle bg-surface px-4 py-4">
+                      <p className="text-sm font-medium text-muted">Deposit returned</p>
+                      <p className="mt-2 text-xl font-medium text-foreground">{depositInsights.returnedPercentage}%</p>
+                    </div>
+                  )}
+                  {depositInsights.onTimePercentage !== null && (
+                    <div className="rounded-xl border border-border-subtle bg-surface px-4 py-4">
+                      <p className="text-sm font-medium text-muted">Returned on time</p>
+                      <p className="mt-2 text-xl font-medium text-foreground">{depositInsights.onTimePercentage}%</p>
+                    </div>
+                  )}
+                  {depositInsights.averageMonths !== null && (
+                    <div className="rounded-xl border border-border-subtle bg-surface px-4 py-4">
+                      <p className="text-sm font-medium text-muted">Typical deposit</p>
+                      <p className="mt-2 text-xl font-medium text-foreground">{depositInsights.averageMonths.toFixed(1)} months&apos; rent</p>
+                    </div>
+                  )}
+                  {depositInsights.averageExperienceRating !== null && (
+                    <div className="rounded-xl border border-border-subtle bg-surface px-4 py-4">
+                      <p className="text-sm font-medium text-muted">Deposit experience</p>
+                      <p className="mt-2 text-xl font-medium text-foreground">{depositInsights.averageExperienceRating.toFixed(1)} / 5</p>
+                    </div>
+                  )}
+                </div>
+                {depositInsights.deductionReasons.length > 0 && (
+                  <div className="mt-5">
+                    <p className="text-xs font-medium uppercase tracking-[0.13em] text-muted">Reasons reviewers gave for a deduction</p>
+                    <ul className="mt-3 flex flex-wrap gap-2">
+                      {depositInsights.deductionReasons.map((reason) => (
+                        <li key={reason} className="rounded-full border border-border-subtle bg-surface px-3 py-1.5 text-sm text-foreground">
+                          {reason}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </section>
+            )}
 
             <section aria-labelledby="highlights-heading" className="mt-14 border-t border-border-subtle pt-10">
               <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted">Community highlights</p>
               <h2 id="highlights-heading" className="mt-3 text-3xl font-medium tracking-[-0.035em] text-foreground">Built from lived experience.</h2>
-              <p className="mt-5 rounded-2xl border border-border-subtle bg-surface px-5 py-6 text-sm leading-6 text-muted">Community insights will appear as more reviews are submitted.</p>
+              {propertyReviews.length === 0 ? (
+                <p className="mt-5 rounded-2xl border border-border-subtle bg-surface px-5 py-6 text-sm leading-6 text-muted">Community insights will appear as more reviews are submitted.</p>
+              ) : (
+                <ul className="mt-5 space-y-3">
+                  {hasEnoughForHighlights && highestRatedCategory && (
+                    <li className="rounded-2xl border border-border-subtle bg-surface px-5 py-4 text-sm leading-6 text-foreground">
+                      Renters rate <strong className="font-medium">{highestRatedCategory.label}</strong> highest, at {highestRatedCategory.average.toFixed(1)} / 5.
+                    </li>
+                  )}
+                  {hasEnoughForHighlights && lowestRatedCategory && lowestRatedCategory.slug !== highestRatedCategory?.slug && (
+                    <li className="rounded-2xl border border-border-subtle bg-surface px-5 py-4 text-sm leading-6 text-foreground">
+                      <strong className="font-medium">{lowestRatedCategory.label}</strong> is the lowest-rated aspect so far, at {lowestRatedCategory.average.toFixed(1)} / 5.
+                    </li>
+                  )}
+                  <li className="rounded-2xl border border-border-subtle bg-surface px-5 py-4 text-sm leading-6 text-foreground">
+                    {recommendationPercentage}% of reviewers would recommend this property.
+                  </li>
+                </ul>
+              )}
             </section>
 
             <section id="reviews" aria-label="Property reviews" className="mt-14 border-t border-border-subtle pt-1">
@@ -438,7 +646,11 @@ export default async function PropertyPage({
               </div>
               <div className="mt-7 border-t border-border-subtle pt-6">
                 <p className="text-sm font-medium text-foreground">RentalIntel Score</p>
-                <p className="mt-2 text-sm leading-6 text-muted">A property score will be available as more renter experiences are shared.</p>
+                <p className="mt-2 text-sm leading-6 text-muted">
+                  {overallScore === null
+                    ? "A property score will be available as more renter experiences are shared."
+                    : `${overallScore.toFixed(1)} / 5 — synthesized from ${propertyReviews.length} ${propertyReviews.length === 1 ? "review" : "reviews"}.`}
+                </p>
               </div>
               <div className="mt-6 border-t border-border-subtle pt-6">
                 <p className="text-sm font-medium text-foreground">{property.area}, {property.city}</p>

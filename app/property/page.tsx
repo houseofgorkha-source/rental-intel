@@ -1,11 +1,13 @@
-import PropertyDiscovery from "@/components/property/PropertyDiscovery";
+import PropertyDiscovery, { isSortOption } from "@/components/property/PropertyDiscovery";
 import { getDiscoveryProperties } from "@/lib/property-discovery";
 import { DEFAULT_CITY } from "@/lib/cities";
 import {
   POSTED_BY_OPTIONS,
+  isAmenity,
   isFurnishing,
   isPropertyConfiguration,
   isPropertyType,
+  type Amenity,
   type Furnishing,
   type PostedBy,
   type PropertyConfiguration,
@@ -26,11 +28,13 @@ type PropertiesPageProps = {
     config?: string;
     ptype?: string;
     furnishing?: string;
+    amenities?: string;
     minArea?: string;
     listedWithin?: string;
     postedBy?: string;
     reviewsOnly?: string;
     photosOnly?: string;
+    sort?: string;
   }>;
 };
 
@@ -77,11 +81,13 @@ export default async function PropertiesPage({ searchParams }: PropertiesPagePro
         ),
         propertyTypes: parseListParam<PropertyType>(params.ptype, isPropertyType),
         furnishing: parseListParam<Furnishing>(params.furnishing, isFurnishing),
+        amenities: parseListParam<Amenity>(params.amenities, isAmenity),
         minAreaSqft: parseNumberParam(params.minArea),
         listedWithinDays: parseNumberParam(params.listedWithin),
         postedBy: parseListParam<PostedBy>(params.postedBy, isPostedBy),
         reviewsOnly: params.reviewsOnly === "1",
         photosOnly: params.photosOnly === "1",
+        sort: params.sort && isSortOption(params.sort) ? params.sort : undefined,
       }}
     />
   );

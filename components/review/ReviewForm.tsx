@@ -75,6 +75,7 @@ export default function ReviewForm({ propertyId, propertyArea }: ReviewFormProps
   const [deductionAmount, setDeductionAmount] = useState("");
   const [depositExperience, setDepositExperience] = useState(0);
   const [comment, setComment] = useState("");
+  const [isAnonymous, setIsAnonymous] = useState(false);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
@@ -107,6 +108,7 @@ export default function ReviewForm({ propertyId, propertyArea }: ReviewFormProps
       depositDeductionReason: deductionReason,
       depositDeductionAmount: deductionAmount.trim() ? Number(deductionAmount) : null,
       depositExperienceRating: depositExperience,
+      isAnonymous,
     });
 
     if (!result.reviewId) {
@@ -391,6 +393,25 @@ export default function ReviewForm({ propertyId, propertyArea }: ReviewFormProps
             placeholder="Share anything else future tenants should know..."
             className="mt-6 w-full rounded-xl border border-border-subtle bg-surface px-4 py-3 text-foreground outline-none transition-colors focus:border-accent"
           />
+
+          <label className="mt-6 flex cursor-pointer items-start gap-3 rounded-xl border border-border-subtle bg-surface-raised p-4">
+            <input
+              type="checkbox"
+              checked={isAnonymous}
+              onChange={(event) => setIsAnonymous(event.target.checked)}
+              className="mt-1"
+            />
+            <span>
+              <span className="block font-medium text-foreground">
+                Post this review anonymously
+              </span>
+              <span className="mt-1 block text-sm text-muted">
+                Your name won&apos;t be shown on this review — it will display
+                as &quot;Anonymous&quot; instead. The review, rating and any
+                deposit details you shared are still published as usual.
+              </span>
+            </span>
+          </label>
         </section>
       </div>
 

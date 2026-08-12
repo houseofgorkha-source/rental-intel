@@ -1,6 +1,7 @@
 import InputField from "../shared/InputField";
 import SelectField from "../shared/SelectField";
 import {
+  AMENITIES,
   FURNISHING_OPTIONS,
   PROPERTY_CONFIGURATIONS,
   PROPERTY_TYPES,
@@ -14,6 +15,7 @@ type PropertyAttributeFieldsProps = {
     propertyType?: string | null;
     furnishing?: string | null;
     carpetAreaSqft?: number | null;
+    amenities?: string[];
   };
 };
 
@@ -75,6 +77,27 @@ export default function PropertyAttributeFields({
           }
           helperText="Renters filter by minimum area, so this helps the property be found."
         />
+      </div>
+
+      <div>
+        <p className="mb-2 font-medium text-foreground">Amenities</p>
+        <p className="mb-3 text-sm text-muted">
+          Select everything that applies. Renters can filter by these.
+        </p>
+        <div className="grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-3">
+          {AMENITIES.map((amenity) => (
+            <label key={amenity} className="flex items-center gap-2 text-sm text-foreground">
+              <input
+                type="checkbox"
+                name="amenities"
+                value={amenity}
+                defaultChecked={defaults?.amenities?.includes(amenity) ?? false}
+                className="accent-blue-600"
+              />
+              {amenity}
+            </label>
+          ))}
+        </div>
       </div>
     </div>
   );

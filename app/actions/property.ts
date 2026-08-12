@@ -7,6 +7,7 @@ import { cleanUpFailedUpload, getFileExtension, validateUploadFiles, verifyFileS
 import { normalizeCityName } from "@/lib/cities";
 import { isSubmitterRole, type SubmitterRole } from "@/lib/property-roles";
 import {
+  isAmenity,
   isContactMethod,
   isFurnishing,
   isPropertyConfiguration,
@@ -69,6 +70,12 @@ function getAttributes(formData: FormData) {
   const propertyType = getTextValue(formData, "propertyType");
   const furnishing = getTextValue(formData, "furnishing");
   const area = parseAmount(getTextValue(formData, "carpetAreaSqft"), "Built-up area");
+  // Unlike the single-value attributes above, an unrecognised amenity is
+  // dropped silently rather than nulling the whole field — one bad value
+  // (there shouldn't be one, since the form only ever submits checkbox names
+  // from the same canonical list) doesn't have to cost every other amenity
+  // the contributor did check.
+  const amenities = formData.getAll("amenities").filter(isAmenity);
 
   return {
     configuration: isPropertyConfiguration(configuration) ? configuration : null,
@@ -78,6 +85,7 @@ function getAttributes(formData: FormData) {
     // it anyway, so it is normalised to "not provided" here rather than
     // failing the whole submission.
     carpet_area_sqft: area.value && area.value > 0 ? area.value : null,
+    amenities,
   };
 }
 

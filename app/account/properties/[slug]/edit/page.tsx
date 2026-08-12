@@ -25,7 +25,7 @@ export default async function EditPropertyPage({ params }: EditPropertyPageProps
   const { data: property } = await supabase
     .from("properties")
     .select(
-      "id, slug, name, area, city, address_line_1, submitted_as, landmark, configuration, property_type, furnishing, carpet_area_sqft, asking_rent, security_deposit, is_available, contact_method, latitude, longitude",
+      "id, slug, name, area, city, address_line_1, submitted_as, landmark, configuration, property_type, furnishing, carpet_area_sqft, amenities, asking_rent, security_deposit, is_available, contact_method, latitude, longitude",
     )
     .eq("slug", slug)
     .eq("created_by", user.id)
@@ -51,6 +51,7 @@ export default async function EditPropertyPage({ params }: EditPropertyPageProps
     propertyType: property.property_type,
     furnishing: property.furnishing,
     carpetAreaSqft: property.carpet_area_sqft,
+    amenities: property.amenities ?? [],
     askingRent: property.asking_rent,
     securityDeposit: property.security_deposit,
     isAvailable: property.is_available,

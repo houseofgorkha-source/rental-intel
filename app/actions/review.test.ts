@@ -32,6 +32,7 @@ const baseInput = {
   depositDeductionReason: "",
   depositDeductionAmount: null,
   depositExperienceRating: 4,
+  isAnonymous: false,
 };
 
 beforeEach(() => {
@@ -88,8 +89,18 @@ describe("createReview", () => {
       p_deposit_experience_rating: 4,
       p_category_slugs: ["cleanliness", "safety", "owner_behavior"],
       p_category_ratings: [5, 4, 3],
+      p_is_anonymous: false,
     });
     expect(result).toEqual({ reviewId: "review-1" });
+  });
+
+  it("passes isAnonymous through to p_is_anonymous", async () => {
+    rpc.mockResolvedValue({ data: "review-1", error: null });
+
+    await createReview({ ...baseInput, isAnonymous: true });
+
+    const call = rpc.mock.calls[0][1];
+    expect(call.p_is_anonymous).toBe(true);
   });
 
   it("omits quick-rating categories with a rating below 1", async () => {

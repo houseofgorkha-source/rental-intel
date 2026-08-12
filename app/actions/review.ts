@@ -24,6 +24,7 @@ type CreateReviewInput = {
   depositDeductionReason: string;
   depositDeductionAmount: number | null;
   depositExperienceRating: number;
+  isAnonymous: boolean;
 };
 
 type CreateReviewResult = {
@@ -63,6 +64,7 @@ export async function createReview({
   depositDeductionReason,
   depositDeductionAmount,
   depositExperienceRating,
+  isAnonymous,
 }: CreateReviewInput): Promise<CreateReviewResult> {
   if (overallRating < 1 || overallRating > 5) {
     return { error: "Please select an overall rating." };
@@ -121,6 +123,7 @@ export async function createReview({
     p_deposit_experience_rating: depositExperienceRating >= 1 ? depositExperienceRating : null,
     p_category_slugs: categorySlugs,
     p_category_ratings: categoryRatings,
+    p_is_anonymous: isAnonymous,
   });
 
   if (error || !reviewId) {

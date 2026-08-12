@@ -8,6 +8,10 @@ export type Review = {
   review: string;
   stay: string;
   verified: boolean;
+  // What backs the "Verified Tenant" badge, e.g. "Rental agreement and Rent
+  // receipt" — never rendered unless `verified` is also true, so an
+  // unverified review can never carry a stray disclosure line.
+  verifiedVia: string | null;
   date: string;
   wouldRecommend: boolean;
 };
@@ -46,7 +50,12 @@ export default function ReviewCard({ review }: ReviewCardProps) {
 
     <div className="mt-4 flex items-center justify-between">
   <div className="flex items-center gap-3">
-    <TrustBadge type={review.verified ? "tenant" : "community"} />
+    <div>
+      <TrustBadge type={review.verified ? "tenant" : "community"} />
+      {review.verified && review.verifiedVia && (
+        <p className="mt-1 text-xs text-muted">Verified via {review.verifiedVia}</p>
+      )}
+    </div>
 
     <span
       className={`text-sm font-medium ${

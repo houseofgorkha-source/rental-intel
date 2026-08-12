@@ -4,6 +4,7 @@ import ReviewCard, { type Review } from "@/components/property/ReviewCard";
 import { createClient } from "@/lib/supabase/server";
 import { one } from "@/lib/embedded";
 import { EmptyState } from "@/components/shared/StatusPrimitives";
+import { formatVerifiedVia } from "@/lib/verification";
 
 export const dynamic = "force-dynamic";
 
@@ -35,6 +36,20 @@ export default async function AccountReviewsPage() {
 
   const rows = (data ?? []) as ReviewRow[];
 
+  // Same disclosure the property page shows on a "Verified Tenant" badge —
+  // see review_verified_document_types' own comment (20260817000000) for why
+  // this reads from the view rather than verification_documents directly.
+  const verifiedDocumentTypesByReview = new Map<string, string[]>();
+  if (rows.length > 0) {
+    const { data: verifiedDocRows } = await supabase
+      .from("review_verified_document_types")
+      .select("review_id, document_types")
+      .in("review_id", rows.map((row) => row.id));
+    (verifiedDocRows ?? []).forEach((row) => {
+      verifiedDocumentTypesByReview.set(row.review_id, row.document_types ?? []);
+    });
+  }
+
   if (rows.length === 0) {
     return (
       <EmptyState
@@ -64,6 +79,9 @@ export default async function AccountReviewsPage() {
             year: "numeric",
           }).format(new Date(row.created_at)),
           verified: row.verification_status === "verified",
+          verifiedVia: formatVerifiedVia(
+            verifiedDocumentTypesByReview.get(row.id) ?? [],
+          ),
           date: row.created_at,
           wouldRecommend: row.recommendation === "yes",
         };

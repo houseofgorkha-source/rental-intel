@@ -5,6 +5,7 @@ import {
   RENT_MAX,
   countActiveFilters,
   filterProperties,
+  sortProperties,
   type PropertyFilters,
 } from "./PropertyDiscovery";
 import type { DiscoveryProperty } from "@/lib/property-discovery";
@@ -35,6 +36,7 @@ function property(overrides: Partial<DiscoveryProperty> = {}): DiscoveryProperty
     furnishing: "Semi-furnished",
     carpetAreaSqft: 900,
     securityDeposit: 100000,
+    amenities: [],
     createdAt: daysAgo(1),
     coordinates: null,
     ...overrides,
@@ -102,6 +104,27 @@ describe("filterProperties", () => {
 
     expect(run(properties, withFilters({ propertyTypes: ["Villa"] }))).toEqual(["villa"]);
     expect(run(properties, withFilters({ furnishing: ["Fully furnished"] }))).toEqual(["flat"]);
+  });
+
+  describe("amenities", () => {
+    it("matches a property that has every selected amenity", () => {
+      const properties = [
+        property({ slug: "both", amenities: ["Lift", "Gym"] }),
+        property({ slug: "one-only", amenities: ["Lift"] }),
+        property({ slug: "neither", amenities: [] }),
+      ];
+
+      expect(run(properties, withFilters({ amenities: ["Lift", "Gym"] }))).toEqual(["both"]);
+    });
+
+    it("is AND across selected amenities, not OR", () => {
+      const properties = [
+        property({ slug: "lift-only", amenities: ["Lift"] }),
+        property({ slug: "gym-only", amenities: ["Gym"] }),
+      ];
+
+      expect(run(properties, withFilters({ amenities: ["Lift", "Gym"] }))).toEqual([]);
+    });
   });
 
   it("filters by minimum area and excludes unmeasured properties", () => {
@@ -245,6 +268,84 @@ describe("filterProperties", () => {
         filters: DEFAULT_FILTERS,
       }).map((item) => item.slug),
     ).toEqual(["kora"]);
+  });
+});
+
+describe("sortProperties", () => {
+  it("leaves the order untouched when sortBy is null", () => {
+    const properties = [
+      property({ slug: "a", askingRent: 50000 }),
+      property({ slug: "b", askingRent: 10000 }),
+    ];
+
+    expect(sortProperties(properties, null).map((item) => item.slug)).toEqual(["a", "b"]);
+  });
+
+  it("sorts by newest first", () => {
+    const properties = [
+      property({ slug: "old", createdAt: daysAgo(30) }),
+      property({ slug: "new", createdAt: daysAgo(1) }),
+    ];
+
+    expect(sortProperties(properties, "newest").map((item) => item.slug)).toEqual([
+      "new",
+      "old",
+    ]);
+  });
+
+  it("sorts by rent, ascending and descending, with unpriced properties always last", () => {
+    const properties = [
+      property({ slug: "mid", askingRent: 30000 }),
+      property({ slug: "unpriced", askingRent: null }),
+      property({ slug: "cheap", askingRent: 10000 }),
+    ];
+
+    expect(sortProperties(properties, "rent_asc").map((item) => item.slug)).toEqual([
+      "cheap",
+      "mid",
+      "unpriced",
+    ]);
+    expect(sortProperties(properties, "rent_desc").map((item) => item.slug)).toEqual([
+      "mid",
+      "cheap",
+      "unpriced",
+    ]);
+  });
+
+  it("sorts by rating with unrated properties always last", () => {
+    const properties = [
+      property({ slug: "new", averageRating: null }),
+      property({ slug: "good", averageRating: 4.5 }),
+      property({ slug: "best", averageRating: 4.9 }),
+    ];
+
+    expect(sortProperties(properties, "rating_desc").map((item) => item.slug)).toEqual([
+      "best",
+      "good",
+      "new",
+    ]);
+  });
+
+  it("sorts by review count", () => {
+    const properties = [
+      property({ slug: "few", reviewCount: 2 }),
+      property({ slug: "many", reviewCount: 10 }),
+    ];
+
+    expect(sortProperties(properties, "most_reviewed").map((item) => item.slug)).toEqual([
+      "many",
+      "few",
+    ]);
+  });
+
+  it("does not mutate the input array", () => {
+    const properties = [
+      property({ slug: "a", askingRent: 50000 }),
+      property({ slug: "b", askingRent: 10000 }),
+    ];
+
+    sortProperties(properties, "rent_asc");
+    expect(properties.map((item) => item.slug)).toEqual(["a", "b"]);
   });
 });
 

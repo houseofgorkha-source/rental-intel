@@ -36,10 +36,26 @@ export const FURNISHING_OPTIONS = [
 
 export const CONTACT_METHODS = ["phone", "email", "message", "none"] as const;
 
+// Mirrors the CHECK constraint in 20260815000000_add_property_amenities.sql
+// exactly, the same discipline as the enums above. Unlike them, a property
+// can hold several of these at once, so the column is a validated text[]
+// rather than a Postgres enum.
+export const AMENITIES = [
+  "Lift",
+  "Power backup",
+  "Parking",
+  "Gym",
+  "Swimming pool",
+  "Security",
+  "Park",
+  "Clubhouse",
+] as const;
+
 export type PropertyConfiguration = (typeof PROPERTY_CONFIGURATIONS)[number];
 export type PropertyType = (typeof PROPERTY_TYPES)[number];
 export type Furnishing = (typeof FURNISHING_OPTIONS)[number];
 export type ContactMethod = (typeof CONTACT_METHODS)[number];
+export type Amenity = (typeof AMENITIES)[number];
 
 // Everything arriving from a form is a self-declared string, so each of these
 // re-validates against the list rather than casting. An unrecognised value
@@ -62,6 +78,10 @@ export function isFurnishing(value: unknown): value is Furnishing {
 
 export function isContactMethod(value: unknown): value is ContactMethod {
   return CONTACT_METHODS.includes(value as ContactMethod);
+}
+
+export function isAmenity(value: unknown): value is Amenity {
+  return AMENITIES.includes(value as Amenity);
 }
 
 // "Posted by" reuses `submitted_as` rather than a column of its own — the

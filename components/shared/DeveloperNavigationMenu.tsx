@@ -134,6 +134,7 @@ export default function DeveloperNavigationMenu({
           badge: sampleOwnProperty ? undefined : "Context Required",
         },
         { label: "My Reviews", route: "/account/reviews", href: "/account/reviews", kind: "page" },
+        { label: "Saved", route: "/account/wishlist", href: "/account/wishlist", kind: "page" },
         { label: "Messages", route: "/account/messages", href: "/account/messages", kind: "page" },
         {
           label: "My Verifications",

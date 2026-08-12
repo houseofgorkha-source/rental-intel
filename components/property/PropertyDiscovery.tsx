@@ -8,10 +8,12 @@ import DualRangeSlider from "@/components/property/DualRangeSlider";
 import { DEFAULT_CITY, LOCALITIES_BY_CITY, cityMatches } from "@/lib/cities";
 import { formatINRPerMonth } from "@/lib/property-format";
 import {
+  AMENITIES,
   FURNISHING_OPTIONS,
   POSTED_BY_OPTIONS,
   PROPERTY_CONFIGURATIONS,
   PROPERTY_TYPES,
+  type Amenity,
   type Furnishing,
   type PostedBy,
   type PropertyConfiguration,
@@ -33,11 +35,13 @@ export type PropertySearchParams = {
   configurations?: PropertyConfiguration[];
   propertyTypes?: PropertyType[];
   furnishing?: Furnishing[];
+  amenities?: Amenity[];
   minAreaSqft?: number;
   listedWithinDays?: number;
   postedBy?: PostedBy[];
   reviewsOnly?: boolean;
   photosOnly?: boolean;
+  sort?: SortOption;
 };
 
 type PropertyDiscoveryProps = {
@@ -93,6 +97,7 @@ export type PropertyFilters = {
   configurations: PropertyConfiguration[];
   propertyTypes: PropertyType[];
   furnishing: Furnishing[];
+  amenities: Amenity[];
   minAreaSqft: number | null;
   listedWithinDays: number | null;
   postedBy: PostedBy[];
@@ -143,6 +148,7 @@ export const DEFAULT_FILTERS: PropertyFilters = {
   configurations: [],
   propertyTypes: [],
   furnishing: [],
+  amenities: [],
   minAreaSqft: null,
   listedWithinDays: null,
   postedBy: [],
@@ -159,6 +165,7 @@ export function countActiveFilters(filters: PropertyFilters): number {
     filters.configurations.length > 0,
     filters.propertyTypes.length > 0,
     filters.furnishing.length > 0,
+    filters.amenities.length > 0,
     filters.minAreaSqft !== null,
     filters.listedWithinDays !== null,
     filters.postedBy.length > 0,
@@ -256,6 +263,18 @@ export function filterProperties(
       return false;
     }
 
+    // Unlike the single-value attributes above, a property can have several
+    // amenities and a search can want several too — so this is "has ALL of
+    // the selected amenities," not "has any of them." Selecting both "Lift"
+    // and "Gym" should narrow the results, not widen them back out to
+    // anything with either one.
+    if (
+      filters.amenities.length > 0 &&
+      !filters.amenities.every((amenity) => property.amenities.includes(amenity))
+    ) {
+      return false;
+    }
+
     if (
       filters.minAreaSqft !== null &&
       (property.carpetAreaSqft === null || property.carpetAreaSqft < filters.minAreaSqft)
@@ -282,6 +301,77 @@ export function filterProperties(
 
     return true;
   });
+}
+
+// Ordering, not narrowing — kept as its own single implementation for the
+// same reason filterProperties is one function rather than one per caller:
+// the list and any future consumer of the sorted order must never disagree
+// about what "sorted" means.
+export type SortOption = "newest" | "rent_asc" | "rent_desc" | "rating_desc" | "most_reviewed";
+
+// `null` is its own option ("Featured"): the order getDiscoveryProperties
+// already returns (alphabetical by name), not a sort this file invents an
+// opinion about. Keeping it distinct from "newest" means there is still a
+// way to ask for "no particular order" instead of silently defaulting to one.
+export const SORT_OPTIONS: { value: SortOption | null; label: string }[] = [
+  { value: null, label: "Featured" },
+  { value: "newest", label: "Newest first" },
+  { value: "rent_asc", label: "Rent: low to high" },
+  { value: "rent_desc", label: "Rent: high to low" },
+  { value: "rating_desc", label: "Highest rated" },
+  { value: "most_reviewed", label: "Most reviewed" },
+];
+
+export function isSortOption(value: string): value is SortOption {
+  return SORT_OPTIONS.some((option) => option.value === value);
+}
+
+// A null price/rating is "not stated," not "worst" — it is excluded from the
+// comparison entirely and always sorts after every property that answered,
+// regardless of which direction the sort runs. Otherwise "Rent: low to high"
+// would put every unpriced property first, ahead of the cheapest real rent.
+function compareNullsLast(
+  a: number | null,
+  b: number | null,
+  compare: (x: number, y: number) => number,
+): number {
+  if (a === null && b === null) return 0;
+  if (a === null) return 1;
+  if (b === null) return -1;
+  return compare(a, b);
+}
+
+export function sortProperties(
+  properties: DiscoveryProperty[],
+  sortBy: SortOption | null,
+): DiscoveryProperty[] {
+  if (!sortBy) return properties;
+
+  const sorted = [...properties];
+
+  switch (sortBy) {
+    case "newest":
+      sorted.sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      );
+      break;
+    case "rent_asc":
+      sorted.sort((a, b) => compareNullsLast(a.askingRent, b.askingRent, (x, y) => x - y));
+      break;
+    case "rent_desc":
+      sorted.sort((a, b) => compareNullsLast(a.askingRent, b.askingRent, (x, y) => y - x));
+      break;
+    case "rating_desc":
+      sorted.sort((a, b) =>
+        compareNullsLast(a.averageRating, b.averageRating, (x, y) => y - x),
+      );
+      break;
+    case "most_reviewed":
+      sorted.sort((a, b) => b.reviewCount - a.reviewCount);
+      break;
+  }
+
+  return sorted;
 }
 
 function formatRent(rent: number | null) {
@@ -379,21 +469,6 @@ function ToggleCheckboxGrid<T extends string>({
   );
 }
 
-// Amenities is the one group still without a data model — it has no column,
-// no table, and no requirement asking for one. It stays local and clearly
-// labelled "coming soon" rather than being wired to nothing while looking
-// identical to the filters that work.
-function useToggleSet(initial: string[] = []) {
-  const [selected, setSelected] = useState<string[]>(initial);
-  const toggle = (option: string) =>
-    setSelected((current) =>
-      current.includes(option)
-        ? current.filter((item) => item !== option)
-        : [...current, option],
-    );
-  return [selected, toggle] as const;
-}
-
 type FiltersPanelProps = {
   onClose: () => void;
   filters: PropertyFilters;
@@ -409,8 +484,6 @@ function FiltersPanel({
   position,
   panelRef,
 }: FiltersPanelProps) {
-  const [amenities, toggleAmenity] = useToggleSet();
-
   // One updater for every group, so a new filter cannot be added and then
   // forgotten on the way back up to the page's state — which is exactly how
   // the previous version's selections got stranded inside this component.
@@ -490,12 +563,11 @@ function FiltersPanel({
         </FilterField>
         <FilterField label="Amenities">
           <ToggleCheckboxGrid
-            options={["Lift", "Power backup", "Parking", "Gym", "Swimming pool", "Security", "Park", "Clubhouse"]}
+            options={AMENITIES}
             columns={2}
-            selected={amenities}
-            onToggle={toggleAmenity}
+            selected={filters.amenities}
+            onToggle={(option) => toggleIn("amenities", filters.amenities, option)}
           />
-          <p className="mt-2 text-xs text-muted">Amenity details are coming soon.</p>
         </FilterField>
         <FilterField label="Minimum area">
           <div className="flex items-center gap-2">
@@ -592,7 +664,7 @@ function FiltersPanel({
             looked like it worked. "Reset all" is what the old Apply slot is
             worth: the one action the panel could not otherwise offer. */}
         <p className="text-xs text-muted">
-          Filters apply as you change them. Amenities are still coming soon.
+          Filters apply as you change them.
         </p>
         <div className="flex items-center justify-between gap-3">
           <button
@@ -918,6 +990,7 @@ export default function PropertyDiscovery({
   const [selectedCity, setSelectedCity] = useState(initialSearch?.city ?? DEFAULT_CITY);
   const [selectedAreas, setSelectedAreas] = useState<string[]>(initialSearch?.areas ?? []);
   const [searchQuery, setSearchQuery] = useState(initialSearch?.query ?? "");
+  const [sortBy, setSortBy] = useState<SortOption | null>(initialSearch?.sort ?? null);
   const [filters, setFilters] = useState<PropertyFilters>(() => ({
     ...DEFAULT_FILTERS,
     rentRange: [
@@ -931,6 +1004,7 @@ export default function PropertyDiscovery({
     configurations: initialSearch?.configurations ?? [],
     propertyTypes: initialSearch?.propertyTypes ?? [],
     furnishing: initialSearch?.furnishing ?? [],
+    amenities: initialSearch?.amenities ?? [],
     minAreaSqft: initialSearch?.minAreaSqft ?? null,
     listedWithinDays: initialSearch?.listedWithinDays ?? null,
     postedBy: initialSearch?.postedBy ?? [],
@@ -951,12 +1025,15 @@ export default function PropertyDiscovery({
 
   const visibleProperties = useMemo(
     () =>
-      filterProperties(cityProperties, {
-        areas: selectedAreas,
-        query: searchQuery,
-        filters,
-      }),
-    [cityProperties, selectedAreas, filters, searchQuery],
+      sortProperties(
+        filterProperties(cityProperties, {
+          areas: selectedAreas,
+          query: searchQuery,
+          filters,
+        }),
+        sortBy,
+      ),
+    [cityProperties, selectedAreas, filters, searchQuery, sortBy],
   );
 
   const searchProperties = cityProperties.map((property) => ({
@@ -996,6 +1073,20 @@ export default function PropertyDiscovery({
             onQueryChange={setSearchQuery}
           />
           <FiltersButton filters={filters} onFiltersChange={setFilters} />
+          <select
+            value={sortBy ?? ""}
+            onChange={(event) =>
+              setSortBy(event.target.value ? (event.target.value as SortOption) : null)
+            }
+            aria-label="Sort properties by"
+            className="rounded-full border border-border-subtle bg-surface px-2 py-1.5 text-xs font-medium text-muted shadow-[0_1px_2px_rgba(14,143,94,0.04)] transition hover:border-accent/30 hover:text-accent focus:border-accent focus:outline-none sm:px-4 sm:py-2 sm:text-sm"
+          >
+            {SORT_OPTIONS.map((option) => (
+              <option key={option.label} value={option.value ?? ""}>
+                {option.label}
+              </option>
+            ))}
+          </select>
         </div>
 
         {cityProperties.length === 0 && (

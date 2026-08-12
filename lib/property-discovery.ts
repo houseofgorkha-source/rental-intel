@@ -3,6 +3,7 @@ import { CITY_NAME_ALIASES, DEFAULT_CITY } from "@/lib/cities";
 import { calculateAverageRating, getPropertyImageUrl } from "@/lib/property-format";
 import { getAreaCoordinates, type Coordinates } from "@/lib/area-coordinates";
 import type {
+  Amenity,
   Furnishing,
   PropertyConfiguration,
   PropertyType,
@@ -31,6 +32,10 @@ export type DiscoveryProperty = {
   furnishing: Furnishing | null;
   carpetAreaSqft: number | null;
   securityDeposit: number | null;
+  // Empty when the property has none, never null — the column itself is
+  // `not null default '{}'`, so there is no "not answered yet" state to
+  // preserve the way there is for configuration/propertyType/furnishing.
+  amenities: Amenity[];
   // Backs the "Listed on" filter. This is when the property was added to
   // RentalIntel, which is the only date the schema holds — it is not a
   // listing date on any external portal.
@@ -72,34 +77,20 @@ type ListingRow = {
   security_deposit: number | null;
   latitude: number | null;
   longitude: number | null;
+  amenities: Amenity[] | null;
 };
 
-export async function getDiscoveryProperties(
-  city: string = DEFAULT_CITY,
+// Shared by every caller that already has a set of property rows and needs
+// them turned into full DiscoveryProperty objects (images, reviews,
+// availability/attributes) — getDiscoveryProperties (a city) and
+// getWishlistedProperties (a specific id list) differ only in how they
+// arrive at `properties`, not in what happens to them afterwards. Keeping
+// this as one function is what stops the two from silently drifting apart
+// the way the filter panel and the query it fed once did.
+async function enrichProperties(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  properties: PropertyRow[],
 ): Promise<DiscoveryProperty[]> {
-  if (
-    !process.env.NEXT_PUBLIC_SUPABASE_URL ||
-    !process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
-  ) {
-    return [];
-  }
-
-  const supabase = await createClient();
-  // properties.city is free text (e.g. "Bangalore"/"BANGALORE" rather than
-  // the app's canonical "Bengaluru"), so match against every known alias,
-  // case-insensitively, instead of an exact .eq() that would silently drop
-  // every real property.
-  const cityAliases = CITY_NAME_ALIASES[city] ?? [city];
-  const cityFilter = cityAliases.map((alias) => `city.ilike.${alias}`).join(",");
-
-  const { data: propertyRows } = await supabase
-    .from("properties")
-    .select("id, slug, name, area, city, asking_rent, created_at")
-    .eq("status", "published")
-    .or(cityFilter)
-    .order("name");
-
-  const properties = (propertyRows ?? []) as PropertyRow[];
   const propertyIds = properties.map((property) => property.id);
   const [imagesResult, reviewsResult, availabilityResult] = propertyIds.length
     ? await Promise.all([
@@ -123,7 +114,7 @@ export async function getDiscoveryProperties(
         supabase
           .from("properties")
           .select(
-            "id, is_available, submitted_as, configuration, property_type, furnishing, carpet_area_sqft, security_deposit, latitude, longitude",
+            "id, is_available, submitted_as, configuration, property_type, furnishing, carpet_area_sqft, security_deposit, latitude, longitude, amenities",
           )
           .in("id", propertyIds),
       ])
@@ -179,6 +170,7 @@ export async function getDiscoveryProperties(
       furnishing: listing?.furnishing ?? null,
       carpetAreaSqft: listing?.carpet_area_sqft ?? null,
       securityDeposit: listing?.security_deposit ?? null,
+      amenities: listing?.amenities ?? [],
       createdAt: property.created_at,
       // An exact pin (see PropertyLocationField) wins whenever both values
       // are present; otherwise the area centroid, same as before this
@@ -191,4 +183,77 @@ export async function getDiscoveryProperties(
           : getAreaCoordinates(property.area),
     };
   });
+}
+
+export async function getDiscoveryProperties(
+  city: string = DEFAULT_CITY,
+): Promise<DiscoveryProperty[]> {
+  if (
+    !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    !process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+  ) {
+    return [];
+  }
+
+  const supabase = await createClient();
+  // properties.city is free text (e.g. "Bangalore"/"BANGALORE" rather than
+  // the app's canonical "Bengaluru"), so match against every known alias,
+  // case-insensitively, instead of an exact .eq() that would silently drop
+  // every real property.
+  const cityAliases = CITY_NAME_ALIASES[city] ?? [city];
+  const cityFilter = cityAliases.map((alias) => `city.ilike.${alias}`).join(",");
+
+  const { data: propertyRows } = await supabase
+    .from("properties")
+    .select("id, slug, name, area, city, asking_rent, created_at")
+    .eq("status", "published")
+    .or(cityFilter)
+    .order("name");
+
+  return enrichProperties(supabase, (propertyRows ?? []) as PropertyRow[]);
+}
+
+// The signed-in user's saved properties, most recently saved first. Reuses
+// enrichProperties rather than a second card-shaping implementation, so a
+// wishlisted property renders with exactly the same facts (rating, rent,
+// image, badge) as it would in ordinary discovery — see that function's own
+// comment for why this matters.
+export async function getWishlistedProperties(
+  userId: string,
+): Promise<DiscoveryProperty[]> {
+  const supabase = await createClient();
+
+  const { data: wishlistRows } = await supabase
+    .from("wishlists")
+    .select("property_id, created_at")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
+
+  const propertyIds = (wishlistRows ?? []).map((row) => row.property_id);
+  if (propertyIds.length === 0) return [];
+
+  // Published only, matching what every other discovery surface shows — a
+  // saved property that was later rejected or withdrawn shouldn't render as
+  // if it were still a live listing.
+  const { data: propertyRows } = await supabase
+    .from("properties")
+    .select("id, slug, name, area, city, asking_rent, created_at")
+    .eq("status", "published")
+    .in("id", propertyIds);
+
+  const properties = (propertyRows ?? []) as PropertyRow[];
+  const enriched = await enrichProperties(supabase, properties);
+
+  // `.in()` does not preserve input order, so the result is re-sorted back
+  // into "most recently saved first" — the one fact this list is actually
+  // organised by. DiscoveryProperty only carries a slug, not the underlying
+  // id, so the wishlist's id-based order is remapped to a slug-based one via
+  // the same `properties` rows enrichProperties was given.
+  const orderById = new Map(propertyIds.map((id, index) => [id, index]));
+  const orderBySlug = new Map(
+    properties.map((property) => [property.slug, orderById.get(property.id) ?? 0]),
+  );
+  return enriched
+    .slice()
+    .sort((a, b) => (orderBySlug.get(a.slug) ?? 0) - (orderBySlug.get(b.slug) ?? 0));
 }

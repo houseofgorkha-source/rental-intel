@@ -24,6 +24,7 @@ export type EditableProperty = {
   propertyType: string | null;
   furnishing: string | null;
   carpetAreaSqft: number | null;
+  amenities: string[];
   askingRent: number | null;
   securityDeposit: number | null;
   isAvailable: boolean;
@@ -96,6 +97,7 @@ export default function PropertyEditForm({ property }: { property: EditablePrope
               propertyType: property.propertyType,
               furnishing: property.furnishing,
               carpetAreaSqft: property.carpetAreaSqft,
+              amenities: property.amenities,
             }}
           />
         </div>
