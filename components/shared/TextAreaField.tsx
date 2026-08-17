@@ -5,6 +5,7 @@ type TextAreaFieldProps = {
   required?: boolean;
   rows?: number;
   name?: string;
+  defaultValue?: string;
 };
 
 export default function TextAreaField({
@@ -14,6 +15,7 @@ export default function TextAreaField({
   required = false,
   rows = 4,
   name,
+  defaultValue,
 }: TextAreaFieldProps) {
   return (
     <div className="space-y-2">
@@ -26,6 +28,7 @@ export default function TextAreaField({
       <textarea
         rows={rows}
         name={name}
+        defaultValue={defaultValue}
         placeholder={placeholder}
         className="
           w-full

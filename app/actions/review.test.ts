@@ -11,10 +11,9 @@ vi.mock("@/lib/supabase/server", () => ({
     }),
 }));
 
-const { createReview } = await import("./review");
+const { createReview, updateReview } = await import("./review");
 
-const baseInput = {
-  propertyId: "property-1",
+const baseFields = {
   overallRating: 4,
   recommendation: "yes" as const,
   comment: "Great place to live.",
@@ -24,7 +23,7 @@ const baseInput = {
   positiveTraits: ["responsive"],
   negativeTraits: [],
   depositTaken: "yes" as const,
-  depositMonths: 2,
+  depositAmount: 200000,
   depositMoreThanTwoMonths: "no" as const,
   depositReturned: "yes" as const,
   depositReturnedOnTime: "yes" as const,
@@ -33,7 +32,10 @@ const baseInput = {
   depositDeductionAmount: null,
   depositExperienceRating: 4,
   isAnonymous: false,
+  amenities: ["Lift", "Parking"],
 };
+
+const baseInput = { ...baseFields, propertyId: "property-1" };
 
 beforeEach(() => {
   rpc.mockReset();
@@ -79,7 +81,7 @@ describe("createReview", () => {
       p_positive_owner_traits: ["responsive"],
       p_negative_owner_traits: [],
       p_deposit_taken: true,
-      p_deposit_months: 2,
+      p_deposit_months: null,
       p_deposit_more_than_two_months: false,
       p_deposit_returned: true,
       p_deposit_returned_on_time: true,
@@ -90,6 +92,8 @@ describe("createReview", () => {
       p_category_slugs: ["cleanliness", "safety", "owner_behavior"],
       p_category_ratings: [5, 4, 3],
       p_is_anonymous: false,
+      p_security_deposit: 200000,
+      p_amenities: ["Lift", "Parking"],
     });
     expect(result).toEqual({ reviewId: "review-1" });
   });
@@ -134,6 +138,66 @@ describe("createReview", () => {
 
     expect(result).toEqual({
       error: "Unable to publish your review. Please try again.",
+    });
+  });
+});
+
+describe("updateReview", () => {
+  const updateInput = { ...baseFields, reviewId: "review-1" };
+
+  it("rejects an out-of-range overall rating without calling the RPC", async () => {
+    const result = await updateReview({ ...updateInput, overallRating: 0 });
+
+    expect(result).toEqual({ error: "Please select an overall rating." });
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it("returns the auth error and skips the RPC when unauthenticated", async () => {
+    getUser.mockResolvedValue({ data: { user: null }, error: null });
+
+    const result = await updateReview(updateInput);
+
+    expect(result).toEqual({ error: "Please sign in to edit your review." });
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it("calls update_review with correctly mapped parameters, including the review id", async () => {
+    rpc.mockResolvedValue({ data: "review-1", error: null });
+
+    const result = await updateReview(updateInput);
+
+    expect(rpc).toHaveBeenCalledWith("update_review", {
+      p_review_id: "review-1",
+      p_overall_rating: 4,
+      p_recommendation: "yes",
+      p_comment: "Great place to live.",
+      p_would_rent_again: "probably",
+      p_positive_owner_traits: ["responsive"],
+      p_negative_owner_traits: [],
+      p_deposit_taken: true,
+      p_deposit_more_than_two_months: false,
+      p_deposit_returned: true,
+      p_deposit_returned_on_time: true,
+      p_deposit_additional_deductions: false,
+      p_deposit_deduction_reason: null,
+      p_deposit_deduction_amount: null,
+      p_deposit_experience_rating: 4,
+      p_security_deposit: 200000,
+      p_amenities: ["Lift", "Parking"],
+      p_category_slugs: ["cleanliness", "safety", "owner_behavior"],
+      p_category_ratings: [5, 4, 3],
+      p_is_anonymous: false,
+    });
+    expect(result).toEqual({ reviewId: "review-1" });
+  });
+
+  it("surfaces a generic error when the RPC errors", async () => {
+    rpc.mockResolvedValue({ data: null, error: new Error("rpc failed") });
+
+    const result = await updateReview(updateInput);
+
+    expect(result).toEqual({
+      error: "Unable to save your changes. Please try again.",
     });
   });
 });

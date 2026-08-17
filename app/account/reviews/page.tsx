@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { one } from "@/lib/embedded";
 import { EmptyState } from "@/components/shared/StatusPrimitives";
 import { formatVerifiedVia } from "@/lib/verification";
+import { calculateDepositOutcomeScore } from "@/lib/property-format";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +17,13 @@ type ReviewRow = {
   recommendation: "yes" | "maybe" | "no";
   verification_status: "unverified" | "pending" | "verified" | "rejected";
   created_at: string;
+  amenities: string[];
+  deposit_taken: boolean | null;
+  deposit_returned: boolean | null;
+  deposit_returned_on_time: boolean | null;
+  deposit_additional_deductions: boolean | null;
+  deposit_deduction_reason: string | null;
+  deposit_deduction_amount: number | null;
   properties: { slug: string; name: string } | { slug: string; name: string }[];
 };
 
@@ -29,7 +37,7 @@ export default async function AccountReviewsPage() {
   const { data } = await supabase
     .from("reviews")
     .select(
-      "id, title, body, overall_rating, recommendation, verification_status, created_at, properties!inner(slug, name)",
+      "id, title, body, overall_rating, recommendation, verification_status, created_at, amenities, deposit_taken, deposit_returned, deposit_returned_on_time, deposit_additional_deductions, deposit_deduction_reason, deposit_deduction_amount, properties!inner(slug, name)",
     )
     .eq("author_id", user.id)
     .order("created_at", { ascending: false });
@@ -84,6 +92,18 @@ export default async function AccountReviewsPage() {
           ),
           date: row.created_at,
           wouldRecommend: row.recommendation === "yes",
+          amenities: row.amenities,
+          depositScore:
+            row.deposit_taken === true
+              ? calculateDepositOutcomeScore({
+                  depositReturned: row.deposit_returned,
+                  depositReturnedOnTime: row.deposit_returned_on_time,
+                  depositAdditionalDeductions: row.deposit_additional_deductions,
+                })
+              : null,
+          depositAdditionalDeductions: row.deposit_additional_deductions,
+          depositDeductionReason: row.deposit_deduction_reason,
+          depositDeductionAmount: row.deposit_deduction_amount,
         };
 
         return (

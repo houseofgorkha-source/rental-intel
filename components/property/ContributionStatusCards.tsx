@@ -3,6 +3,11 @@ import Link from "next/link";
 type OwnReview = {
   id: string;
   verification_status: "unverified" | "pending" | "verified" | "rejected";
+  // What backs a "verified" status, e.g. "Rental agreement and Rent receipt".
+  // Only ever meaningful when verification_status === "verified"; null
+  // otherwise. Same disclosure ReviewCard shows publicly, kept in sync here
+  // rather than a second wording.
+  verifiedVia: string | null;
 } | null;
 
 type ContributionStatusCardsProps = {
@@ -11,6 +16,14 @@ type ContributionStatusCardsProps = {
   submittedAs: "owner" | "tenant" | "helper" | null;
   isAvailable: boolean;
   ownReview: OwnReview;
+  // Whether the CURRENT VIEWER is the person who submitted this property —
+  // not a fact about the property itself. The owner/helper restrictions
+  // below describe why THAT PERSON specifically can't review it (they listed
+  // it commercially, or they never lived there); they say nothing about
+  // anyone else looking at the same page, who should always get the normal
+  // write/edit review flow. See the RLS policy this mirrors: it blocks only
+  // `submitted_as = 'owner' and created_by = auth.uid()`, not every reviewer.
+  isContributor: boolean;
 };
 
 function StatusCard({
@@ -50,22 +63,28 @@ const actionLinkClass =
 // showing the whole workflow up front is a deliberate product decision
 // (CLAUDE.md §25).
 //
-// Which cards appear depends on how the submitter described their
-// relationship to the property (`submitted_as`), because the three roles have
-// genuinely different workflows — not because the UI is being decorative:
-//   owner  -> property + listing management. Owners cannot review their own
-//             property (enforced in RLS, not just here).
-//   helper -> property only. Someone adding a property on another person's
-//             behalf has no first-hand experience to review.
-//   tenant / legacy(null) -> the original three cards, unchanged.
+// Which cards appear depends on how THIS VIEWER themselves related to the
+// property (`submitted_as`, but only when `isContributor` is also true),
+// because the three roles have genuinely different workflows — not because
+// the UI is being decorative:
+//   owner  -> property + listing management. An owner cannot review the
+//             property they themselves listed (enforced in RLS, not just
+//             here) — everyone else viewing that same property still gets
+//             the normal review flow below.
+//   helper -> property only, for the person who added it. Someone who added
+//             a property on another person's behalf has no first-hand
+//             experience to review — again, only for that specific person.
+//   tenant / legacy(null) / any non-contributor visitor -> the original
+//             three cards, unchanged.
 export default function ContributionStatusCards({
   propertySlug,
   propertyStatus,
   submittedAs,
   isAvailable,
   ownReview,
+  isContributor,
 }: ContributionStatusCardsProps) {
-  if (submittedAs === "owner") {
+  if (isContributor && submittedAs === "owner") {
     return (
       <>
         <PropertyStatusCard propertyStatus={propertyStatus} />
@@ -94,7 +113,7 @@ export default function ContributionStatusCards({
     );
   }
 
-  if (submittedAs === "helper") {
+  if (isContributor && submittedAs === "helper") {
     return (
       <>
         <PropertyStatusCard propertyStatus={propertyStatus} />
@@ -118,10 +137,19 @@ export default function ContributionStatusCards({
           <Link href={`/property/${propertySlug}/review`} className={actionLinkClass}>
             Write Review →
           </Link>
-        ) : propertyStatus === "published" ? (
-          <span className="font-medium text-success">✅ Review Published</span>
         ) : (
-          <span className="font-medium text-warning">⏳ Review Pending Approval</span>
+          <>
+            {propertyStatus === "published" ? (
+              <span className="font-medium text-success">✅ Review Published</span>
+            ) : (
+              <span className="font-medium text-warning">⏳ Review Pending Approval</span>
+            )}
+            <div className="mt-1.5">
+              <Link href={`/property/${propertySlug}/review`} className={actionLinkClass}>
+                Edit Review →
+              </Link>
+            </div>
+          </>
         )}
       </StatusCard>
 
@@ -136,7 +164,12 @@ export default function ContributionStatusCards({
       {ownReview && (
         <StatusCard label="Stay Verification">
           {ownReview.verification_status === "verified" ? (
-            <span className="font-medium text-success">✅ Verified Tenant</span>
+            <>
+              <span className="font-medium text-success">✅ Verified Tenant</span>
+              {ownReview.verifiedVia && (
+                <p className="mt-1 text-xs text-muted">Verified via {ownReview.verifiedVia}</p>
+              )}
+            </>
           ) : ownReview.verification_status === "pending" ? (
             <span className="font-medium text-warning">⏳ Verification Pending</span>
           ) : ownReview.verification_status === "rejected" ? (

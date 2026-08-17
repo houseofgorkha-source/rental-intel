@@ -14,6 +14,8 @@ import {
   aggregateCategoryRatings,
   aggregateDepositInsights,
   calculateAverageRating,
+  calculateDepositOutcomeScore,
+  formatINR,
   formatINRPerMonth,
   getPropertyImageUrl,
   type CategoryRatingRow,
@@ -40,12 +42,15 @@ type ReviewRow = {
   created_at: string;
   is_anonymous: boolean;
   deposit_taken: boolean | null;
-  deposit_months: number | null;
+  security_deposit: number | null;
   deposit_returned: boolean | null;
   deposit_returned_on_time: boolean | null;
   deposit_additional_deductions: boolean | null;
   deposit_deduction_reason: string | null;
+  deposit_deduction_amount: number | null;
+  deposit_more_than_two_months: boolean | null;
   deposit_experience_rating: number | null;
+  amenities: string[];
   author: { display_name: string } | { display_name: string }[] | null;
 };
 
@@ -83,6 +88,13 @@ function formatRent(rent: number | null) {
   return rent === null ? "Not available" : formatINRPerMonth(rent);
 }
 
+// A deposit is a lump sum, not a recurring rate — this was previously
+// rendered with formatRent (→ "/month"), which made a ₹500,000 deposit
+// display as "₹500,000/month".
+function formatDepositAmount(amount: number | null) {
+  return amount === null ? "Not available" : formatINR(amount);
+}
+
 export default async function PropertyPage({
   params,
   searchParams,
@@ -110,7 +122,7 @@ export default async function PropertyPage({
     supabase
       .from("reviews")
       .select(
-        "id, title, body, overall_rating, recommendation, verification_status, stay_start_date, stay_end_date, created_at, is_anonymous, deposit_taken, deposit_months, deposit_returned, deposit_returned_on_time, deposit_additional_deductions, deposit_deduction_reason, deposit_experience_rating, author:profiles!reviews_author_id_fkey(display_name)",
+        "id, title, body, overall_rating, recommendation, verification_status, stay_start_date, stay_end_date, created_at, is_anonymous, deposit_taken, security_deposit, deposit_returned, deposit_returned_on_time, deposit_additional_deductions, deposit_deduction_reason, deposit_deduction_amount, deposit_more_than_two_months, deposit_experience_rating, amenities, author:profiles!reviews_author_id_fkey(display_name)",
       )
       .eq("property_id", property.id)
       .order("created_at", { ascending: false }),
@@ -171,18 +183,35 @@ export default async function PropertyPage({
   // 'verified', so this query returns nothing extra a visitor couldn't
   // already infer from the review's own public verification_status.
   const verifiedDocumentTypesByReview = new Map<string, string[]>();
-  if ((reviewRows ?? []).length > 0) {
+  // `ownReview` isn't necessarily inside `reviewRows` (a still-pending
+  // property's review is only readable by its own author, not the
+  // unfiltered list query above), so its id is included explicitly rather
+  // than assumed to already be covered.
+  const reviewIdsForVerification = Array.from(
+    new Set([
+      ...(reviewRows as ReviewRow[] | null ?? []).map((review) => review.id),
+      ...(ownReview ? [ownReview.id] : []),
+    ]),
+  );
+  if (reviewIdsForVerification.length > 0) {
     const { data: verifiedDocRows } = await supabase
       .from("review_verified_document_types")
       .select("review_id, document_types")
-      .in(
-        "review_id",
-        (reviewRows as ReviewRow[]).map((review) => review.id),
-      );
+      .in("review_id", reviewIdsForVerification);
     (verifiedDocRows ?? []).forEach((row) => {
       verifiedDocumentTypesByReview.set(row.review_id, row.document_types ?? []);
     });
   }
+
+  const ownReviewForCards = ownReview
+    ? {
+        id: ownReview.id,
+        verification_status: ownReview.verification_status,
+        verifiedVia: formatVerifiedVia(
+          verifiedDocumentTypesByReview.get(ownReview.id) ?? [],
+        ),
+      }
+    : null;
 
   const propertyReviews: Review[] = ((reviewRows ?? []) as ReviewRow[]).map(
     (review) => ({
@@ -203,6 +232,18 @@ export default async function PropertyPage({
       ),
       date: review.created_at,
       wouldRecommend: review.recommendation === "yes",
+      amenities: review.amenities,
+      depositScore:
+        review.deposit_taken === true
+          ? calculateDepositOutcomeScore({
+              depositReturned: review.deposit_returned,
+              depositReturnedOnTime: review.deposit_returned_on_time,
+              depositAdditionalDeductions: review.deposit_additional_deductions,
+            })
+          : null,
+      depositAdditionalDeductions: review.deposit_additional_deductions,
+      depositDeductionReason: review.deposit_deduction_reason,
+      depositDeductionAmount: review.deposit_deduction_amount,
     }),
   );
 
@@ -278,11 +319,12 @@ export default async function PropertyPage({
   const depositInsights = aggregateDepositInsights(
     ((reviewRows ?? []) as ReviewRow[]).map((review) => ({
       depositTaken: review.deposit_taken,
-      depositMonths: review.deposit_months,
+      depositAmount: review.security_deposit,
       depositReturned: review.deposit_returned,
       depositReturnedOnTime: review.deposit_returned_on_time,
       depositAdditionalDeductions: review.deposit_additional_deductions,
       depositDeductionReason: review.deposit_deduction_reason,
+      depositDeductionAmount: review.deposit_deduction_amount,
       depositExperienceRating: review.deposit_experience_rating,
     })),
   );
@@ -322,7 +364,7 @@ export default async function PropertyPage({
           { label: "Rent", value: formatRent(property.asking_rent) },
           {
             label: "Security deposit",
-            value: formatRent(property.security_deposit),
+            value: formatDepositAmount(property.security_deposit),
           },
           {
             label: "Availability",
@@ -454,7 +496,8 @@ export default async function PropertyPage({
                   propertyStatus={property.status}
                   submittedAs={property.submitted_as}
                   isAvailable={property.is_available}
-                  ownReview={ownReview}
+                  ownReview={ownReviewForCards}
+                  isContributor={isContributor}
                 />
                 {viewerActions}
                 <PropertyShareButton propertyName={property.name} />
@@ -533,6 +576,12 @@ export default async function PropertyPage({
                   Based on {depositInsights.reviewsWithDeposit} {depositInsights.reviewsWithDeposit === 1 ? "review" : "reviews"} that paid a security deposit here.
                 </p>
                 <div className="mt-7 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  {depositInsights.averageScore !== null && (
+                    <div className="rounded-xl border border-border-subtle bg-surface px-4 py-4">
+                      <p className="text-sm font-medium text-muted">Deposit score</p>
+                      <p className="mt-2 text-xl font-medium text-foreground">{Math.round(depositInsights.averageScore)} / 100</p>
+                    </div>
+                  )}
                   {depositInsights.returnedPercentage !== null && (
                     <div className="rounded-xl border border-border-subtle bg-surface px-4 py-4">
                       <p className="text-sm font-medium text-muted">Deposit returned</p>
@@ -545,10 +594,10 @@ export default async function PropertyPage({
                       <p className="mt-2 text-xl font-medium text-foreground">{depositInsights.onTimePercentage}%</p>
                     </div>
                   )}
-                  {depositInsights.averageMonths !== null && (
+                  {depositInsights.averageAmount !== null && (
                     <div className="rounded-xl border border-border-subtle bg-surface px-4 py-4">
                       <p className="text-sm font-medium text-muted">Typical deposit</p>
-                      <p className="mt-2 text-xl font-medium text-foreground">{depositInsights.averageMonths.toFixed(1)} months&apos; rent</p>
+                      <p className="mt-2 text-xl font-medium text-foreground">{formatINR(Math.round(depositInsights.averageAmount))}</p>
                     </div>
                   )}
                   {depositInsights.averageExperienceRating !== null && (
@@ -639,7 +688,8 @@ export default async function PropertyPage({
                   propertyStatus={property.status}
                   submittedAs={property.submitted_as}
                   isAvailable={property.is_available}
-                  ownReview={ownReview}
+                  ownReview={ownReviewForCards}
+                  isContributor={isContributor}
                 />
                 {viewerActions}
                 <PropertyShareButton propertyName={property.name} />

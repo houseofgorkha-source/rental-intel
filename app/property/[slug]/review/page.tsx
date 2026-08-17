@@ -1,13 +1,34 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import ReviewForm from "../../../../components/review/ReviewForm";
+import ReviewForm, { type ExistingReview } from "../../../../components/review/ReviewForm";
+import { rentAgainOptions, type RentAgainOption } from "@/components/review/reviewCategories";
 
 type ReviewPageProps = {
   params: Promise<{
     slug: string;
   }>;
 };
+
+type YesNoValue = "yes" | "no" | null;
+
+function toYesNo(value: boolean | null): YesNoValue {
+  if (value === true) return "yes";
+  if (value === false) return "no";
+  return null;
+}
+
+// "probably" -> "Probably", the inverse of ReviewForm's own
+// label.toLowerCase().replace(/\s+/g, "_") — only ever applied to a value
+// this same form wrote, so every DB value is expected to match one of these.
+function fromRentAgainValue(value: string | null): RentAgainOption | null {
+  if (!value) return null;
+  return (
+    rentAgainOptions.find(
+      (option) => option.toLowerCase().replace(/\s+/g, "_") === value,
+    ) ?? null
+  );
+}
 
 export default async function ReviewPage({
   params,
@@ -46,6 +67,62 @@ export default async function ReviewPage({
     notFound();
   }
 
+  // If the current user already has a review here, this page edits it
+  // instead of creating a second one — there is no UI path to a duplicate
+  // review, and none at the database level either (this query plus
+  // update_review's ownership check are what make that true).
+  const { data: existingReviewRow } = await supabase
+    .from("reviews")
+    .select(
+      "id, overall_rating, recommendation, would_rent_again, positive_owner_traits, negative_owner_traits, deposit_taken, security_deposit, deposit_more_than_two_months, deposit_returned, deposit_returned_on_time, deposit_additional_deductions, deposit_deduction_reason, deposit_deduction_amount, deposit_experience_rating, body, is_anonymous, amenities",
+    )
+    .eq("property_id", property.id)
+    .eq("author_id", user.id)
+    .maybeSingle();
+
+  let existingReview: ExistingReview | undefined;
+  if (existingReviewRow) {
+    const { data: categoryRatingRows } = await supabase
+      .from("review_category_ratings")
+      .select("rating, category:review_categories(slug)")
+      .eq("review_id", existingReviewRow.id);
+
+    const quickRatings: Record<string, number> = {};
+    let ownerRating = 0;
+    for (const row of categoryRatingRows ?? []) {
+      const category = Array.isArray(row.category) ? row.category[0] : row.category;
+      if (!category) continue;
+      if (category.slug === "owner_behavior") {
+        ownerRating = row.rating;
+      } else {
+        quickRatings[category.slug] = row.rating;
+      }
+    }
+
+    existingReview = {
+      id: existingReviewRow.id,
+      overallRating: existingReviewRow.overall_rating,
+      wouldRecommend: existingReviewRow.recommendation === "yes" ? "yes" : "no",
+      wouldRentAgain: fromRentAgainValue(existingReviewRow.would_rent_again),
+      quickRatings,
+      ownerRating,
+      positiveTraits: existingReviewRow.positive_owner_traits ?? [],
+      negativeTraits: existingReviewRow.negative_owner_traits ?? [],
+      depositTaken: toYesNo(existingReviewRow.deposit_taken),
+      depositAmount: existingReviewRow.security_deposit,
+      depositMoreThanTwoMonths: toYesNo(existingReviewRow.deposit_more_than_two_months),
+      depositReturned: toYesNo(existingReviewRow.deposit_returned),
+      depositReturnedOnTime: toYesNo(existingReviewRow.deposit_returned_on_time),
+      depositAdditionalDeductions: toYesNo(existingReviewRow.deposit_additional_deductions),
+      depositDeductionReason: existingReviewRow.deposit_deduction_reason ?? "",
+      depositDeductionAmount: existingReviewRow.deposit_deduction_amount,
+      depositExperienceRating: existingReviewRow.deposit_experience_rating ?? 0,
+      comment: existingReviewRow.body,
+      isAnonymous: existingReviewRow.is_anonymous,
+      amenities: existingReviewRow.amenities ?? [],
+    };
+  }
+
   return (
     // `pt-28`, matching the header-clearance convention used elsewhere
     // (account/admin/property-detail) — `py-12` (48px) wasn't enough to
@@ -64,11 +141,13 @@ export default async function ReviewPage({
         <div className="mt-8 rounded-2xl border border-border-subtle bg-surface p-8">
 
           <h1 className="text-4xl font-bold tracking-tight text-foreground">
-            Share Your Experience
+            {existingReview ? "Edit Your Review" : "Share Your Experience"}
           </h1>
 
           <p className="mt-3 text-muted">
-            Help future tenants by sharing your honest experience at{" "}
+            {existingReview
+              ? "Update your review of "
+              : "Help future tenants by sharing your honest experience at "}
             <span className="font-medium text-foreground">
               {property.name}
             </span>.
@@ -77,7 +156,11 @@ export default async function ReviewPage({
         </div>
 
         <div className="mt-8">
-          <ReviewForm propertyId={property.id} propertyArea={property.area} />
+          <ReviewForm
+            propertyId={property.id}
+            propertyArea={property.area}
+            existingReview={existingReview}
+          />
         </div>
 
       </div>

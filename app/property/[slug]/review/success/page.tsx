@@ -125,7 +125,7 @@ export default async function SuccessPage({
                 </p>
 
                 <p className="text-sm text-muted">
-                  Upload supporting documents when verification launches.
+                  Upload supporting documents to verify your stay.
                 </p>
               </div>
             </div>
@@ -155,9 +155,8 @@ export default async function SuccessPage({
           </h3>
 
           <p className="mt-3 text-muted">
-            Upload your rental agreement or supporting documents in a future
-            update to earn a <strong>Verified Tenant</strong> or{" "}
-            <strong>Verified Occupancy</strong> badge.
+            Upload your rental agreement or supporting documents to earn a{" "}
+            <strong>Verified Tenant</strong> badge.
           </p>
 
           <p className="mt-4 text-sm text-muted">
