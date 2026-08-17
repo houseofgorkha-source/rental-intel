@@ -11,12 +11,13 @@ type BrokerInterestSurveyProps = {
   initialResults: BrokerInterestResults;
 };
 
-// A demand signal, not a feature: RentalIntel has no broker role anywhere in
-// the schema (see lib/property-attributes.ts's POSTED_BY_OPTIONS comment),
-// and this component doesn't add one — it only asks whether one would be
-// worth building. "Have you already voted" is a localStorage flag, not an
-// account — a soft courtesy for a casual poll, not something the poll's
-// integrity depends on.
+// Originally a pre-build demand signal, when RentalIntel had no broker role
+// at all. A real, self-registered broker directory now exists (see
+// components/home/BrokerDirectorySection.tsx, migration
+// 20260820000000_add_broker_directory.sql) — this poll is kept as a
+// post-launch "was this worth building" check rather than removed outright.
+// "Have you already voted" is a localStorage flag, not an account — a soft
+// courtesy for a casual poll, not something the poll's integrity depends on.
 export default function BrokerInterestSurvey({ initialResults }: BrokerInterestSurveyProps) {
   const [results, setResults] = useState(initialResults);
   const [myVote, setMyVote] = useState<boolean | null>(null);
@@ -55,20 +56,20 @@ export default function BrokerInterestSurvey({ initialResults }: BrokerInterestS
         id="broker-interest-heading"
         className="text-xl font-medium tracking-[-0.02em] text-foreground sm:text-2xl"
       >
-        Should RentalIntel include a broker listings section?
+        Is the broker directory above worth keeping?
       </h2>
       <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted">
-        RentalIntel doesn&apos;t have one today. We&apos;re asking before
-        building it, not after.
+        We just launched a first version, self-registered by brokers — tell
+        us if it&apos;s actually useful.
       </p>
 
       {myVote === null ? (
         <div className="mt-6 flex items-center justify-center gap-3">
           <Button variant="primary" disabled={isSubmitting} onClick={() => vote(true)}>
-            Yes, that would help
+            Yes, keep it
           </Button>
           <Button variant="secondary" disabled={isSubmitting} onClick={() => vote(false)}>
-            No, keep it as is
+            No, remove it
           </Button>
         </div>
       ) : (

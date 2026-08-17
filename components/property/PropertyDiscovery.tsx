@@ -47,6 +47,10 @@ export type PropertySearchParams = {
 type PropertyDiscoveryProps = {
   properties: DiscoveryProperty[];
   initialSearch?: PropertySearchParams;
+  // Precomputed server-side (lib/rent-insights.ts) — this component only
+  // renders what it's given, so an area below the minimum sample size never
+  // reaches here to begin with.
+  rentInsights?: { area: string; averageRent: number; sampleSize: number }[];
 };
 
 type PropertyListProps = {
@@ -956,7 +960,7 @@ export function PropertyList({
         >
           <p className="font-medium text-foreground">No properties found here yet.</p>
           <p className="mt-2 text-sm text-muted">
-            Try another locality or check back as the community grows.
+            Try reducing the number of filters, or searching another locality.
           </p>
         </div>
       ) : compact ? (
@@ -986,6 +990,7 @@ export function PropertyList({
 export default function PropertyDiscovery({
   properties,
   initialSearch,
+  rentInsights = [],
 }: PropertyDiscoveryProps) {
   const [selectedCity, setSelectedCity] = useState(initialSearch?.city ?? DEFAULT_CITY);
   const [selectedAreas, setSelectedAreas] = useState<string[]>(initialSearch?.areas ?? []);
@@ -1060,6 +1065,25 @@ export default function PropertyDiscovery({
         <h1 className="text-3xl font-medium tracking-[-0.03em] text-foreground sm:text-4xl">
           {resultsHeading}
         </h1>
+
+        {/* Real RentalIntel submissions only — never scraped, never shown
+            for an area with too few properties to mean anything (see
+            lib/rent-insights.ts's minimum sample size). Kept compact and
+            close to the heading, in keeping with this page's own rule of
+            staying limited to search/filters/map/results (CLAUDE.md §22) —
+            a market-rate summary of the current results, not pitch copy. */}
+        {rentInsights.length > 0 && (
+          <p className="mt-3 text-sm text-muted">
+            Typical rent —{" "}
+            {rentInsights.map((insight, index) => (
+              <span key={insight.area}>
+                {index > 0 && ", "}
+                <span className="font-medium text-foreground">{insight.area}</span>{" "}
+                {formatINRPerMonth(insight.averageRent)}
+              </span>
+            ))}
+          </p>
+        )}
 
         <div className="mt-6 flex flex-wrap items-start gap-3">
           <HomeSearch

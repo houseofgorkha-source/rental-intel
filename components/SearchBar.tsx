@@ -39,6 +39,12 @@ type SearchBarProps = {
   // which keeps every existing caller's behavior (navigate to the property
   // page) exactly as it was.
   onSelectProperty?: (slug: string) => void;
+  // Overrides what the search icon button (not Enter, not a dropdown
+  // suggestion) does — used by the homepage to send the icon to the
+  // canonical search results page for the current city/area/query instead
+  // of jumping straight to a guessed property match. Undefined by default,
+  // so every existing caller keeps today's behavior unchanged.
+  onSearchIconClick?: () => void;
 };
 
 type DropdownPosition = {
@@ -58,6 +64,7 @@ export default function SearchBar({
   leadingContent,
   compact = false,
   onSelectProperty,
+  onSearchIconClick,
 }: SearchBarProps) {
   const [internalSearch, setInternalSearch] = useState("");
   const search = externalQuery ?? internalSearch;
@@ -272,9 +279,9 @@ export default function SearchBar({
           />
           <button
             type="button"
-            onClick={performSearch}
+            onClick={onSearchIconClick ?? performSearch}
             aria-label="Search properties"
-            className={`flex shrink-0 items-center justify-center rounded-xl text-muted transition hover:bg-accent/10 hover:text-accent ${
+            className={`flex shrink-0 items-center justify-center rounded-xl text-accent transition hover:bg-accent/10 ${
               compact ? "m-1 h-9 w-9" : "m-2 h-12 w-12"
             }`}
           >

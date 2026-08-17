@@ -1,6 +1,7 @@
 import PropertyDiscovery, { isSortOption } from "@/components/property/PropertyDiscovery";
 import { getDiscoveryProperties } from "@/lib/property-discovery";
 import { DEFAULT_CITY } from "@/lib/cities";
+import { aggregateRentByArea } from "@/lib/rent-insights";
 import {
   POSTED_BY_OPTIONS,
   isAmenity,
@@ -63,10 +64,14 @@ const isPostedBy = (value: string): value is PostedBy =>
 export default async function PropertiesPage({ searchParams }: PropertiesPageProps) {
   const params = await searchParams;
   const properties = await getDiscoveryProperties(DEFAULT_CITY);
+  const rentInsights = aggregateRentByArea(
+    properties.map((property) => ({ area: property.area, askingRent: property.askingRent })),
+  );
 
   return (
     <PropertyDiscovery
       properties={properties}
+      rentInsights={rentInsights}
       initialSearch={{
         city: params.city,
         areas: params.areas ? params.areas.split(",").filter(Boolean) : undefined,

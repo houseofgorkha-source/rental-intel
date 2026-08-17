@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useMemo, useRef, useState } from "react";
 import PropertyMap from "@/components/property/PropertyMap";
 import HomeSearch from "@/components/property/HomeSearch";
@@ -46,6 +47,7 @@ const MY_LOCATION_ZOOM = 15;
 // map and the list — they can't disagree about what's visible because
 // they're literally looking at the same array reference.
 export default function HomeDiscovery({ properties, children }: HomeDiscoveryProps) {
+  const router = useRouter();
   const [selectedCity, setSelectedCity] = useState(DEFAULT_CITY);
   const [selectedAreas, setSelectedAreas] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -146,6 +148,18 @@ export default function HomeDiscovery({ properties, children }: HomeDiscoveryPro
     setSelectedAreas(nearestArea ? [nearestArea] : []);
   }, []);
 
+  // The search icon's own action: go to the canonical search results page
+  // (§21) for whatever is currently selected — city, area(s), and any typed
+  // text — rather than guessing a single property to jump to. Enter and a
+  // clicked dropdown suggestion are untouched; this only changes the icon.
+  const handleSearchIconClick = useCallback(() => {
+    const params = new URLSearchParams();
+    params.set("city", selectedCity);
+    if (selectedAreas.length > 0) params.set("areas", selectedAreas.join(","));
+    if (searchQuery.trim()) params.set("q", searchQuery.trim());
+    router.push(`/property?${params.toString()}`);
+  }, [router, selectedCity, selectedAreas, searchQuery]);
+
   return (
     <main className="min-w-0 bg-background">
       <div className="mx-auto max-w-[1600px] px-7 pb-16 pt-28 lg:px-12 xl:px-16">
@@ -197,6 +211,7 @@ export default function HomeDiscovery({ properties, children }: HomeDiscoveryPro
                     onAreasChange={handleAreasChange}
                     query={searchQuery}
                     onQueryChange={setSearchQuery}
+                    onSearchIconClick={handleSearchIconClick}
                   />
                   {/* On mobile this same control renders instead beside the
                       "{city} properties" heading (via PropertyList's
