@@ -451,6 +451,23 @@
 
                                                     ---
 
+                                                    ## 27. Business model and monetization strategy
+
+                                                    [Documented Product Decision — stated directly by the product owner in conversation.] RentalIntel will never charge renters, owners, or brokers for the core product — search, browsing, reviews, property submission, and community knowledge stay free permanently. This is a stated business-model commitment, not a launch promotion to be revisited, and it sharpens "trust over growth" (§2): monetizing basic access would put exactly the kind of commercial pressure on the product that §2/§3 already rule out. The broker directory (§7 migration 22) is the one place this is already true in the shipped product — fully public, no paywall — and is precedent for how the rest of this section should be read.
+
+                                                    [Current Working Assumption — a business-strategy direction produced in a planning conversation, not yet a committed roadmap. Per this file's own rule, no part of it should be treated as decided, prioritized, or scheduled until the product owner confirms it explicitly, section by section.] The direction: RentalIntel should not try to out-compete NoBroker/MagicBricks/99acres on listing volume, paid placement, or broker lead-gen — that is a different, lower-margin business than the one this product is positioned as. Instead it extends §17's existing "renter decision platform" framing outward: the free product is the trust-and-discovery layer, and revenue (if pursued) would come from professional/documentation services layered on top of it, never from gating discovery, reviews, or basic listing. Candidate service categories, none scoped or built:
+
+                                                    - **Document workflows** — rental agreement generation, downloadable rent receipts, lease/tenancy history records.
+                                                    - **Verification services** — tenant/owner verification packages, a property history/verification report, a "fair rent" or area-risk style report (would likely build on the rent-insights aggregation already in `lib/rent-insights.ts`, not replace it).
+                                                    - **Professional tools** — a landlord/property-manager dashboard (occupancy, rent collection, review management) as a subscription, distinct from the free per-property listing tools already in `/account/properties`.
+                                                    - **B2B/partnerships** — relocation, moving, maintenance, legal, insurance, and financing partners referenced around the rental lifecycle, structured as referrals rather than embedded ads (consistent with §3's "never manipulate" and the community-groups pattern in §7 migration 22, which links out rather than embeds).
+
+                                                    Illustrative pricing floated in that conversation — one-time document products roughly ₹99–₹2,000, verification/report products roughly ₹1,000–₹6,000, landlord subscriptions priced annually — is explicitly **not** a decision, just a comparison point for a future discussion.
+
+                                                    [Open Question] Which, if any, of the candidate service categories above the product owner actually wants to pursue, in what order, and whether "never charge" is meant to extend to these professional/B2B services too or only to the renter/owner/broker core product named in the Documented Product Decision above.
+
+                                                    ---
+
                                                     ## Open Questions
 
                                                     These require product-owner confirmation before Claude should treat any related assumption as settled:
@@ -461,6 +478,7 @@
                                                     4. Is the "current sprint" described in `RentalIntel_Master_Context_v1.md` (Brand migration, UI polish, Shared components) still accurate, or superseded by the Supabase/auth/verification work already shipped?
                                                     5. Should the §12 "changes requiring approval" list be adopted as-is, adjusted, or replaced?
                                                     6. Should `docs/Architecture.md`, `docs/PROJECT_STRUCTURE.md`, `docs/RentalIntel-Blueprint.md`, and `RentalIntel_Transition_v1.md` be updated to match current reality, or kept as historical record with this file as the current source of truth?
+                                                    7. Which of §27's candidate paid-service categories, if any, does the product owner actually want to pursue — see §27's own Open Question for the full framing.
 
                                                     ---
 
