@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { OPEN_SUPPORT_CHAT_EVENT } from "@/components/shared/ChatWidget";
 
 // The homepage's one entry point into support (CLAUDE.md's stated intent:
@@ -8,14 +7,10 @@ import { OPEN_SUPPORT_CHAT_EVENT } from "@/components/shared/ChatWidget";
 // separate page). Deliberately not a Link — there is no /support route,
 // only the widget, opened here via the same event the widget itself listens
 // for so this component doesn't need to know anything about chat state.
-export default function NeedSupportSection({ isSignedIn }: { isSignedIn: boolean }) {
-  const router = useRouter();
-
-  function handleClick() {
-    if (!isSignedIn) {
-      router.push(`/login?next=${encodeURIComponent("/")}`);
-      return;
-    }
+// No sign-in check here any more: the widget itself opens for everyone and
+// only asks for a sign-in at the point of actually sending a message.
+export default function NeedSupportSection() {
+  function handleChatClick() {
     window.dispatchEvent(new CustomEvent(OPEN_SUPPORT_CHAT_EVENT));
   }
 
@@ -25,11 +20,19 @@ export default function NeedSupportSection({ isSignedIn }: { isSignedIn: boolean
         Have a question we haven&apos;t answered?{" "}
         <button
           type="button"
-          onClick={handleClick}
+          onClick={handleChatClick}
           className="font-medium text-accent underline decoration-accent/40 underline-offset-4 transition hover:text-accent-hover hover:decoration-accent"
         >
-          Need support?
-        </button>
+          Chat with us
+        </button>{" "}
+        or{" "}
+        <a
+          href="tel:9606002439"
+          className="font-medium text-accent underline decoration-accent/40 underline-offset-4 transition hover:text-accent-hover hover:decoration-accent"
+        >
+          call us on 9606002439
+        </a>
+        .
       </p>
     </section>
   );

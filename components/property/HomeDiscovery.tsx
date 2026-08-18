@@ -67,6 +67,12 @@ export default function HomeDiscovery({ properties, children }: HomeDiscoveryPro
     zoom: CITY_ZOOM,
   });
 
+  // Below `lg` the map sits stacked above the list, so a card tap that opens
+  // a popup up there can land off-screen if the list has been scrolled into
+  // view — this ref lets that tap bring the map (and its new popup) back
+  // into view instead of silently doing nothing the viewer can see.
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+
   // Reported after the user finishes dragging/zooming the map, kept separate
   // from `mapView` (which only ever changes via city/area selection) so a
   // drag never feeds back into a city/area change. Not read anywhere yet —
@@ -126,6 +132,17 @@ export default function HomeDiscovery({ properties, children }: HomeDiscoveryPro
 
   const handleMoveEnd = useCallback((view: { center: Coordinates; zoom: number }) => {
     lastUserMapView.current = view;
+  }, []);
+
+  // Same "open the popup" request PropertyMap already understood, plus a
+  // scroll below `lg` — matches the breakpoint where the grid stops sitting
+  // side-by-side (see the grid className below) and stacks the map above
+  // the list instead, which is exactly when a tap needs this nudge.
+  const handleActivateProperty = useCallback((slug: string) => {
+    setPopupRequest({ slug, token: Date.now() });
+    if (typeof window !== "undefined" && window.innerWidth < 1024) {
+      mapContainerRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    }
   }, []);
 
   // The map centers on the browser's actual coordinates — never an area or
@@ -236,7 +253,7 @@ export default function HomeDiscovery({ properties, children }: HomeDiscoveryPro
                   where they stack, vertical at lg where they sit side by
                   side), no gap, same height. */}
               <div className="grid divide-y divide-border-subtle lg:h-[30rem] lg:grid-cols-[3fr_2fr] lg:divide-x lg:divide-y-0">
-                <div className="h-[22rem] lg:h-full">
+                <div ref={mapContainerRef} className="h-[22rem] lg:h-full">
                   <PropertyMap
                     properties={visibleProperties}
                     center={mapView.center}
@@ -275,7 +292,7 @@ export default function HomeDiscovery({ properties, children }: HomeDiscoveryPro
                     compact
                     selectedSlug={selectedSlug}
                     onSelectProperty={setSelectedSlug}
-                    onActivateProperty={(slug) => setPopupRequest({ slug, token: Date.now() })}
+                    onActivateProperty={handleActivateProperty}
                     headerAction={
                       <div className="sm:hidden">
                         <FiltersButton filters={filters} onFiltersChange={setFilters} />

@@ -106,17 +106,23 @@ export default async function AccountReviewsPage() {
           depositDeductionAmount: row.deposit_deduction_amount,
         };
 
+        if (!property) {
+          return (
+            <li key={row.id}>
+              <ReviewCard review={review} />
+            </li>
+          );
+        }
+
         return (
           <li key={row.id}>
-            {property && (
-              <Link
-                href={`/property/${property.slug}`}
-                className="mb-2 inline-flex text-sm font-medium text-accent underline decoration-accent/40 underline-offset-4 transition hover:text-accent-hover hover:decoration-accent"
-              >
-                {property.name} →
-              </Link>
-            )}
-            <ReviewCard review={review} />
+            <Link
+              href={`/property/${property.slug}`}
+              className="block rounded-2xl border border-transparent transition-all duration-200 hover:-translate-y-1 hover:border-accent/60 hover:shadow-[0_18px_45px_-20px_rgba(14,143,94,0.5)]"
+            >
+              <p className="mb-2 text-sm font-medium text-accent">{property.name} →</p>
+              <ReviewCard review={review} />
+            </Link>
           </li>
         );
       })}

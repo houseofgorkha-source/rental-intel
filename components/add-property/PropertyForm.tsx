@@ -144,7 +144,7 @@ export default function PropertyForm({
 
       </div>
 
-      <div className="mt-10">
+      <div className="mt-6">
 
         <InfoCard title="Before you begin">
           Your property goes live as soon as you submit it. You can keep its
@@ -154,11 +154,11 @@ export default function PropertyForm({
       </div>
 
       <form onSubmit={handleSubmit}>
-        <div className="mt-10 rounded-2xl border border-border-subtle bg-surface p-8 shadow-sm">
+        <div className="mt-6 rounded-2xl border border-border-subtle bg-surface p-6 shadow-sm">
 
           <SectionTitle
             title="What's your relationship to this property?"
-            description="This tells renters where the information came from. We show it as an unverified claim."
+            description="This tells renters where the information came from."
           />
 
           <RoleSelector value={role} onChange={setRole} />
@@ -166,18 +166,18 @@ export default function PropertyForm({
         </div>
 
         {role && (
-        <div className="mt-8 rounded-2xl border border-border-subtle bg-surface p-8 shadow-sm">
+        <div className="mt-6 rounded-2xl border border-border-subtle bg-surface p-6 shadow-sm">
 
         <SectionTitle
           title="Property Details"
           description="Help us identify this property as accurately as possible."
         />
 
-        <div className="space-y-6">
+        <div className="space-y-5">
 
           <InputField
             label="Property / Society Name"
-            placeholder="Prestige Lakeside Habitat"
+            placeholder="Prestige Shantiniketan"
             name="name"
             required
           />
@@ -198,35 +198,37 @@ export default function PropertyForm({
             )}
           </div>
 
-          <InputField
-            label="Address"
-            placeholder="#31, C/o Anna PG, 27th Main Road"
-            name="addressLine1"
-            onChange={(event) => setAddressLine1(event.target.value)}
-            helperText="House number, building, street or anything that helps identify the property."
-            required
-          />
+          {/* Address Line 1/2 paired in one row, and Area/City/State/PIN
+              grouped into two more rows below, instead of six stacked
+              full-width fields — same fields, same labels and helper text,
+              just less scrolling to reach the end of the form. */}
+          <div className="grid gap-6 md:grid-cols-2">
+            <InputField
+              label="Address"
+              placeholder="Plot 12, ITPL Main Road"
+              name="addressLine1"
+              onChange={(event) => setAddressLine1(event.target.value)}
+              helperText="House number, building, street or anything that helps identify the property."
+              required
+            />
 
-          {/* Placeholder no longer says "Near Empire Restaurant, Opposite BDA
-              Complex" — that is a landmark, and asking for it twice in two
-              fields is how landmark information ended up scattered. */}
-          <InputField
-            label="Address Line 2"
-            placeholder="Apartment, floor, block or tower"
-            name="addressLine2"
-            onChange={(event) => setAddressLine2(event.target.value)}
-          />
-
-          <InputField
-            label="Area / Locality"
-            placeholder="Ejipura"
-            name="area"
-            value={area}
-            onChange={(event) => setArea(event.target.value)}
-            required
-          />
+            <InputField
+              label="Address Line 2"
+              placeholder="Tower 4, Flat 502"
+              name="addressLine2"
+              onChange={(event) => setAddressLine2(event.target.value)}
+            />
+          </div>
 
           <div className="grid gap-6 md:grid-cols-2">
+            <InputField
+              label="Area / Locality"
+              placeholder="Whitefield"
+              name="area"
+              value={area}
+              onChange={(event) => setArea(event.target.value)}
+              required
+            />
 
             <InputField
               label="City"
@@ -236,7 +238,9 @@ export default function PropertyForm({
               onChange={(event) => setCity(event.target.value)}
               required
             />
+          </div>
 
+          <div className="grid gap-6 md:grid-cols-2">
             <InputField
               label="State"
               placeholder="Karnataka"
@@ -244,25 +248,35 @@ export default function PropertyForm({
               required
             />
 
+            <InputField
+              label="PIN Code"
+              placeholder="560066"
+              name="postalCode"
+            />
           </div>
 
-          <InputField
-            label="PIN Code"
-            placeholder="560095"
-            name="postalCode"
-          />
+          {/* Landmark paired with the Maps link — both are supplementary
+              location aids, not part of the required address itself. In
+              Indian cities a landmark is how an address is actually given
+              and found, so it still gets its own labeled field rather than
+              a line inside free-text notes; it's just no longer a full-width
+              row of its own. */}
+          <div className="grid gap-6 md:grid-cols-2">
+            <InputField
+              label="Landmark"
+              placeholder="Near Forum Shantiniketan Mall"
+              name="landmark"
+              helperText="The nearest well-known place. This is often how people find a property."
+            />
 
-          {/* Immediately after the address block, and a field in its own
-              right rather than a line inside free-text notes. In Indian
-              cities a landmark is how an address is actually given and
-              found, so it needs to be asked for explicitly, stored on its
-              own column, and shown on its own row. */}
-          <InputField
-            label="Landmark"
-            placeholder="Opposite BDA Complex, behind Empire Restaurant"
-            name="landmark"
-            helperText="The nearest well-known place. This is often how people find a property."
-          />
+            <InputField
+              label="Google Maps Link"
+              placeholder="https://maps.google.com/..."
+              name="mapsUrl"
+              type="url"
+              helperText="Optional. Helps us verify the property faster."
+            />
+          </div>
 
           {/* Auto-locates from the full typed address (debounced inside the
               component) and falls back to the area/city centroid whenever
@@ -275,14 +289,6 @@ export default function PropertyForm({
             addressLine2={addressLine2}
             area={area}
             city={city}
-          />
-
-          <InputField
-            label="Google Maps Link"
-            placeholder="https://maps.google.com/..."
-            name="mapsUrl"
-            type="url"
-            helperText="Optional for Version 1. Adding a Google Maps link helps us verify the property faster."
           />
 
           <InputField
@@ -313,7 +319,7 @@ export default function PropertyForm({
             community member adding a property they don't live in genuinely
             may not know. */}
         {role && (
-          <div className="mt-8 rounded-2xl border border-border-subtle bg-surface p-8 shadow-sm">
+          <div className="mt-6 rounded-2xl border border-border-subtle bg-surface p-6 shadow-sm">
 
             <SectionTitle
               title="About the Property"
@@ -329,14 +335,14 @@ export default function PropertyForm({
             collected from owners. What a tenant actually paid is a different
             fact and belongs on their review, not on the property. */}
         {role === "owner" && (
-          <div className="mt-8 rounded-2xl border border-border-subtle bg-surface p-8 shadow-sm">
+          <div className="mt-6 rounded-2xl border border-border-subtle bg-surface p-6 shadow-sm">
 
             <SectionTitle
               title="Listing Details"
               description="What you're asking for this property. You can change these any time from your account."
             />
 
-            <div className="space-y-6">
+            <div className="space-y-5">
 
               <div className="grid gap-6 md:grid-cols-2">
 
@@ -384,7 +390,7 @@ export default function PropertyForm({
             them. The default is "no direct contact" — nothing is exposed
             unless it is chosen. */}
         {role && (
-          <div className="mt-8 rounded-2xl border border-border-subtle bg-surface p-8 shadow-sm">
+          <div className="mt-6 rounded-2xl border border-border-subtle bg-surface p-6 shadow-sm">
 
             <SectionTitle
               title="How should interested renters reach you?"

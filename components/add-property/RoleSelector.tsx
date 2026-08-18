@@ -7,10 +7,11 @@ type RoleSelectorProps = {
   onChange: (role: SubmitterRole) => void;
 };
 
-// What the submitter CLAIMS their relationship to the property is. This is
-// provenance, not verified ownership -- nothing here is checked, and the
-// property page presents it as an unverified claim. Each option states its
-// own consequences up front so the choice is informed rather than guessed.
+// What the submitter says their relationship to the property is —
+// self-declared, kept short and to the point, not a checklist of
+// consequences. Whether reviewing/verification apply to a given role is
+// explained where it's actually relevant later in the flow, not up front
+// here.
 const roleOptions: {
   role: SubmitterRole;
   icon: string;
@@ -21,22 +22,19 @@ const roleOptions: {
     role: "owner",
     icon: "🏠",
     title: "I own this property",
-    description:
-      "List it for rent. You can add rent and deposit details and manage the listing later. Owners can't review their own property.",
+    description: "List it for rent, with rent and deposit details.",
   },
   {
     role: "tenant",
     icon: "🔑",
     title: "I live or lived here",
-    description:
-      "Share the place you call home. You can write a review and verify your stay.",
+    description: "Share the place you call home.",
   },
   {
     role: "helper",
     icon: "🤝",
     title: "I'm adding it for someone else",
-    description:
-      "Add a property on someone's behalf. Reviews can only be written by someone who has lived there.",
+    description: "Add it on their behalf.",
   },
 ];
 
@@ -45,17 +43,23 @@ export default function RoleSelector({ value, onChange }: RoleSelectorProps) {
     <fieldset>
       <legend className="sr-only">What is your relationship to this property?</legend>
 
-      <div className="grid gap-3 md:grid-cols-3">
+      {/* Same at-rest/hover/responsive treatment as the homepage's
+          ListYourPropertySection cards (CLAUDE.md-documented visual
+          language: accent border always visible on mobile since touch has
+          no hover, transparent-until-hover on desktop; description hidden
+          below `sm` for room) — plus a distinct selected state these
+          homepage cards don't need, since these are real radio choices. */}
+      <div className="grid grid-cols-3 gap-2 sm:gap-3">
         {roleOptions.map((option) => {
           const isSelected = value === option.role;
 
           return (
             <label
               key={option.role}
-              className={`flex cursor-pointer flex-col rounded-2xl border p-5 transition-all duration-200 ${
+              className={`flex cursor-pointer flex-col items-center rounded-xl border-2 p-4 text-center transition-all duration-200 sm:items-start sm:border sm:p-5 sm:text-left ${
                 isSelected
                   ? "border-accent bg-accent/10 shadow-[0_10px_28px_-10px_rgba(14,143,94,0.55)]"
-                  : "border-border-subtle bg-surface hover:-translate-y-1 hover:border-accent/60 hover:shadow-[0_14px_32px_-14px_rgba(14,143,94,0.4)]"
+                  : "border-accent bg-surface shadow-[0_1px_2px_rgba(14,143,94,0.04)] hover:-translate-y-1 hover:shadow-[0_18px_45px_-20px_rgba(14,143,94,0.5)] sm:border-transparent sm:shadow-none sm:hover:border-accent/60"
               }`}
             >
               <input
@@ -72,14 +76,14 @@ export default function RoleSelector({ value, onChange }: RoleSelectorProps) {
               </span>
 
               <span
-                className={`mt-3 font-semibold ${
+                className={`mt-2 text-sm font-medium leading-tight sm:mt-3 sm:font-semibold sm:leading-normal ${
                   isSelected ? "text-accent-hover" : "text-foreground"
                 }`}
               >
                 {option.title}
               </span>
 
-              <span className="mt-2 text-sm leading-6 text-muted">
+              <span className="mt-1.5 hidden text-sm leading-6 text-muted sm:block">
                 {option.description}
               </span>
             </label>

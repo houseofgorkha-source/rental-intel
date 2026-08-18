@@ -27,23 +27,16 @@ const CONTACT_CHOICES = [
     description:
       "Renters message you inside RentalIntel. Your phone and email stay private.",
   },
-  {
-    value: "none",
-    title: "No direct contact",
-    description: "No contact option is shown. Your property is still fully visible.",
-  },
 ] as const satisfies readonly {
   value: ContactMethod;
   title: string;
   description: string;
 }[];
-
-// Exhaustiveness guard: adding a value to the property_contact_method enum
-// without giving it a choice above becomes a type error here, rather than a
-// method that exists in the database and can never be selected.
-const _everyMethodHasAChoice: (typeof CONTACT_CHOICES)[number]["value"] =
-  null as unknown as ContactMethod;
-void _everyMethodHasAChoice;
+// "none" ("No direct contact") is deliberately not offered as a choice any
+// more — every property should be reachable somehow. It remains a valid,
+// stored value: existing rows saved with it before this change still work
+// exactly as before (ContactContributor.tsx already renders nothing for
+// contact_method='none'), this only stops anyone from newly choosing it.
 
 // How the contributor is willing to be reached, and the details for the
 // channel they picked.
@@ -53,24 +46,35 @@ void _everyMethodHasAChoice;
 // number ends up stored for no reason. The server stores only the detail
 // matching the chosen method, for the same reason.
 export default function ContactPreferenceFields({
-  defaultMethod = "none",
+  defaultMethod = "message",
   defaultPhone = null,
   defaultEmail = null,
 }: ContactPreferenceFieldsProps) {
-  const [method, setMethod] = useState<ContactMethod>(defaultMethod);
+  // "none" is no longer an offered choice (see CONTACT_CHOICES) — a property
+  // saved with it before this change still lands here on edit, and needs a
+  // real, visibly-selected starting point rather than showing no pill
+  // selected at all.
+  const [method, setMethod] = useState<ContactMethod>(
+    defaultMethod === "none" ? "message" : defaultMethod,
+  );
+
+  const selectedChoice = CONTACT_CHOICES.find((choice) => choice.value === method);
 
   return (
-    <div className="space-y-6">
-      <div className="grid gap-3">
+    <div className="space-y-3">
+      {/* One row of pill choices rather than four stacked cards — the detail
+          that used to live under each card now shows once, below, for
+          whichever one is currently selected, so no information is lost. */}
+      <div className="flex flex-wrap gap-2">
         {CONTACT_CHOICES.map((choice) => {
           const isSelected = method === choice.value;
           return (
             <label
               key={choice.value}
-              className={`flex cursor-pointer gap-3 rounded-xl border p-4 transition ${
+              className={`cursor-pointer rounded-full px-4 py-2 text-sm font-medium transition ${
                 isSelected
-                  ? "border-accent bg-accent/10/60"
-                  : "border-border-subtle bg-surface hover:border-muted"
+                  ? "bg-accent text-white"
+                  : "border border-border-subtle bg-surface text-muted hover:bg-surface-raised"
               }`}
             >
               <input
@@ -79,20 +83,17 @@ export default function ContactPreferenceFields({
                 value={choice.value}
                 checked={isSelected}
                 onChange={() => setMethod(choice.value)}
-                className="mt-1 accent-blue-600"
+                className="sr-only"
               />
-              <span>
-                <span className="block text-sm font-medium text-foreground">
-                  {choice.title}
-                </span>
-                <span className="mt-1 block text-sm text-muted">
-                  {choice.description}
-                </span>
-              </span>
+              {choice.title}
             </label>
           );
         })}
       </div>
+
+      {selectedChoice && (
+        <p className="text-sm text-muted">{selectedChoice.description}</p>
+      )}
 
       {method === "phone" && (
         <InputField
@@ -117,16 +118,9 @@ export default function ContactPreferenceFields({
           required
         />
       )}
-
-      {/* Nothing is collected for "message here" — the sender's account is the
-          address, so there is no detail to store. */}
-      {method === "message" && (
-        <p className="rounded-xl border border-border-subtle bg-surface-raised p-4 text-sm text-muted">
-          Messages arrive in your account under{" "}
-          <span className="font-medium text-foreground">Messages</span>. Nothing else
-          about you is shared.
-        </p>
-      )}
+      {/* Nothing else is collected for "message here" or "no direct contact"
+          — the description above already covers both, and messages now
+          arrive in the floating chat widget, not a dedicated page. */}
     </div>
   );
 }

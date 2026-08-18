@@ -836,7 +836,7 @@ export function PropertyList({
   }, [selectedSlug]);
 
   const grid = (
-    <div className={`grid grid-cols-2 gap-2 sm:gap-3 ${compact ? "" : "xl:grid-cols-3"}`}>
+    <div className={`grid grid-cols-2 gap-3 sm:gap-4 ${compact ? "" : "xl:grid-cols-3"}`}>
       {visibleProperties.map((property) => (
         // The card body is a click target for map preview (mouse-only — see
         // onActivateProperty) but deliberately NOT itself a link: an earlier
@@ -863,7 +863,7 @@ export function PropertyList({
               : "border-border-subtle"
           } ${onActivateProperty ? "cursor-pointer" : ""}`}
         >
-          <div className="relative aspect-[5/2] bg-surface-raised">
+          <div className="relative aspect-square bg-surface-raised sm:aspect-[5/2]">
             {/* Only shown for owner listings: a tenant contributing the flat
                 they live in isn't advertising a vacancy, so badging it
                 "Available for rent" would be false. Legacy rows have a null

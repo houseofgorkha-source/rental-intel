@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import {
   getMessageThreads,
   getSupportThread,
@@ -49,6 +50,8 @@ export default function ChatWidget({ isSignedIn }: { isSignedIn: boolean }) {
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const panelRef = useRef<HTMLDivElement>(null);
+  const bubbleRef = useRef<HTMLButtonElement>(null);
 
   const refresh = useCallback(async () => {
     if (!isSignedIn) return;
@@ -66,22 +69,40 @@ export default function ChatWidget({ isSignedIn }: { isSignedIn: boolean }) {
 
   useEffect(() => {
     function handleOpenSupport() {
-      if (!isSignedIn) {
-        router.push(`/login?next=${encodeURIComponent("/")}`);
-        return;
-      }
       setSelection({ kind: "support" });
       setIsOpen(true);
     }
     window.addEventListener(OPEN_SUPPORT_CHAT_EVENT, handleOpenSupport);
     return () => window.removeEventListener(OPEN_SUPPORT_CHAT_EVENT, handleOpenSupport);
-  }, [isSignedIn, router]);
+  }, []);
 
-  function handleBubbleClick() {
-    if (!isSignedIn) {
-      router.push(`/login?next=${encodeURIComponent("/")}`);
-      return;
+  // Closes on a click/tap anywhere outside the open panel — mirrors
+  // AccountMenu.tsx's own outside-click pattern. The bubble gets its own ref
+  // too so a click that toggles the panel closed via handleBubbleClick isn't
+  // ALSO caught here and doesn't fight that toggle.
+  useEffect(() => {
+    if (!isOpen) return;
+    function handlePointerDown(event: PointerEvent) {
+      const target = event.target as Node;
+      if (panelRef.current?.contains(target)) return;
+      if (bubbleRef.current?.contains(target)) return;
+      setIsOpen(false);
     }
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") setIsOpen(false);
+    }
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen]);
+
+  // Opens for anyone — the bubble is meant to always be there. Signing in is
+  // only required at the point of actually sending a message (handleSend),
+  // not just to look at the panel.
+  function handleBubbleClick() {
     setIsOpen((open) => !open);
   }
 
@@ -97,6 +118,11 @@ export default function ChatWidget({ isSignedIn }: { isSignedIn: boolean }) {
   async function handleSend() {
     const body = draft.trim();
     if (body.length < 10 || selection.kind === "list") return;
+
+    if (!isSignedIn) {
+      router.push(`/login?next=${encodeURIComponent("/")}`);
+      return;
+    }
 
     setIsSending(true);
     setError(null);
@@ -154,6 +180,7 @@ export default function ChatWidget({ isSignedIn }: { isSignedIn: boolean }) {
   return (
     <>
       <button
+        ref={bubbleRef}
         type="button"
         onClick={handleBubbleClick}
         aria-label={isOpen ? "Close chat" : "Open chat"}
@@ -179,7 +206,10 @@ export default function ChatWidget({ isSignedIn }: { isSignedIn: boolean }) {
       </button>
 
       {isOpen && (
-        <div className="fixed inset-0 z-40 flex h-full w-full flex-col bg-surface sm:inset-auto sm:bottom-20 sm:right-4 sm:h-[32rem] sm:w-96 sm:rounded-2xl sm:border sm:border-border-subtle sm:shadow-xl">
+        <div
+          ref={panelRef}
+          className="fixed inset-0 z-40 flex h-full w-full flex-col bg-surface sm:inset-auto sm:bottom-20 sm:right-4 sm:h-[32rem] sm:w-96 sm:rounded-2xl sm:border sm:border-border-subtle sm:shadow-xl"
+        >
           <div className="flex items-center gap-2 border-b border-border-subtle px-4 py-3">
             {selection.kind !== "list" ? (
               <button
@@ -207,7 +237,7 @@ export default function ChatWidget({ isSignedIn }: { isSignedIn: boolean }) {
               type="button"
               onClick={() => setIsOpen(false)}
               aria-label="Close chat"
-              className="text-muted transition hover:text-foreground"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border-subtle text-lg leading-none text-muted transition hover:border-accent hover:bg-surface-raised hover:text-accent"
             >
               ×
             </button>
@@ -274,6 +304,9 @@ export default function ChatWidget({ isSignedIn }: { isSignedIn: boolean }) {
               </div>
 
               <div className="border-t border-border-subtle p-3">
+                {!isSignedIn && (
+                  <p className="mb-2 text-xs text-muted">Sign in to send a message.</p>
+                )}
                 {error && (
                   <p role="alert" className="mb-2 text-xs text-danger">
                     {error}
@@ -335,8 +368,8 @@ function ThreadList({
         onClick={onOpenSupport}
         className="flex w-full items-start gap-3 border-b border-border-subtle px-4 py-3 text-left transition hover:bg-surface-raised"
       >
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent/10 text-sm font-semibold text-accent">
-          RI
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-accent/10">
+          <Image src="/brand/logo.webp" alt="" width={533} height={536} className="h-full w-full object-cover" />
         </span>
         <span className="min-w-0 flex-1">
           <span className="flex items-center justify-between gap-2">

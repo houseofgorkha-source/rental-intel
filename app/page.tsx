@@ -6,16 +6,13 @@ import NeedSupportSection from "@/components/home/NeedSupportSection";
 import { getDiscoveryProperties } from "@/lib/property-discovery";
 import { DEFAULT_CITY } from "@/lib/cities";
 import { getBrokerInterestResults } from "@/app/actions/broker-interest";
-import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const supabase = await createClient();
-  const [properties, brokerInterestResults, { data: { user } }] = await Promise.all([
+  const [properties, brokerInterestResults] = await Promise.all([
     getDiscoveryProperties(DEFAULT_CITY),
     getBrokerInterestResults(),
-    supabase.auth.getUser(),
   ]);
 
   return (
@@ -23,7 +20,7 @@ export default async function Home() {
       <ListYourPropertySection />
       <BrokerDirectorySection />
       <BrokerInterestSurvey initialResults={brokerInterestResults} />
-      <NeedSupportSection isSignedIn={Boolean(user)} />
+      <NeedSupportSection />
     </HomeDiscovery>
   );
 }
