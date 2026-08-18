@@ -338,12 +338,14 @@ export default async function PropertyPage({
   // schema holds that anyone has proven they stayed here.
   const hasVerifiedReview = propertyReviews.some((review) => review.verified);
 
-  // Provenance is a self-declared claim, never a verified fact — the owner
-  // case says so explicitly, since that's the one with a commercial
-  // incentive to misstate it.
+  // Provenance is a self-declared claim, not something RentalIntel checks —
+  // the only thing this product verifies is a tenant's stay (via review
+  // verification, a separate concept from this label), so this line states
+  // who submitted the property plainly rather than flagging it as
+  // "unverified" against a standard nothing here is held to.
   const provenanceLabel =
     property.submitted_as === "owner"
-      ? "🏠 Listed by owner (unverified)"
+      ? "🏠 Listed by owner"
       : property.submitted_as === "tenant"
         ? "🔑 Added by a resident"
         : property.submitted_as === "helper"
@@ -487,6 +489,18 @@ export default async function PropertyPage({
                   <span className="rounded-full border border-border-subtle bg-surface px-3 py-1.5 font-medium text-muted">
                     {provenanceLabel}
                   </span>
+                )}
+                {/* Right beside the provenance label rather than buried in
+                    the status cards below — whoever added this property
+                    (owner, tenant, or helper alike) can get straight to
+                    editing it from the page they're already looking at. */}
+                {isContributor && (
+                  <Link
+                    href={`/account/properties/${property.slug}/edit`}
+                    className="inline-flex items-center gap-1 rounded-full border border-border-subtle bg-surface px-3 py-1.5 font-medium text-accent transition hover:border-accent/60 hover:bg-surface-raised"
+                  >
+                    ✏️ Edit property
+                  </Link>
                 )}
               </div>
 

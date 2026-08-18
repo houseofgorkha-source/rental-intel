@@ -17,8 +17,10 @@ export type EditableProperty = {
   name: string;
   area: string;
   city: string;
+  state: string;
+  postalCode: string | null;
   addressLine1: string;
-  submittedAs: "owner" | "tenant" | "helper" | null;
+  addressLine2: string | null;
   landmark: string | null;
   configuration: string | null;
   propertyType: string | null;
@@ -38,12 +40,22 @@ export type EditableProperty = {
 // Amending a property, reusing the exact field fragments the Add Property form
 // uses (PropertyAttributeFields, ContactPreferenceFields) rather than a second
 // set of inputs — so a value can never be registerable and not editable.
+//
+// Every identity/commercial/attribute field is editable here by whoever
+// created this property, regardless of which of the three roles they
+// submitted it as — a deliberate reversal of the earlier "identity is
+// permanently fixed" and "listing fields are owner-only" rules, per an
+// explicit product decision (see the 20260822000000 migration and
+// updateProperty's own comment). Row scope (only your own property) is
+// unchanged and is enforced by the database, not this form.
 export default function PropertyEditForm({ property }: { property: EditableProperty }) {
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [addressLine1, setAddressLine1] = useState(property.addressLine1);
+  const [addressLine2, setAddressLine2] = useState(property.addressLine2 ?? "");
+  const [area, setArea] = useState(property.area);
+  const [city, setCity] = useState(property.city);
   const router = useRouter();
-
-  const isOwnerListing = property.submittedAs === "owner";
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -69,20 +81,71 @@ export default function PropertyEditForm({ property }: { property: EditablePrope
     <form onSubmit={handleSubmit} className="flex flex-col gap-8">
       <input type="hidden" name="slug" value={property.slug} />
 
-      {/* Stated up front rather than discovered by looking for missing
-          inputs. The name and address are not editable anywhere, by anyone —
-          reviews are permanently attached to them (CLAUDE.md §26) — so the
-          honest thing is to show them as fixed facts and say why. */}
       <section className="rounded-2xl border border-border-subtle bg-surface p-6">
         <h2 className="text-sm font-medium text-foreground">This property</h2>
-        <p className="mt-3 text-base font-medium text-foreground">{property.name}</p>
         <p className="mt-1 text-sm text-muted">
-          {property.addressLine1}, {property.area}, {property.city}
+          Editable by you, since you added it. Changing the name changes this
+          property&apos;s page address.
         </p>
-        <p className="mt-4 text-sm leading-6 text-muted">
-          A property&apos;s name and address can&apos;t be changed — reviews stay
-          attached to them permanently. Everything below is yours to keep current.
-        </p>
+        <div className="mt-6 space-y-5">
+          <InputField
+            label="Property / Society Name"
+            placeholder="Prestige Shantiniketan"
+            name="name"
+            defaultValue={property.name}
+            required
+          />
+          <div className="grid gap-6 md:grid-cols-2">
+            <InputField
+              label="Address"
+              placeholder="Plot 12, ITPL Main Road"
+              name="addressLine1"
+              value={addressLine1}
+              onChange={(event) => setAddressLine1(event.target.value)}
+              required
+            />
+            <InputField
+              label="Address Line 2"
+              placeholder="Tower 4, Flat 502"
+              name="addressLine2"
+              value={addressLine2}
+              onChange={(event) => setAddressLine2(event.target.value)}
+            />
+          </div>
+          <div className="grid gap-6 md:grid-cols-2">
+            <InputField
+              label="Area / Locality"
+              placeholder="Whitefield"
+              name="area"
+              value={area}
+              onChange={(event) => setArea(event.target.value)}
+              required
+            />
+            <InputField
+              label="City"
+              placeholder="Bengaluru"
+              name="city"
+              value={city}
+              onChange={(event) => setCity(event.target.value)}
+              required
+            />
+          </div>
+          <div className="grid gap-6 md:grid-cols-2">
+            <InputField
+              label="State"
+              placeholder="Karnataka"
+              name="state"
+              defaultValue={property.state}
+              required
+            />
+            <InputField
+              label="PIN Code"
+              placeholder="560066"
+              name="postalCode"
+              defaultValue={property.postalCode ?? undefined}
+            />
+          </div>
+        </div>
       </section>
 
       <section className="rounded-2xl border border-border-subtle bg-surface p-6">
@@ -104,7 +167,7 @@ export default function PropertyEditForm({ property }: { property: EditablePrope
         <div className="mt-6">
           <InputField
             label="Landmark"
-            placeholder="Opposite BDA Complex, behind Empire Restaurant"
+            placeholder="Near Forum Shantiniketan Mall"
             name="landmark"
             defaultValue={property.landmark ?? undefined}
             helperText="The nearest well-known place. This is often how people find a property."
@@ -117,69 +180,66 @@ export default function PropertyEditForm({ property }: { property: EditablePrope
                 ? { lat: property.latitude, lng: property.longitude }
                 : null
             }
-            fallbackCenter={getAreaCoordinates(property.area) ?? getCityCoordinates(property.city)}
-            // Static values, not live-typed input: addressLine1/area/city
-            // are frozen here (§26 identity immutability — this field never
-            // unlocks them, only reads them). If a confirmed pin already
+            fallbackCenter={getAreaCoordinates(area) ?? getCityCoordinates(city)}
+            // Live-typed now that identity fields are editable — mirrors
+            // PropertyForm.tsx's own pattern. If a confirmed pin already
             // exists, PropertyLocationField skips geocoding entirely and
-            // keeps it; otherwise this runs once to offer a better starting
-            // point than the raw area centroid.
-            addressLine1={property.addressLine1}
-            area={property.area}
-            city={property.city}
+            // keeps it; otherwise this reruns as the address is edited.
+            addressLine1={addressLine1}
+            addressLine2={addressLine2}
+            area={area}
+            city={city}
           />
         </div>
       </section>
 
-      {isOwnerListing && (
-        <section className="rounded-2xl border border-border-subtle bg-surface p-6">
-          <h2 className="text-sm font-medium text-foreground">Listing details</h2>
-          <p className="mt-1 text-sm text-muted">
-            What you&apos;re asking for this property.
-          </p>
-          <div className="mt-6 space-y-6">
-            <div className="grid gap-6 md:grid-cols-2">
-              <InputField
-                label="Monthly Rent (₹)"
-                placeholder="28000"
-                name="askingRent"
-                type="number"
-                min="0"
-                step="1"
-                defaultValue={
-                  property.askingRent === null ? undefined : String(property.askingRent)
-                }
-              />
-              <InputField
-                label="Security Deposit (₹)"
-                placeholder="150000"
-                name="securityDeposit"
-                type="number"
-                min="0"
-                step="1"
-                defaultValue={
-                  property.securityDeposit === null
-                    ? undefined
-                    : String(property.securityDeposit)
-                }
-              />
-            </div>
-            {/* Unticking this is how a property is marked as rented. It removes
-                the "Available for rent" badge and nothing else — the page, its
-                reviews and its history stay live and searchable, because a
-                property's rental history has to outlive any one tenancy. */}
-            <label className="flex items-center gap-2 text-muted">
-              <input
-                type="checkbox"
-                name="isAvailable"
-                defaultChecked={property.isAvailable}
-                className="accent-blue-600"
-              />
-              This property is currently available to rent
-            </label>
+      <section className="rounded-2xl border border-border-subtle bg-surface p-6">
+        <h2 className="text-sm font-medium text-foreground">Listing details</h2>
+        <p className="mt-1 text-sm text-muted">
+          What you&apos;re asking for this property.
+        </p>
+        <div className="mt-6 space-y-6">
+          <div className="grid gap-6 md:grid-cols-2">
+            <InputField
+              label="Monthly Rent (₹)"
+              placeholder="28000"
+              name="askingRent"
+              type="number"
+              min="0"
+              step="1"
+              defaultValue={
+                property.askingRent === null ? undefined : String(property.askingRent)
+              }
+            />
+            <InputField
+              label="Security Deposit (₹)"
+              placeholder="150000"
+              name="securityDeposit"
+              type="number"
+              min="0"
+              step="1"
+              defaultValue={
+                property.securityDeposit === null
+                  ? undefined
+                  : String(property.securityDeposit)
+              }
+            />
           </div>
-        </section>
-      )}
+          {/* Unticking this is how a property is marked as rented. It removes
+              the "Available for rent" badge and nothing else — the page, its
+              reviews and its history stay live and searchable, because a
+              property's rental history has to outlive any one tenancy. */}
+          <label className="flex items-center gap-2 text-muted">
+            <input
+              type="checkbox"
+              name="isAvailable"
+              defaultChecked={property.isAvailable}
+              className="accent-blue-600"
+            />
+            This property is currently available to rent
+          </label>
+        </div>
+      </section>
 
       <section className="rounded-2xl border border-border-subtle bg-surface p-6">
         <h2 className="text-sm font-medium text-foreground">

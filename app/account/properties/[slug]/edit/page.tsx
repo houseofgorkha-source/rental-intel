@@ -25,7 +25,7 @@ export default async function EditPropertyPage({ params }: EditPropertyPageProps
   const { data: property } = await supabase
     .from("properties")
     .select(
-      "id, slug, name, area, city, address_line_1, submitted_as, landmark, configuration, property_type, furnishing, carpet_area_sqft, amenities, asking_rent, security_deposit, is_available, contact_method, latitude, longitude",
+      "id, slug, name, area, city, state, postal_code, address_line_1, address_line_2, landmark, configuration, property_type, furnishing, carpet_area_sqft, amenities, asking_rent, security_deposit, is_available, contact_method, latitude, longitude",
     )
     .eq("slug", slug)
     .eq("created_by", user.id)
@@ -44,8 +44,10 @@ export default async function EditPropertyPage({ params }: EditPropertyPageProps
     name: property.name,
     area: property.area,
     city: property.city,
+    state: property.state,
+    postalCode: property.postal_code,
     addressLine1: property.address_line_1,
-    submittedAs: property.submitted_as,
+    addressLine2: property.address_line_2,
     landmark: property.landmark,
     configuration: property.configuration,
     propertyType: property.property_type,
@@ -76,14 +78,17 @@ export default async function EditPropertyPage({ params }: EditPropertyPageProps
         <h1 className="mt-3 text-2xl font-medium tracking-[-0.03em] text-foreground">
           Edit property
         </h1>
-        {/* Editing does not send a published property back for re-approval:
-            these are the commercial and descriptive facts, not the property's
-            identity, and re-queuing a live listing every time a rent changed
-            would make the listing unusable. Moderation state is untouched by
-            this form — the database enforces that, not this page. */}
+        {/* Editing does not send a published property back for re-approval —
+            moderation state is untouched by this form, the database enforces
+            that, not this page. Identity fields (name, address, area, city)
+            are now editable by whoever created this property, per an
+            explicit product decision reversing the earlier "identity is
+            permanently fixed" rule — see the 20260822000000 migration. */}
         <p className="mt-2 text-sm leading-6 text-muted">
           Changes here go live immediately. Approval only applies to a property
-          being added, not to keeping its details current.
+          being added, not to keeping its details current. Changing the name
+          changes this property&apos;s page address — any link to the old one
+          will stop working.
         </p>
       </div>
 

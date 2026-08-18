@@ -444,17 +444,22 @@ export async function deletePendingProperty(
 type UpdatePropertyResult = {
   error?: string;
   success?: boolean;
+  slug?: string;
 };
 
 // Amend a property you contributed.
 //
 // What this can change is decided by the database, not by this function: the
-// column-level UPDATE grant in 20260810000001 lists the commercial and
-// descriptive columns, and Postgres rejects a statement naming any other one
-// outright — for every role, including administrators. So `name`,
-// `address_*`, `area`, `city`, `slug`, `created_by` and `submitted_as` are
-// not "left out of the update" here, they are unreachable. The record a
-// review is attached to still cannot drift.
+// column-level UPDATE grant (20260810000001, widened by 20260822000000) lists
+// exactly the reachable columns, and Postgres rejects a statement naming any
+// other one outright — for every role, including administrators. `created_by`
+// and `submitted_as` are not "left out of the update" here, they are
+// unreachable: authorship and provenance can never be rewritten, even by the
+// property's own creator. Everything else — identity (name/address/area/
+// city/state/postal code/slug) as well as commercial/attribute fields — is
+// now open to whoever created the row, regardless of which of the three
+// roles (owner/tenant/helper) they submitted it as (product owner's explicit
+// instruction: "they can edit any details of their added property only").
 //
 // `status` is the one column both a moderator and a creator can reach through
 // the same role, so it is guarded by the
@@ -471,6 +476,21 @@ export async function updateProperty(
   const slug = getTextValue(formData, "slug");
   if (!slug) return { error: "Missing property." };
 
+  const name = getTextValue(formData, "name");
+  const addressLine1 = getTextValue(formData, "addressLine1");
+  const area = getTextValue(formData, "area");
+  const rawCity = getTextValue(formData, "city");
+  const state = getTextValue(formData, "state");
+
+  if (!name || !addressLine1 || !area || !rawCity || !state) {
+    return { error: "Please complete all required property details." };
+  }
+
+  const city = normalizeCityName(rawCity);
+  if (!city) {
+    return { error: "Please complete all required property details." };
+  }
+
   const supabase = await createClient();
   const { user, error: authFailure } = await requireUser(
     supabase,
@@ -480,7 +500,7 @@ export async function updateProperty(
 
   const { data: existing } = await supabase
     .from("properties")
-    .select("id, submitted_as")
+    .select("id, name")
     .eq("slug", slug)
     .eq("created_by", user.id)
     .maybeSingle();
@@ -489,16 +509,9 @@ export async function updateProperty(
     return { error: "That property could not be found in your account." };
   }
 
-  // Same rule as submission: rent, deposit and availability are an owner's
-  // commercial offer. A tenant editing the flat they live in is not setting an
-  // asking price, so those fields are neither shown nor accepted for them.
-  const isOwnerListing = existing.submitted_as === "owner";
-  const askingRent = parseAmount(
-    isOwnerListing ? getTextValue(formData, "askingRent") : "",
-    "Monthly rent",
-  );
+  const askingRent = parseAmount(getTextValue(formData, "askingRent"), "Monthly rent");
   const securityDeposit = parseAmount(
-    isOwnerListing ? getTextValue(formData, "securityDeposit") : "",
+    getTextValue(formData, "securityDeposit"),
     "Security deposit",
   );
 
@@ -508,27 +521,42 @@ export async function updateProperty(
 
   const coordinates = getCoordinates(formData);
 
+  // The slug only changes when the name actually did — editing rent or an
+  // amenity, or even re-saving the same name, never moves a property's URL
+  // out from under anyone who bookmarked or shared it.
+  const nextSlug = name !== existing.name ? createSlug(name) : slug;
+
   const { data: updated, error: updateError } = await supabase
     .from("properties")
     .update({
+      name,
+      address_line_1: addressLine1,
+      address_line_2: getTextValue(formData, "addressLine2") || null,
+      area,
+      city,
+      state,
+      postal_code: getTextValue(formData, "postalCode") || null,
+      slug: nextSlug,
       ...getAttributes(formData),
       landmark: getTextValue(formData, "landmark") || null,
       contact_method: contact.method,
       latitude: coordinates.latitude,
       longitude: coordinates.longitude,
-      ...(isOwnerListing
-        ? {
-            asking_rent: askingRent.value,
-            security_deposit: securityDeposit.value,
-            is_available: formData.get("isAvailable") !== null,
-          }
-        : {}),
+      asking_rent: askingRent.value,
+      security_deposit: securityDeposit.value,
+      is_available: formData.get("isAvailable") !== null,
     })
     .eq("id", existing.id)
     .eq("created_by", user.id)
     .select("slug");
 
   if (updateError) {
+    // `slug` is unique; createSlug's random suffix makes a real collision
+    // astronomically unlikely, but a friendly retry-safe message beats a raw
+    // constraint-violation error reaching the form.
+    if (updateError.code === "23505") {
+      return { error: "Unable to save your changes right now. Please try again." };
+    }
     return { error: "Unable to save your changes. Please try again." };
   }
 
@@ -557,6 +585,7 @@ export async function updateProperty(
 
   revalidatePath("/account/properties");
   revalidatePath(`/property/${slug}`);
+  if (nextSlug !== slug) revalidatePath(`/property/${nextSlug}`);
   revalidatePath("/");
-  return { success: true };
+  return { success: true, slug: nextSlug };
 }
