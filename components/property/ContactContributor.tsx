@@ -2,7 +2,6 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { sendPropertyMessage } from "@/app/actions/messages";
 import type { ContactMethod } from "@/lib/property-attributes";
 
@@ -143,15 +142,8 @@ export default function ContactContributor({
           Message sent. Their reply will come from them directly.
         </p>
         <p className="text-xs leading-5 text-muted">
-          You can find this under{" "}
-          <Link
-            href="/account/messages"
-            prefetch={false}
-            className="font-medium text-accent-hover underline decoration-accent/50 underline-offset-4 hover:text-accent-hover"
-          >
-            Account → Messages
-          </Link>{" "}
-          any time.
+          You can find this conversation any time in the chat bubble at the
+          bottom of your screen.
         </p>
         <button type="button" onClick={() => setIsSent(false)} className={buttonClass}>
           Send another message

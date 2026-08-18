@@ -5,7 +5,6 @@ const sections = [
   { href: "/account/properties", label: "My Properties" },
   { href: "/account/reviews", label: "My Reviews" },
   { href: "/account/wishlist", label: "Saved" },
-  { href: "/account/messages", label: "Messages" },
   { href: "/account/verifications", label: "Verifications" },
   { href: "/account/profile", label: "Profile" },
 ];

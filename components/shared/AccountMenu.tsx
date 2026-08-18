@@ -11,10 +11,6 @@ type AccountMenuProps = {
   // itself server-side and every table behind it is filtered by RLS, so
   // forging this prop would reveal a link to a page that 404s.
   isAdmin?: boolean;
-  // Unread property_messages addressed to this user. Presentation only, same
-  // as isAdmin above — /account/messages re-derives its own contents from
-  // RLS regardless of what this number says.
-  unreadMessageCount?: number;
   // Dev-nav-only — resolved server-side in app/layout.tsx, only when
   // NEXT_PUBLIC_SHOW_DEV_NAV is set. Always null/undefined otherwise, so
   // these props are inert in production.
@@ -30,7 +26,6 @@ const SHOW_DEV_NAV = process.env.NEXT_PUBLIC_SHOW_DEV_NAV === "true";
 export default function AccountMenu({
   email,
   isAdmin = false,
-  unreadMessageCount = 0,
   sampleProperty = null,
   sampleReview = null,
   sampleModerationProperty = null,
@@ -69,11 +64,6 @@ export default function AccountMenu({
           still shows on hover/press. */}
       <summary className="cursor-pointer list-none text-sm font-medium text-foreground transition-all duration-200 hover:-translate-y-0.5 hover:text-accent">
         Account
-        {unreadMessageCount > 0 && (
-          <span className="ml-1.5 inline-flex h-5 min-w-5 animate-pulse items-center justify-center rounded-full bg-accent-warm px-1 text-[11px] font-semibold text-white">
-            {unreadMessageCount > 9 ? "9+" : unreadMessageCount}
-          </span>
-        )}
       </summary>
 
       <div
@@ -104,30 +94,26 @@ export default function AccountMenu({
           My Reviews
         </Link>
         <Link
-          href="/account/messages"
-          onClick={closeMenu}
-          // Prefetch off, deliberately: this link renders (and becomes
-          // prefetch-eligible) the moment the menu opens, before anyone has
-          // actually chosen Messages. /account/messages marks the viewer's
-          // inbox read as a side effect of rendering, so a prefetch fired by
-          // opening this menu would silently clear the unread badge without
-          // the message ever being read. It should only run on a real click.
-          prefetch={false}
-          className="flex items-center justify-between rounded-lg px-3 py-2 text-sm text-foreground transition-colors hover:bg-surface-raised hover:text-accent"
-        >
-          Messages
-          {unreadMessageCount > 0 && (
-            <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-accent-warm px-1 text-[11px] font-semibold text-white">
-              {unreadMessageCount > 9 ? "9+" : unreadMessageCount}
-            </span>
-          )}
-        </Link>
-        <Link
           href="/add-property"
           onClick={closeMenu}
           className="block rounded-lg px-3 py-2 text-sm text-foreground transition-colors hover:bg-surface-raised hover:text-accent"
         >
           Add Property
+        </Link>
+        <div className="my-1 border-t border-border-subtle" />
+        <Link
+          href="/brokers"
+          onClick={closeMenu}
+          className="block rounded-lg px-3 py-2 text-sm text-foreground transition-colors hover:bg-surface-raised hover:text-accent"
+        >
+          Browse Brokers
+        </Link>
+        <Link
+          href="/add-broker"
+          onClick={closeMenu}
+          className="block rounded-lg px-3 py-2 text-sm text-foreground transition-colors hover:bg-surface-raised hover:text-accent"
+        >
+          List as a Broker
         </Link>
         {isAdmin && (
           <>

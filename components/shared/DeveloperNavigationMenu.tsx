@@ -57,6 +57,7 @@ export default function DeveloperNavigationMenu({
         { label: "Home", route: "/", href: "/", kind: "page" },
         { label: "Search Properties", route: "/property", href: "/property", kind: "page" },
         { label: "Find a Property to Review", route: "/review", href: "/review", kind: "page" },
+        { label: "Browse Brokers", route: "/brokers", href: "/brokers", kind: "page" },
         {
           label: "Property Details",
           route: "/property/[slug]",
@@ -70,6 +71,13 @@ export default function DeveloperNavigationMenu({
       title: "Community",
       routes: [
         { label: "Add Property", route: "/add-property", href: "/add-property", kind: "page" },
+        { label: "List as a Broker", route: "/add-broker", href: "/add-broker", kind: "page" },
+        {
+          label: "My Broker Listing",
+          route: "/account/brokers",
+          href: "/account/brokers",
+          kind: "page",
+        },
         {
           label: "Add Property (Owner)",
           route: "/add-property?as=owner",
@@ -135,7 +143,6 @@ export default function DeveloperNavigationMenu({
         },
         { label: "My Reviews", route: "/account/reviews", href: "/account/reviews", kind: "page" },
         { label: "Saved", route: "/account/wishlist", href: "/account/wishlist", kind: "page" },
-        { label: "Messages", route: "/account/messages", href: "/account/messages", kind: "page" },
         {
           label: "My Verifications",
           route: "/account/verifications",
@@ -178,6 +185,7 @@ export default function DeveloperNavigationMenu({
           badge: sampleVerification ? undefined : "Admin Only",
         },
         { label: "Inspect Reviews", route: "/admin/reviews", href: "/admin/reviews", kind: "page" },
+        { label: "Support Inbox", route: "/admin/support", href: "/admin/support", kind: "page" },
       ],
     },
     {

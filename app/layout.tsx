@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Geist, Geist_Mono } from "next/font/google";
 import AccountMenu from "@/components/shared/AccountMenu";
+import ChatWidget from "@/components/shared/ChatWidget";
 import Logo from "@/components/shared/Logo";
 import { createClient } from "@/lib/supabase/server";
 import { isAdminUser } from "@/lib/admin";
@@ -52,19 +53,6 @@ export default async function RootLayout({
   // security check — /admin gates itself and every query behind it is filtered
   // by RLS — so this only avoids showing a link that would 404.
   const isAdmin = user ? await isAdminUser(supabase, user.id) : false;
-
-  // Unread message count for the Account menu badge — every signed-in user,
-  // not just admins/dev-nav, unlike the sample-data queries below. A `head`
-  // count query so the badge costs one round trip and no row data.
-  let unreadMessageCount = 0;
-  if (user) {
-    const { count } = await supabase
-      .from("property_messages")
-      .select("id", { count: "exact", head: true })
-      .eq("recipient_id", user.id)
-      .is("read_at", null);
-    unreadMessageCount = count ?? 0;
-  }
 
   // Only queried when the dev nav flag is on AND the viewer is an
   // administrator — the same condition AccountMenu now uses to render it.
@@ -147,7 +135,6 @@ export default async function RootLayout({
               <AccountMenu
                 email={user.email ?? "RentalIntel member"}
                 isAdmin={isAdmin}
-                unreadMessageCount={unreadMessageCount}
                 sampleProperty={sampleProperty}
                 sampleReview={sampleReview}
                 sampleModerationProperty={sampleModerationProperty}
@@ -173,6 +160,7 @@ export default async function RootLayout({
           </div>
         </header>
         {children}
+        <ChatWidget isSignedIn={Boolean(user)} />
       </body>
     </html>
   );

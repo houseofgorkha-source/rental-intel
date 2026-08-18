@@ -5,6 +5,7 @@ const sections = [
   { href: "/admin/properties", label: "Properties" },
   { href: "/admin/verifications", label: "Verifications" },
   { href: "/admin/reviews", label: "Reviews" },
+  { href: "/admin/support", label: "Support" },
 ];
 
 export default function AdminSectionNav() {
