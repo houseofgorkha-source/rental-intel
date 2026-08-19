@@ -1,5 +1,8 @@
-import { test } from "node:test";
+import { test, after } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync, rmSync } from "node:fs";
+import path from "node:path";
+import os from "node:os";
 import {
   SOURCES,
   configureQuota,
@@ -7,13 +10,22 @@ import {
   getQuotaStatus,
   getQuotaLog,
   resetQuota,
+  setQuotaStoragePath,
+  _setNowForTests,
   QuotaExceededError,
 } from "./apiQuota.js";
+
+// Redirect persistence at a throwaway temp file for the whole test file —
+// these tests must never read or write the real quota_state.json that
+// actual crawler runs depend on.
+const TEST_STORAGE_PATH = path.join(os.tmpdir(), `tolet-vision-quota-test-${process.pid}.json`);
+setQuotaStoragePath(TEST_STORAGE_PATH);
 
 // Every test resets state AND explicitly configures the scenario it needs —
 // never relies on defaults/env vars, so tests stay deterministic regardless
 // of what's in .env.
 function fresh(config) {
+  _setNowForTests(null); // real clock unless a test explicitly overrides it
   resetQuota();
   configureQuota({ crawlerLimit: Infinity, totalBudget: Infinity, userTrafficReserve: 0, ...config });
 }
@@ -130,4 +142,126 @@ test("configureQuota accepts the legacy plain-number call shape (crawlerLimit on
   configureQuota(5); // legacy shape used by discoveryPilot.js
   for (let i = 0; i < 5; i++) recordRequest(SOURCES.CRAWLER, "metadata");
   assert.throws(() => recordRequest(SOURCES.CRAWLER, "metadata"), QuotaExceededError);
+});
+
+// --- Persistence across runs ---------------------------------------------
+
+test("persistence: usage survives reloading state from disk (simulates a process restart)", () => {
+  fresh({ crawlerLimit: 100 });
+  recordRequest(SOURCES.CRAWLER, "metadata");
+  recordRequest(SOURCES.CRAWLER, "imageDownload");
+  recordRequest(SOURCES.USER_MAP, "tile");
+
+  // A real restart re-imports the module, which reads this same file from
+  // disk at load time. Re-pointing at the identical path exercises that
+  // exact read path without needing a second process.
+  setQuotaStoragePath(TEST_STORAGE_PATH);
+
+  const status = getQuotaStatus();
+  assert.equal(status.crawler.used, 2);
+  assert.equal(status.userMap.used, 1);
+  assert.equal(getQuotaLog().length, 3);
+});
+
+test("persistence: the on-disk file contains timestamp, endpoint, source, and running totals per request", () => {
+  fresh();
+  recordRequest(SOURCES.CRAWLER, "metadata");
+  recordRequest(SOURCES.USER_MAP, "tile");
+
+  const onDisk = JSON.parse(readFileSync(TEST_STORAGE_PATH, "utf8"));
+  assert.equal(onDisk.log.length, 2);
+  for (const entry of onDisk.log) {
+    assert.equal(typeof entry.at, "string");
+    assert.ok(!Number.isNaN(Date.parse(entry.at)));
+    assert.equal(typeof entry.endpoint, "string");
+    assert.ok(Object.values(SOURCES).includes(entry.source));
+    assert.equal(typeof entry.totalUsed, "number");
+  }
+  assert.equal(onDisk.counters[SOURCES.CRAWLER], 1);
+  assert.equal(onDisk.counters[SOURCES.USER_MAP], 1);
+});
+
+test("persistence: a crawler limit reached in an earlier run is still enforced after reload", () => {
+  fresh({ crawlerLimit: 3 });
+  recordRequest(SOURCES.CRAWLER, "metadata");
+  recordRequest(SOURCES.CRAWLER, "metadata");
+  recordRequest(SOURCES.CRAWLER, "metadata");
+
+  // Simulate the process exiting and a new one starting: re-read from disk.
+  // configureQuota must be called again too, since limits are policy (not
+  // persisted) and a real new process would set them again from env/args.
+  setQuotaStoragePath(TEST_STORAGE_PATH);
+  configureQuota({ crawlerLimit: 3 });
+
+  assert.throws(() => recordRequest(SOURCES.CRAWLER, "metadata"), QuotaExceededError);
+});
+
+// --- Monthly reset ---------------------------------------------------------
+
+test("monthly reset: usage carries over within the same month across multiple recordRequest calls", () => {
+  fresh({ crawlerLimit: 100 });
+  _setNowForTests(() => new Date("2031-03-10T12:00:00Z"));
+  recordRequest(SOURCES.CRAWLER, "metadata");
+  _setNowForTests(() => new Date("2031-03-25T23:59:00Z"));
+  recordRequest(SOURCES.CRAWLER, "metadata");
+
+  assert.equal(getQuotaStatus().crawler.used, 2);
+  assert.equal(getQuotaStatus().month, "2031-03");
+});
+
+test("monthly reset: usage resets to zero automatically when the calendar month rolls over", () => {
+  fresh({ crawlerLimit: 100 });
+  _setNowForTests(() => new Date("2031-04-30T23:00:00Z"));
+  recordRequest(SOURCES.CRAWLER, "metadata");
+  recordRequest(SOURCES.CRAWLER, "metadata");
+  assert.equal(getQuotaStatus().crawler.used, 2);
+
+  _setNowForTests(() => new Date("2031-05-01T00:05:00Z"));
+  assert.equal(getQuotaStatus().crawler.used, 0); // rollover happens on read too, not just on write
+  assert.equal(getQuotaStatus().month, "2031-05");
+
+  recordRequest(SOURCES.CRAWLER, "metadata");
+  assert.equal(getQuotaStatus().crawler.used, 1);
+});
+
+test("monthly reset: the previous month's final usage is archived, not discarded", () => {
+  fresh({ crawlerLimit: 100 });
+  _setNowForTests(() => new Date("2031-06-15T00:00:00Z"));
+  recordRequest(SOURCES.CRAWLER, "metadata");
+  recordRequest(SOURCES.CRAWLER, "metadata");
+  recordRequest(SOURCES.USER_MAP, "tile");
+
+  _setNowForTests(() => new Date("2031-07-01T00:00:00Z"));
+  recordRequest(SOURCES.CRAWLER, "metadata"); // triggers the rollover
+
+  // Archive dir is derived from the (redirected, tmpdir) storage path's
+  // directory — never the real .data/quota_archive/. See archiveDir() in
+  // apiQuota.js.
+  const archivePath = path.join(path.dirname(TEST_STORAGE_PATH), "quota_archive", "2031-06.json");
+  const archived = JSON.parse(readFileSync(archivePath, "utf8"));
+  assert.equal(archived.month, "2031-06");
+  assert.equal(archived.counters[SOURCES.CRAWLER], 2);
+  assert.equal(archived.counters[SOURCES.USER_MAP], 1);
+  assert.equal(archived.log.length, 3);
+
+  rmSync(archivePath, { force: true });
+});
+
+test("monthly reset: the crawler limit applies to the new month's usage, not the old month's", () => {
+  fresh({ crawlerLimit: 2 });
+  _setNowForTests(() => new Date("2031-08-01T00:00:00Z"));
+  recordRequest(SOURCES.CRAWLER, "metadata");
+  recordRequest(SOURCES.CRAWLER, "metadata");
+  assert.throws(() => recordRequest(SOURCES.CRAWLER, "metadata"), QuotaExceededError);
+
+  _setNowForTests(() => new Date("2031-09-01T00:00:00Z"));
+  // Same crawlerLimit=2, but it's a new month — must not still be exhausted.
+  assert.doesNotThrow(() => recordRequest(SOURCES.CRAWLER, "metadata"));
+  assert.equal(getQuotaStatus().crawler.used, 1);
+});
+
+after(() => {
+  _setNowForTests(null);
+  rmSync(TEST_STORAGE_PATH, { force: true });
+  rmSync(path.join(path.dirname(TEST_STORAGE_PATH), "quota_archive"), { recursive: true, force: true });
 });
