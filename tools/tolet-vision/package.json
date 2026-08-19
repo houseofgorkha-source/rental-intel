@@ -1,0 +1,14 @@
+{
+  "name": "tolet-vision-prototype",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "description": "Isolated To-Let Vision prototype: single-coordinate Ola Maps Street View test. Not part of the RentalIntel app.",
+  "scripts": {
+    "test-one-coordinate": "node src/testOneCoordinate.js"
+  },
+  "dependencies": {
+    "jimp": "^1.6.1",
+    "tesseract.js": "^7.0.0"
+  }
+}
