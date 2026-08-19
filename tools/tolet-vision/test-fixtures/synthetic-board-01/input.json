@@ -1,0 +1,4 @@
+{
+  "description": "Hand-written OCR text (not from a real board) exercising every extraction field at once, plus the 'No Broker' disclaimer case that exposed a real bug in BROKER_RE (it originally matched 'Broker' inside 'No Broker', misreporting an agency-advertised board as agency-advertised when the board says the opposite).",
+  "rawText": "TO LET\n2 BHK\nGreen Valley Apartments\nHSR Layout Main Road\nNear BDA Complex\nNo Broker\nContact: 9886123456\nABC Realty"
+}

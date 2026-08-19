@@ -1,0 +1,14 @@
+{
+  "score": 80,
+  "signals": ["TO_LET", "BHK", "PHONE", "BROKER"],
+  "phone": "9886123456",
+  "phones": ["9886123456"],
+  "bhk": 2,
+  "rent": null,
+  "broker": "Realty",
+  "propertyName": "Valley Apartments",
+  "addressHints": ["HSR Layout Main Road", "Near BDA Complex"],
+  "agencyName": "ABC Realty",
+  "contactHints": ["No Broker", "Contact"],
+  "otherText": null
+}

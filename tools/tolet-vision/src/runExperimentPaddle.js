@@ -58,7 +58,20 @@ async function main() {
         });
 
         if (tileResult.confidence < OCR_CONFIDENCE_FLOOR) continue;
-        const { score, signals, phone, bhk, rent, broker } = extractAndScore(tileResult.text);
+        const {
+          score,
+          signals,
+          phone,
+          phones,
+          bhk,
+          rent,
+          broker,
+          propertyName,
+          addressHints,
+          agencyName,
+          contactHints,
+          otherText,
+        } = extractAndScore(tileResult.text);
         if (score < CANDIDATE_SCORE_THRESHOLD) continue;
 
         const cropFileName = `${sourceId}_tile${i}.jpg`;
@@ -72,9 +85,15 @@ async function main() {
           ocrConfidence: tileResult.confidence,
           signals,
           phone,
+          phones,
           bhk,
           rent,
           broker,
+          propertyName,
+          addressHints,
+          agencyName,
+          contactHints,
+          otherText,
           score,
           cropImage: `crops_paddle/${cropFileName}`,
         });
