@@ -4,7 +4,7 @@
 // should import it directly. Everything else talks to the provider-neutral
 // interface in ../../imageryProvider.js.
 
-import { recordRequest } from "../../apiQuota.js";
+import { recordRequest, SOURCES } from "../../apiQuota.js";
 
 const OLA_STREET_VIEW_BASE_URL = "https://api.olamaps.io";
 
@@ -25,8 +25,8 @@ function getApiKey() {
   return key;
 }
 
-async function request(path, { query = {} } = {}) {
-  recordRequest(path); // throws QuotaExceededError before any network call once the limit is hit
+async function request(path, { query = {} } = {}, source = SOURCES.CRAWLER) {
+  recordRequest(source, path); // throws QuotaExceededError before any network call once the crawler limit/reserve is hit
   const apiKey = getApiKey();
 
   const url = new URL(OLA_STREET_VIEW_BASE_URL + path);
@@ -48,20 +48,20 @@ async function request(path, { query = {} } = {}) {
   return { status: res.status, ok: res.ok, body, url: url.toString() };
 }
 
-export async function getCoverage({ xMax, xMin, yMax, yMin }) {
-  return request(ENDPOINTS.coverage, { query: { xMax, xMin, yMax, yMin } });
+export async function getCoverage({ xMax, xMin, yMax, yMin }, source = SOURCES.CRAWLER) {
+  return request(ENDPOINTS.coverage, { query: { xMax, xMin, yMax, yMin } }, source);
 }
 
-export async function getNearestImageId({ lat, lon }) {
-  return request(ENDPOINTS.nearestImageId, { query: { lat, lon } });
+export async function getNearestImageId({ lat, lon }, source = SOURCES.CRAWLER) {
+  return request(ENDPOINTS.nearestImageId, { query: { lat, lon } }, source);
 }
 
-export async function getMetadata({ imageId }) {
-  return request(ENDPOINTS.metadata, { query: { imageId } });
+export async function getMetadata({ imageId }, source = SOURCES.CRAWLER) {
+  return request(ENDPOINTS.metadata, { query: { imageId } }, source);
 }
 
-export async function fetchImageBytes(imageUrl) {
-  recordRequest("imageDownload");
+export async function fetchImageBytes(imageUrl, source = SOURCES.CRAWLER) {
+  recordRequest(source, "imageDownload");
   const res = await fetch(imageUrl);
   const arrayBuffer = res.ok ? await res.arrayBuffer() : null;
   return {
