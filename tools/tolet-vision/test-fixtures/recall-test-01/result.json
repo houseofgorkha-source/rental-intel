@@ -1,0 +1,40 @@
+{
+  "description": "First real recall test: production PaddleOCR GPU pipeline (unchanged) detecting a genuine physical TO-LET board.",
+  "provider": "ola",
+  "sourceId": "fc6a05843374700314227997fb9be243",
+  "panoramaLatitude": 12.900499,
+  "panoramaLongitude": 77.648649,
+  "panoramaFile": "panorama.jpg",
+  "detectedCropFile": "detected_crop.jpg",
+  "pipelineRun": {
+    "generatedAt": "2026-08-19T10:08:31.324Z",
+    "ocrEngine": "paddleocr",
+    "candidateScoreThreshold": 15,
+    "ocrConfidenceFloor": 50,
+    "panoramasProcessed": 6,
+    "ocrCropsProcessed": 84,
+    "apiRequestsUsed": 0
+  },
+  "candidate": {
+    "provider": "ola",
+    "sourceId": "fc6a05843374700314227997fb9be243",
+    "tile": {
+      "x": 3276,
+      "y": 864,
+      "w": 1024,
+      "h": 1024
+    },
+    "ocrText": "TO-LET\nTO-LE\nTO-LET\n(23\n7019164269",
+    "ocrConfidence": 71.18551135063171,
+    "signals": [
+      "TO_LET",
+      "PHONE"
+    ],
+    "phone": "7019164269",
+    "bhk": null,
+    "rent": null,
+    "broker": null,
+    "score": 55,
+    "cropImage": "crops_paddle/fc6a05843374700314227997fb9be243_tile4.jpg"
+  }
+}
