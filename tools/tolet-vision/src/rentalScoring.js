@@ -1,7 +1,14 @@
 // Pure text-scoring/extraction logic — no I/O. Kept separate so it can be
 // unit-tested or re-tuned without touching the OCR/crawler plumbing.
 
-const PHONE_RE = /(?:\+?91[\s-]?)?[6-9]\d{9}\b/g;
+// (?<!\d) / (?!\d) instead of \b at the boundaries: \b treats "+" as a
+// non-word char, which would (wrongly) allow a match to start mid-way
+// through a longer run of digits right after a "+"; a same-length lookaround
+// against "is the adjacent character a digit" is what we actually mean, and
+// it also rejects matching a spurious 10-digit window out of an 11-digit
+// toll-free number like "1800 210 3311" (helpline numbers, not mobiles,
+// were showing up as false-positive phone matches before this).
+const PHONE_RE = /(?<!\d)(?:\+?91[\s-]?)?[6-9]\d{9}(?!\d)/g;
 const BHK_RE = /\b([1-9])\s?BHK\b/i;
 const RK_RE = /\b([1-9])\s?RK\b/i;
 const RENT_AMOUNT_RE = /(?:₹|rs\.?|inr)\s?[\d,]{3,7}|\b\d{4,6}\s?(?:\/-|per\s?month|pm)\b/i;
@@ -23,9 +30,12 @@ const ADDRESS_LINE_RE = /\b(ROAD|STREET|\bST\b|MAIN\s?ROAD|CROSS|LAYOUT|NAGAR|BL
 const CONTACT_ROLE_RE = /\b(NO\s*BROKER\S*|DIRECT\s*OWNER|OWNER|BROKER|AGENT|CONTACT)\b/gi;
 const CONTACT_ROLE_TEST_RE = /\b(NO\s*BROKER\S*|DIRECT\s*OWNER|OWNER|BROKER|AGENT|CONTACT)\b/i; // non-global: safe for repeated .test()
 
-function cleanForPhoneMatch(text) {
-  // OCR frequently breaks a phone number across spaces/newlines.
-  return text.replace(/[\s-]{1,3}(?=\d)/g, "");
+function cleanForPhoneMatch(line) {
+  // OCR frequently breaks a single phone number across internal spaces
+  // ("98451 23456"). Scoped to one line only (see extractPhones) — collapsing
+  // whitespace across line breaks is what let digits from two unrelated
+  // numbers on separate lines get spliced into one fabricated number.
+  return line.replace(/[\s-]{1,3}(?=\d)/g, "");
 }
 
 function splitLines(text) {
@@ -37,6 +47,30 @@ function splitLines(text) {
 
 function dedupe(arr) {
   return [...new Set(arr)];
+}
+
+// Extracts phone numbers one OCR line at a time, never across a line break.
+// A single real phone number is (almost) always OCR'd as one line; two
+// separate numbers on separate lines must never be concatenated into a
+// number that doesn't actually exist on the board.
+function extractPhones(text) {
+  const found = [];
+  for (const line of splitLines(text)) {
+    const cleaned = cleanForPhoneMatch(line);
+    const matches = cleaned.match(PHONE_RE) ?? [];
+    found.push(...matches);
+  }
+  return dedupe(found);
+}
+
+const RENTAL_SIGNALS = new Set(["TO_LET", "FOR_RENT", "RENT", "BHK"]);
+
+// A phone number alone is not evidence of a rental board — plenty of
+// unrelated signage (cement ads, shop numbers, sale-project banners) has a
+// legible phone number too. Call sites must require this alongside their
+// score threshold before treating something as a to-let candidate.
+export function hasRentalSignal(signals) {
+  return signals.some((s) => RENTAL_SIGNALS.has(s));
 }
 
 export function extractAndScore(rawText) {
@@ -66,8 +100,8 @@ export function extractAndScore(rawText) {
     signals.push("BHK");
   }
 
-  const phoneMatches = cleanForPhoneMatch(text).match(PHONE_RE) ?? [];
-  const phone = phoneMatches[0] ?? null;
+  const allPhones = extractPhones(text);
+  const phone = allPhones[0] ?? null;
   if (phone) {
     score += 15;
     signals.push("PHONE");
@@ -90,8 +124,6 @@ export function extractAndScore(rawText) {
   // Everything below is purely extractive (no additional scoring weight) —
   // it surfaces more of what a board says without changing candidate
   // detection/thresholds, which are governed by the signals above.
-  const allPhones = dedupe(phoneMatches);
-
   const lines = splitLines(text);
   const propertyNameMatch = text.match(PROPERTY_NAME_RE);
   const propertyName = propertyNameMatch ? propertyNameMatch[0].trim() : null;

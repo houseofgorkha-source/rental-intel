@@ -4,6 +4,8 @@
 // should import it directly. Everything else talks to the provider-neutral
 // interface in ../../imageryProvider.js.
 
+import { recordRequest } from "../../apiQuota.js";
+
 const OLA_STREET_VIEW_BASE_URL = "https://api.olamaps.io";
 
 const ENDPOINTS = {
@@ -24,6 +26,7 @@ function getApiKey() {
 }
 
 async function request(path, { query = {} } = {}) {
+  recordRequest(path); // throws QuotaExceededError before any network call once the limit is hit
   const apiKey = getApiKey();
 
   const url = new URL(OLA_STREET_VIEW_BASE_URL + path);
@@ -58,6 +61,7 @@ export async function getMetadata({ imageId }) {
 }
 
 export async function fetchImageBytes(imageUrl) {
+  recordRequest("imageDownload");
   const res = await fetch(imageUrl);
   const arrayBuffer = res.ok ? await res.arrayBuffer() : null;
   return {
