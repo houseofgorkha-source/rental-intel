@@ -22,9 +22,15 @@
 // providers/<name>/ module that exports crawlPanoramas() returning this same
 // shape — the OCR/scoring/candidate layers do not change.
 import * as olaProvider from "./providers/ola/olaProvider.js";
+import * as googleProvider from "./providers/google/googleProvider.js";
 
 export const PROVIDERS = {
   ola: olaProvider,
+  // Comparison-test only (see googleComparisonTest.js) — not wired into
+  // any discovery pipeline. crawlPanoramas() throws on this provider;
+  // callers must use resolvePanoramaAtPoint() instead. See
+  // providers/google/googleProvider.js for why.
+  google: googleProvider,
 };
 
 export function getProvider(name) {
