@@ -154,6 +154,18 @@ export default function PropertyForm({
       </div>
 
       <form onSubmit={handleSubmit}>
+        {/* Honeypot — real users never see or fill this (visually hidden,
+            off the tab order, out of the accessibility tree); a bot's
+            form-filler typically does. Checked server-side in
+            createProperty. Plain CSS hiding rather than type="hidden",
+            since some bots specifically skip hidden-type inputs. */}
+        <div className="absolute h-0 w-0 overflow-hidden opacity-0" aria-hidden="true">
+          <label>
+            Website
+            <input type="text" name="website" tabIndex={-1} autoComplete="off" />
+          </label>
+        </div>
+
         <div className="mt-6 rounded-2xl border border-border-subtle bg-surface p-6 shadow-sm">
 
           <SectionTitle

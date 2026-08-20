@@ -12,6 +12,13 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // tools/tolet-vision is a separate, self-contained Node tool (its own
+    // package.json says "Not part of the RentalIntel app") -- not built,
+    // linted, or tested as part of this app. Without this, ESLint also
+    // crawls its Python-venv-vendored JS bundles (tools/tolet-vision/.venv*)
+    // and can crash with "RangeError: Invalid string length" on a huge
+    // minified vendor file.
+    "tools/tolet-vision/**",
   ]),
 ]);
 

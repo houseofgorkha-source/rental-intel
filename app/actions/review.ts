@@ -92,6 +92,11 @@ function validate(overallRating: number, comment: string): string | null {
   return null;
 }
 
+// Same reasoning as MAX_PROPERTIES_PER_DAY in app/actions/property.ts: a
+// free, zero-infrastructure deterrent against a scripted flood, generous
+// enough that no real reviewer would ever hit it in a day.
+const MAX_REVIEWS_PER_DAY = 10;
+
 export async function createReview({
   propertyId,
   overallRating,
@@ -118,11 +123,24 @@ export async function createReview({
   if (validationError) return { error: validationError };
 
   const supabase = await createClient();
-  const { error: authFailure } = await requireUser(
+  const { user, error: authFailure } = await requireUser(
     supabase,
     "Please sign in to publish a review.",
   );
-  if (authFailure) return { error: authFailure };
+  if (!user) return { error: authFailure };
+
+  const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const { count: recentReviewCount } = await supabase
+    .from("reviews")
+    .select("id", { count: "exact", head: true })
+    .eq("author_id", user.id)
+    .gte("created_at", oneDayAgo);
+
+  if ((recentReviewCount ?? 0) >= MAX_REVIEWS_PER_DAY) {
+    return {
+      error: `You've published ${MAX_REVIEWS_PER_DAY} reviews in the last 24 hours. Please try again tomorrow.`,
+    };
+  }
 
   const { categorySlugs, categoryRatings } = buildCategoryRatings(quickRatings, ownerRating);
 

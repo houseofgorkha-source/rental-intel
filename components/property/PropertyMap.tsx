@@ -1,14 +1,15 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import {
+import { OlaMaps, defaultStyleJson } from "olamaps-web-sdk";
+import type {
   Map as MapLibreMap,
   Marker,
   NavigationControl,
   Popup,
-  type GeoJSONSource,
-  type StyleSpecification,
-  type MapGeoJSONFeature,
+  GeoJSONSource,
+  StyleSpecification,
+  MapGeoJSONFeature,
 } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { formatINRPerMonth } from "@/lib/property-format";
@@ -55,6 +56,39 @@ export const OSM_STYLE: StyleSpecification = {
   },
   layers: [{ id: "osm", type: "raster", source: "osm" }],
 };
+
+// Ola Maps foundation — shared by every live map in the app (this component
+// and the To-Let spotted-boards preview map). Deliberately centralized here
+// rather than each map constructing its own OlaMaps client/style, so the two
+// can never drift onto different styles or key-handling logic (mirrors why
+// OSM_STYLE above was already exported for PropertyLocationField).
+//
+// `defaultStyleJson` is the SDK's own published default style URL (not
+// hand-rolled) — see olamaps-web-sdk's exported constant. `pitch`/`bearing`
+// give the tilted, building-extrusion "3D" look on top of it; MapLibre (which
+// this SDK wraps) renders 3D buildings from a non-zero pitch whenever the
+// active style defines them, which this default style does at street level.
+export const OLA_STYLE_URL = defaultStyleJson;
+export const OLA_MAP_VIEW_DEFAULTS = { pitch: 45, bearing: -10 } as const;
+
+let olaMapsClient: OlaMaps | null = null;
+// Lazily constructed, not module-scope-eager — avoids throwing on import in
+// any environment (tests, SSR) where NEXT_PUBLIC_OLA_MAPS_API_KEY isn't set,
+// and where a component using this never actually mounts. Stateless per the
+// SDK's own design (the returned client only holds the key/config used by
+// its own init()/addMarker()/addPopup() calls), so one shared instance is
+// safe to reuse across every map on the page.
+export function getOlaMapsClient(): OlaMaps {
+  if (olaMapsClient) return olaMapsClient;
+  const apiKey = process.env.NEXT_PUBLIC_OLA_MAPS_API_KEY;
+  if (!apiKey) {
+    throw new Error(
+      "NEXT_PUBLIC_OLA_MAPS_API_KEY is not set. Copy .env.example to .env and set it to a Web SDK key from the Krutrim Cloud dashboard -- never the crawler's server-side OLA_MAPS_API_KEY, which would expose that budget-tracked key to every visitor's browser."
+    );
+  }
+  olaMapsClient = new OlaMaps({ apiKey });
+  return olaMapsClient;
+}
 
 const SOURCE_ID = "properties";
 
@@ -142,6 +176,14 @@ export default function PropertyMap({
   const mapRef = useRef<MapLibreMap | null>(null);
   const popupRef = useRef<Popup | null>(null);
   const userMarkerRef = useRef<Marker | null>(null);
+  // Shared across a React Strict Mode dev double-invoke of the init effect
+  // below (mount -> cleanup -> mount, synchronously, before olaMaps.init()'s
+  // promise can resolve) — see that effect's own comment for why a second,
+  // independent init() call on the same container was observed (via
+  // browser testing) to abort both instances' style/tile requests, leaving
+  // the map permanently blank in dev.
+  const initPromiseRef = useRef<Promise<MapLibreMap> | null>(null);
+  const initTokenRef = useRef(0);
   const [isLoaded, setIsLoaded] = useState(false);
   // MapLibre requires WebGL2 and throws (synchronously from the constructor,
   // or asynchronously via an "error" event) when it's unavailable —
@@ -165,42 +207,99 @@ export default function PropertyMap({
   });
 
   // Initialize the map once. Layers/sources are added on "load", not here —
-  // MapLibre requires the style to be ready first.
+  // MapLibre requires the style to be ready first. olaMaps.init() is async
+  // (it dynamically loads the bundled MapLibre GL + Ola style internally),
+  // unlike plain `new MapLibreMap(...)`.
+  //
+  // Strict Mode note: dev double-invokes this effect (mount -> cleanup ->
+  // mount) synchronously, before the init() promise can resolve. Starting a
+  // second, independent olaMaps.init() call against the same container in
+  // that window was confirmed (by testing, not guessed) to abort BOTH
+  // instances' in-flight style/tile requests, leaving the map permanently
+  // blank. Fix: every effect invocation shares one init() call
+  // (initPromiseRef) instead of starting its own, and a token
+  // (initTokenRef) identifies which invocation is the survivor — the
+  // throwaway one's callback sees a stale token and leaves the (shared,
+  // single) map instance alone rather than tearing it down out from under
+  // the invocation that's actually going to use it.
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
+    let cancelled = false;
+    const myToken = ++initTokenRef.current;
+    const isCurrent = () => !cancelled && initTokenRef.current === myToken;
+
     if (!isWebGL2Supported()) {
-      queueMicrotask(() => setHasError(true));
+      // Deferred and token-guarded, not a bare setHasError(true): a Strict
+      // Mode throwaway invocation's WebGL probe failing (observed via
+      // testing — a fresh <canvas> context request can transiently fail on
+      // the very first of two rapid-fire probes) must not stick and mask a
+      // later invocation that goes on to actually succeed. hasError is only
+      // ever meant to reflect the CURRENT (surviving) invocation's outcome.
+      queueMicrotask(() => {
+        if (isCurrent()) setHasError(true);
+      });
       return;
     }
 
-    let map: MapLibreMap;
-    try {
-      map = new MapLibreMap({
+    if (!initPromiseRef.current) {
+      initPromiseRef.current = getOlaMapsClient().init({
         container: containerRef.current,
-        style: OSM_STYLE,
+        style: OLA_STYLE_URL,
         center: [center.lng, center.lat],
         zoom,
+        ...OLA_MAP_VIEW_DEFAULTS,
         attributionControl: { compact: true },
-      });
-    } catch {
-      queueMicrotask(() => setHasError(true));
-      return;
+      }) as Promise<MapLibreMap>;
     }
-    map.addControl(new NavigationControl({ showCompass: false }), "top-right");
-    mapRef.current = map;
 
-    // Some failures (e.g. WebGL context creation failing after construction
-    // succeeds) surface as an "error" event instead of a thrown exception.
-    map.on("error", () => setHasError(true));
+    initPromiseRef.current
+      .then((map) => {
+        if (!isCurrent()) return;
+        const olaMaps = getOlaMapsClient();
 
-    map.on("load", () => {
-      try {
-        setUpMapLayers(map);
-      } catch {
-        setHasError(true);
-      }
-    });
+        map.addControl(olaMaps.addNavigationControls({ showCompass: false }) as NavigationControl, "top-right");
+        mapRef.current = map;
+
+        // Deliberately NOT wired to hasError: MapLibre fires "error" for
+        // routine, non-fatal request failures (a sprite icon 404, a tile
+        // request aborted mid-pan, a flaky network blip) constantly, even
+        // while the style goes on to load and render successfully — this
+        // is normal for any tile-based map, not a sign the map is broken.
+        // Confirmed via browser testing: wiring this to hasError, even
+        // gated on "before style loaded", made the map permanently show
+        // "unavailable" over an early transient error despite the style
+        // finishing its load moments later. WebGL2 support (checked above,
+        // before ever constructing a map) and the init() promise rejecting
+        // (below) are the only conditions treated as actually fatal.
+
+        map.on("load", () => {
+          try {
+            setUpMapLayers(map);
+          } catch {
+            setHasError(true);
+          }
+        });
+        // A style already finished loading by the time init() resolved never
+        // fires another "load" event — the effect above would then wait
+        // forever. isStyleLoaded() covers exactly that race.
+        if (map.isStyleLoaded()) {
+          try {
+            setUpMapLayers(map);
+          } catch {
+            setHasError(true);
+          }
+        }
+
+        map.on("moveend", () => {
+          if (!onMoveEndRef.current) return;
+          const c = map.getCenter();
+          onMoveEndRef.current({ center: { lat: c.lat, lng: c.lng }, zoom: map.getZoom() });
+        });
+      })
+      .catch(() => {
+        if (isCurrent()) setHasError(true);
+      });
 
     function setUpMapLayers(map: MapLibreMap) {
       map.addSource(SOURCE_ID, {
@@ -275,7 +374,8 @@ export default function PropertyMap({
         onSelectPropertyRef.current(slug);
 
         popupRef.current?.remove();
-        popupRef.current = new Popup({ closeButton: true, offset: 12 })
+        popupRef.current = getOlaMapsClient().addPopup({ closeButton: true, offset: 12 }) as Popup;
+        popupRef.current
           .setLngLat(feature.geometry.coordinates as [number, number])
           .setDOMContent(buildPopupNode(name, area, city, rent, slug))
           .addTo(map);
@@ -297,17 +397,21 @@ export default function PropertyMap({
       setIsLoaded(true);
     }
 
-    map.on("moveend", () => {
-      if (!onMoveEndRef.current) return;
-      const c = map.getCenter();
-      onMoveEndRef.current({ center: { lat: c.lat, lng: c.lng }, zoom: map.getZoom() });
-    });
-
     return () => {
-      popupRef.current?.remove();
-      userMarkerRef.current?.remove();
-      map.remove();
-      mapRef.current = null;
+      cancelled = true;
+      // Only a genuine final teardown (setup had actually finished and
+      // mapRef.current holds the shared instance) removes anything — a
+      // Strict Mode throwaway cleanup runs before init() resolves, when
+      // mapRef.current is still null, and must leave the in-flight
+      // initPromiseRef alone so the very next (surviving) invocation
+      // attaches to the same call instead of starting a second one.
+      if (mapRef.current) {
+        popupRef.current?.remove();
+        userMarkerRef.current?.remove();
+        mapRef.current.remove();
+        mapRef.current = null;
+        initPromiseRef.current = null;
+      }
     };
     // Initialize once; center/zoom/properties changes are handled by the
     // effects below via imperative map calls, not by re-running this setup.
@@ -348,7 +452,8 @@ export default function PropertyMap({
     if (!property?.coordinates) return;
 
     popupRef.current?.remove();
-    popupRef.current = new Popup({ closeButton: true, offset: 12 })
+    popupRef.current = getOlaMapsClient().addPopup({ closeButton: true, offset: 12 }) as Popup;
+    popupRef.current
       .setLngLat([property.coordinates.lng, property.coordinates.lat])
       .setDOMContent(buildPopupNode(property.name, property.area, property.city, property.askingRent, property.slug))
       .addTo(mapRef.current);
@@ -376,9 +481,8 @@ export default function PropertyMap({
       <span class="relative inline-flex h-3.5 w-3.5 rounded-full border-2 border-white bg-blue-600 shadow-[0_1px_4px_rgba(15,23,42,0.45)]"></span>
     `;
 
-    userMarkerRef.current = new Marker({ element: el })
-      .setLngLat([userLocation.lng, userLocation.lat])
-      .addTo(mapRef.current);
+    userMarkerRef.current = getOlaMapsClient().addMarker({ element: el }) as Marker;
+    userMarkerRef.current.setLngLat([userLocation.lng, userLocation.lat]).addTo(mapRef.current);
   }, [userLocation, isLoaded]);
 
   const hasVisibleMarkers = properties.some((property) => property.coordinates !== null);

@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Analytics } from "@vercel/analytics/next";
 import { Geist, Geist_Mono } from "next/font/google";
 import AccountMenu from "@/components/shared/AccountMenu";
 import ChatWidget from "@/components/shared/ChatWidget";
+import Footer from "@/components/shared/Footer";
 import Logo from "@/components/shared/Logo";
 import { createClient } from "@/lib/supabase/server";
 import { isAdminUser } from "@/lib/admin";
@@ -160,7 +162,12 @@ export default async function RootLayout({
           </div>
         </header>
         {children}
+        <Footer />
         <ChatWidget isSignedIn={Boolean(user)} />
+        {/* No-ops when not actually running on Vercel's infrastructure, so
+            this is safe regardless of final host — free, no PII, aggregate
+            page-view counts only. */}
+        <Analytics />
       </body>
     </html>
   );

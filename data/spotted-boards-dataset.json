@@ -1,0 +1,557 @@
+{
+  "generatedAt": "2026-08-20T02:58:53.707Z",
+  "boardCount": 24,
+  "maps": {
+    "all": {
+      "centerLat": 12.944372,
+      "centerLon": 77.6696255,
+      "zoom": 11,
+      "width": 900,
+      "height": 900,
+      "fileName": "map-all.png",
+      "boardCount": 42
+    },
+    "koramangala": {
+      "centerLat": 12.924019000000001,
+      "centerLon": 77.6251965,
+      "zoom": 14,
+      "width": 800,
+      "height": 800,
+      "fileName": "map-koramangala.png",
+      "boardCount": 27
+    },
+    "indiranagar": {
+      "centerLat": 12.9711675,
+      "centerLon": 77.6511145,
+      "zoom": 14,
+      "width": 800,
+      "height": 800,
+      "fileName": "map-indiranagar.png",
+      "boardCount": 10
+    },
+    "whitefield": {
+      "centerLat": 12.988111,
+      "centerLon": 77.720335,
+      "zoom": 14,
+      "width": 800,
+      "height": 800,
+      "fileName": "map-whitefield.png",
+      "boardCount": 3
+    },
+    "other": {
+      "centerLat": 12.939421,
+      "centerLon": 77.644844,
+      "zoom": 12,
+      "width": 800,
+      "height": 800,
+      "fileName": "map-other.png",
+      "boardCount": 2
+    }
+  },
+  "boards": [
+    {
+      "id": "loc-12-9206-77-6057",
+      "key": "loc:12.9206,77.6057",
+      "phone": null,
+      "bhk": null,
+      "rent": null,
+      "propertyName": null,
+      "latitude": 12.920638,
+      "longitude": 77.60571,
+      "imagePath": "/spotted-boards-preview/loc-12-9206-77-6057.jpg",
+      "score": 80,
+      "ocrConfidence": 60.26349067687988,
+      "observationCount": 1,
+      "sources": [
+        "bfs_cluster"
+      ],
+      "cluster": "koramangala",
+      "locality": "Btm Layout",
+      "localityKey": "koramangala/btm-layout",
+      "firstSeenAt": "2026-08-19T17:32:50.571Z"
+    },
+    {
+      "id": "loc-12-9247-77-6142",
+      "key": "loc:12.9247,77.6142",
+      "phone": null,
+      "bhk": "2",
+      "rent": null,
+      "propertyName": null,
+      "latitude": 12.924715,
+      "longitude": 77.614215,
+      "imagePath": "/spotted-boards-preview/loc-12-9247-77-6142.jpg",
+      "score": 55,
+      "ocrConfidence": 62.41861581802368,
+      "observationCount": 1,
+      "sources": [
+        "bfs_cluster"
+      ],
+      "cluster": "koramangala",
+      "locality": "Madiwala",
+      "localityKey": "koramangala/madiwala",
+      "firstSeenAt": "2026-08-19T17:32:50.581Z"
+    },
+    {
+      "id": "loc-12-9301-77-6071",
+      "key": "loc:12.9301,77.6071",
+      "phone": null,
+      "bhk": "1",
+      "rent": null,
+      "propertyName": "Venkatram Enclave",
+      "latitude": 12.930078,
+      "longitude": 77.607111,
+      "imagePath": "/spotted-boards-preview/loc-12-9301-77-6071.jpg",
+      "score": 55,
+      "ocrConfidence": 89.71970677375793,
+      "observationCount": 1,
+      "sources": [
+        "bfs_cluster"
+      ],
+      "cluster": "koramangala",
+      "locality": "Sg Palya",
+      "localityKey": "koramangala/sg-palya",
+      "firstSeenAt": "2026-08-19T17:32:50.583Z"
+    },
+    {
+      "id": "loc-12-9304-77-6067",
+      "key": "loc:12.9304,77.6067",
+      "phone": null,
+      "bhk": "3",
+      "rent": null,
+      "propertyName": null,
+      "latitude": 12.93036,
+      "longitude": 77.60668,
+      "imagePath": "/spotted-boards-preview/loc-12-9304-77-6067.jpg",
+      "score": 55,
+      "ocrConfidence": 60.8395516872406,
+      "observationCount": 1,
+      "sources": [
+        "bfs_cluster"
+      ],
+      "cluster": "koramangala",
+      "locality": "Sg Palya",
+      "localityKey": "koramangala/sg-palya",
+      "firstSeenAt": "2026-08-19T17:32:50.583Z"
+    },
+    {
+      "id": "loc-12-9299-77-6068",
+      "key": "loc:12.9299,77.6068",
+      "phone": null,
+      "bhk": "1",
+      "rent": null,
+      "propertyName": null,
+      "latitude": 12.92986,
+      "longitude": 77.606773,
+      "imagePath": "/spotted-boards-preview/loc-12-9299-77-6068.jpg",
+      "score": 55,
+      "ocrConfidence": 97.7998435497284,
+      "observationCount": 1,
+      "sources": [
+        "bfs_cluster"
+      ],
+      "cluster": "koramangala",
+      "locality": "Sg Palya",
+      "localityKey": "koramangala/sg-palya",
+      "firstSeenAt": "2026-08-19T17:32:50.583Z"
+    },
+    {
+      "id": "loc-12-988-77-7335",
+      "key": "loc:12.988,77.7335",
+      "phone": null,
+      "bhk": "3",
+      "rent": null,
+      "propertyName": null,
+      "latitude": 12.987977,
+      "longitude": 77.733541,
+      "imagePath": "/spotted-boards-preview/loc-12-988-77-7335.jpg",
+      "score": 55,
+      "ocrConfidence": 93.93259882926941,
+      "observationCount": 2,
+      "sources": [
+        "bfs_cluster"
+      ],
+      "cluster": "whitefield",
+      "locality": "Itpl",
+      "localityKey": "whitefield/itpl",
+      "firstSeenAt": "2026-08-19T17:32:50.593Z"
+    },
+    {
+      "id": "loc-12-9623-77-6356",
+      "key": "loc:12.9623,77.6356",
+      "phone": null,
+      "bhk": null,
+      "rent": null,
+      "propertyName": null,
+      "latitude": 12.962293,
+      "longitude": 77.635639,
+      "imagePath": "/spotted-boards-preview/loc-12-9623-77-6356.jpg",
+      "score": 40,
+      "ocrConfidence": 61.19484305381775,
+      "observationCount": 1,
+      "sources": [
+        "bfs_cluster"
+      ],
+      "cluster": "indiranagar",
+      "locality": "Domlur",
+      "localityKey": "indiranagar/domlur",
+      "firstSeenAt": "2026-08-19T17:32:50.558Z"
+    },
+    {
+      "id": "loc-12-9659-77-6377",
+      "key": "loc:12.9659,77.6377",
+      "phone": null,
+      "bhk": null,
+      "rent": null,
+      "propertyName": null,
+      "latitude": 12.965915,
+      "longitude": 77.637699,
+      "imagePath": "/spotted-boards-preview/loc-12-9659-77-6377.jpg",
+      "score": 40,
+      "ocrConfidence": 55.933499336242676,
+      "observationCount": 1,
+      "sources": [
+        "bfs_cluster"
+      ],
+      "cluster": "indiranagar",
+      "locality": "Domlur",
+      "localityKey": "indiranagar/domlur",
+      "firstSeenAt": "2026-08-19T17:32:50.558Z"
+    },
+    {
+      "id": "loc-12-9582-77-6553",
+      "key": "loc:12.9582,77.6553",
+      "phone": null,
+      "bhk": null,
+      "rent": null,
+      "propertyName": null,
+      "latitude": 12.958184,
+      "longitude": 77.655273,
+      "imagePath": "/spotted-boards-preview/loc-12-9582-77-6553.jpg",
+      "score": 40,
+      "ocrConfidence": 95.22306323051453,
+      "observationCount": 1,
+      "sources": [
+        "bfs_cluster"
+      ],
+      "cluster": "indiranagar",
+      "locality": "Jeevan Bima Nagar",
+      "localityKey": "indiranagar/jeevan-bima-nagar",
+      "firstSeenAt": "2026-08-19T17:32:50.562Z"
+    },
+    {
+      "id": "loc-12-9137-77-638",
+      "key": "loc:12.9137,77.638",
+      "phone": null,
+      "bhk": null,
+      "rent": null,
+      "propertyName": null,
+      "latitude": 12.913743,
+      "longitude": 77.638014,
+      "imagePath": "/spotted-boards-preview/loc-12-9137-77-638.jpg",
+      "score": 40,
+      "ocrConfidence": 58.705878257751465,
+      "observationCount": 1,
+      "sources": [
+        "bfs_cluster"
+      ],
+      "cluster": "koramangala",
+      "locality": "Hsr Layout",
+      "localityKey": "koramangala/hsr-layout",
+      "firstSeenAt": "2026-08-19T17:32:50.575Z"
+    },
+    {
+      "id": "loc-12-9333-77-6151",
+      "key": "loc:12.9333,77.6151",
+      "phone": null,
+      "bhk": null,
+      "rent": null,
+      "propertyName": null,
+      "latitude": 12.933294,
+      "longitude": 77.615123,
+      "imagePath": "/spotted-boards-preview/loc-12-9333-77-6151.jpg",
+      "score": 40,
+      "ocrConfidence": 63.468849658966064,
+      "observationCount": 1,
+      "sources": [
+        "bfs_cluster"
+      ],
+      "cluster": "koramangala",
+      "locality": "Jakkasandra",
+      "localityKey": "koramangala/jakkasandra",
+      "firstSeenAt": "2026-08-19T17:32:50.577Z"
+    },
+    {
+      "id": "loc-12-9402-77-6296",
+      "key": "loc:12.9402,77.6296",
+      "phone": null,
+      "bhk": null,
+      "rent": null,
+      "propertyName": null,
+      "latitude": 12.94017,
+      "longitude": 77.629576,
+      "imagePath": "/spotted-boards-preview/loc-12-9402-77-6296.jpg",
+      "score": 40,
+      "ocrConfidence": 95.79858183860779,
+      "observationCount": 1,
+      "sources": [
+        "bfs_cluster"
+      ],
+      "cluster": "koramangala",
+      "locality": "Koramangala",
+      "localityKey": "koramangala/koramangala",
+      "firstSeenAt": "2026-08-19T17:32:50.579Z"
+    },
+    {
+      "id": "loc-12-9219-77-6083",
+      "key": "loc:12.9219,77.6083",
+      "phone": null,
+      "bhk": null,
+      "rent": null,
+      "propertyName": null,
+      "latitude": 12.921859,
+      "longitude": 77.608276,
+      "imagePath": "/spotted-boards-preview/loc-12-9219-77-6083.jpg",
+      "score": 40,
+      "ocrConfidence": 99.99220967292786,
+      "observationCount": 1,
+      "sources": [
+        "bfs_cluster"
+      ],
+      "cluster": "koramangala",
+      "locality": "Madiwala",
+      "localityKey": "koramangala/madiwala",
+      "firstSeenAt": "2026-08-19T17:32:50.581Z"
+    },
+    {
+      "id": "loc-12-9881-77-7071",
+      "key": "loc:12.9881,77.7071",
+      "phone": null,
+      "bhk": "3",
+      "rent": null,
+      "propertyName": null,
+      "latitude": 12.988051,
+      "longitude": 77.707129,
+      "imagePath": "/spotted-boards-preview/loc-12-9881-77-7071.jpg",
+      "score": 40,
+      "ocrConfidence": 61.71543002128601,
+      "observationCount": 1,
+      "sources": [
+        "bfs_cluster"
+      ],
+      "cluster": "whitefield",
+      "locality": "Hoodi",
+      "localityKey": "whitefield/hoodi",
+      "firstSeenAt": "2026-08-19T17:32:50.590Z"
+    },
+    {
+      "id": "loc-12-9851-77-6666",
+      "key": "loc:12.9851,77.6666",
+      "phone": null,
+      "bhk": null,
+      "rent": null,
+      "propertyName": null,
+      "latitude": 12.985144,
+      "longitude": 77.66659,
+      "imagePath": "/spotted-boards-preview/loc-12-9851-77-6666.jpg",
+      "score": 40,
+      "ocrConfidence": 62.619566917419434,
+      "observationCount": 1,
+      "sources": [
+        "bfs_cluster"
+      ],
+      "cluster": "indiranagar",
+      "locality": "Cv Raman Nagar",
+      "localityKey": "indiranagar/cv-raman-nagar",
+      "firstSeenAt": "2026-08-19T18:07:16.955Z"
+    },
+    {
+      "id": "loc-12-9856-77-6638",
+      "key": "loc:12.9856,77.6638",
+      "phone": null,
+      "bhk": null,
+      "rent": null,
+      "propertyName": null,
+      "latitude": 12.985585,
+      "longitude": 77.66384,
+      "imagePath": "/spotted-boards-preview/loc-12-9856-77-6638.jpg",
+      "score": 40,
+      "ocrConfidence": 58.65738391876221,
+      "observationCount": 1,
+      "sources": [
+        "bfs_cluster"
+      ],
+      "cluster": "indiranagar",
+      "locality": "Cv Raman Nagar",
+      "localityKey": "indiranagar/cv-raman-nagar",
+      "firstSeenAt": "2026-08-19T18:07:16.955Z"
+    },
+    {
+      "id": "loc-12-9567-77-6549",
+      "key": "loc:12.9567,77.6549",
+      "phone": null,
+      "bhk": null,
+      "rent": null,
+      "propertyName": null,
+      "latitude": 12.95675,
+      "longitude": 77.654916,
+      "imagePath": "/spotted-boards-preview/loc-12-9567-77-6549.jpg",
+      "score": 35,
+      "ocrConfidence": 72.37623333930969,
+      "observationCount": 1,
+      "sources": [
+        "bfs_cluster"
+      ],
+      "cluster": "indiranagar",
+      "locality": "Jeevan Bima Nagar",
+      "localityKey": "indiranagar/jeevan-bima-nagar",
+      "firstSeenAt": "2026-08-19T17:32:50.562Z"
+    },
+    {
+      "id": "loc-12-9634-77-6417",
+      "key": "loc:12.9634,77.6417",
+      "phone": null,
+      "bhk": null,
+      "rent": null,
+      "propertyName": null,
+      "latitude": 12.963363,
+      "longitude": 77.641675,
+      "imagePath": "/spotted-boards-preview/loc-12-9634-77-6417.jpg",
+      "score": 25,
+      "ocrConfidence": 51.69752240180969,
+      "observationCount": 1,
+      "sources": [
+        "bfs_cluster"
+      ],
+      "cluster": "indiranagar",
+      "locality": "Domlur",
+      "localityKey": "indiranagar/domlur",
+      "firstSeenAt": "2026-08-19T17:32:50.558Z"
+    },
+    {
+      "id": "loc-12-9352-77-6243",
+      "key": "loc:12.9352,77.6243",
+      "phone": null,
+      "bhk": null,
+      "rent": null,
+      "propertyName": null,
+      "latitude": 12.935185,
+      "longitude": 77.624311,
+      "imagePath": "/spotted-boards-preview/loc-12-9352-77-6243.jpg",
+      "score": 25,
+      "ocrConfidence": 57.317423820495605,
+      "observationCount": 1,
+      "sources": [
+        "bfs_cluster"
+      ],
+      "cluster": "koramangala",
+      "locality": "Ejipura",
+      "localityKey": "koramangala/ejipura",
+      "firstSeenAt": "2026-08-19T17:32:50.573Z"
+    },
+    {
+      "id": "loc-12-9377-77-6241",
+      "key": "loc:12.9377,77.6241",
+      "phone": null,
+      "bhk": null,
+      "rent": null,
+      "propertyName": null,
+      "latitude": 12.937653,
+      "longitude": 77.624113,
+      "imagePath": "/spotted-boards-preview/loc-12-9377-77-6241.jpg",
+      "score": 25,
+      "ocrConfidence": 64.5675539970398,
+      "observationCount": 1,
+      "sources": [
+        "bfs_cluster"
+      ],
+      "cluster": "koramangala",
+      "locality": "Ejipura",
+      "localityKey": "koramangala/ejipura",
+      "firstSeenAt": "2026-08-19T17:32:50.573Z"
+    },
+    {
+      "id": "loc-12-9348-77-6132",
+      "key": "loc:12.9348,77.6132",
+      "phone": null,
+      "bhk": null,
+      "rent": null,
+      "propertyName": null,
+      "latitude": 12.934764,
+      "longitude": 77.613192,
+      "imagePath": "/spotted-boards-preview/loc-12-9348-77-6132.jpg",
+      "score": 25,
+      "ocrConfidence": 50.808483362197876,
+      "observationCount": 1,
+      "sources": [
+        "bfs_cluster"
+      ],
+      "cluster": "koramangala",
+      "locality": "Jakkasandra",
+      "localityKey": "koramangala/jakkasandra",
+      "firstSeenAt": "2026-08-19T17:32:50.577Z"
+    },
+    {
+      "id": "loc-12-9322-77-6135",
+      "key": "loc:12.9322,77.6135",
+      "phone": null,
+      "bhk": "5",
+      "rent": null,
+      "propertyName": null,
+      "latitude": 12.932243,
+      "longitude": 77.61347,
+      "imagePath": "/spotted-boards-preview/loc-12-9322-77-6135.jpg",
+      "score": 15,
+      "ocrConfidence": 73.82394671440125,
+      "observationCount": 1,
+      "sources": [
+        "bfs_cluster"
+      ],
+      "cluster": "koramangala",
+      "locality": "Jakkasandra",
+      "localityKey": "koramangala/jakkasandra",
+      "firstSeenAt": "2026-08-19T17:32:50.577Z"
+    },
+    {
+      "id": "loc-12-9252-77-6117",
+      "key": "loc:12.9252,77.6117",
+      "phone": null,
+      "bhk": "2",
+      "rent": null,
+      "propertyName": null,
+      "latitude": 12.925229,
+      "longitude": 77.611738,
+      "imagePath": "/spotted-boards-preview/loc-12-9252-77-6117.jpg",
+      "score": 15,
+      "ocrConfidence": 73.92040491104126,
+      "observationCount": 1,
+      "sources": [
+        "bfs_cluster"
+      ],
+      "cluster": "koramangala",
+      "locality": "Sg Palya",
+      "localityKey": "koramangala/sg-palya",
+      "firstSeenAt": "2026-08-19T17:32:50.583Z"
+    },
+    {
+      "id": "loc-12-9882-77-7316",
+      "key": "loc:12.9882,77.7316",
+      "phone": null,
+      "bhk": "3",
+      "rent": null,
+      "propertyName": null,
+      "latitude": 12.988245,
+      "longitude": 77.731641,
+      "imagePath": "/spotted-boards-preview/loc-12-9882-77-7316.jpg",
+      "score": 15,
+      "ocrConfidence": 87.70323395729065,
+      "observationCount": 1,
+      "sources": [
+        "bfs_cluster"
+      ],
+      "cluster": "whitefield",
+      "locality": "Itpl",
+      "localityKey": "whitefield/itpl",
+      "firstSeenAt": "2026-08-19T17:32:50.593Z"
+    }
+  ]
+}

@@ -157,9 +157,26 @@ function createSlug(name: string) {
   return `${baseSlug || "property"}-${crypto.randomUUID().slice(0, 8)}`;
 }
 
+// Basic bot deterrents for the one form that publishes public content
+// instantly with no moderation gate (migration 16). Neither is a strong
+// defense against a determined attacker, but both are free, need no
+// external service, and stop the unsophisticated-bot case that a
+// zero-cost launch is actually exposed to.
+const MAX_PROPERTIES_PER_DAY = 5;
+
 export async function createProperty(
   formData: FormData,
 ): Promise<CreatePropertyResult> {
+  // Honeypot: a field named to look plausible to a bot's form-filler, hidden
+  // from real users via CSS in PropertyForm.tsx (never via type="hidden",
+  // which some bots specifically skip). A human never sees or fills it; a
+  // bot that fills every field it finds does. Rejected with the same
+  // generic error a real validation failure would show, so this isn't
+  // detectable as a honeypot from the response alone.
+  if (getTextValue(formData, "website")) {
+    return { error: "Unable to submit your property. Please try again." };
+  }
+
   const name = getTextValue(formData, "name");
   const addressLine1 = getTextValue(formData, "addressLine1");
   const area = getTextValue(formData, "area");
@@ -231,6 +248,23 @@ export async function createProperty(
 
   if (!user) {
     return { error: authFailure };
+  }
+
+  // Rate limit: no more than MAX_PROPERTIES_PER_DAY per user in a rolling
+  // 24h window. A `head: true` count query, so this costs no row data, only
+  // a number. Generous enough for a legitimate contributor adding several
+  // properties in one sitting, tight enough to blunt a scripted flood.
+  const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const { count: recentPropertyCount } = await supabase
+    .from("properties")
+    .select("id", { count: "exact", head: true })
+    .eq("created_by", user.id)
+    .gte("created_at", oneDayAgo);
+
+  if ((recentPropertyCount ?? 0) >= MAX_PROPERTIES_PER_DAY) {
+    return {
+      error: `You've added ${MAX_PROPERTIES_PER_DAY} properties in the last 24 hours. Please try again tomorrow.`,
+    };
   }
 
   const slug = createSlug(name);

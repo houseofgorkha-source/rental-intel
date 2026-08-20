@@ -2,12 +2,24 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const rpc = vi.fn();
 const getUser = vi.fn();
+// Backs the rate-limit count query in createReview — a chainable
+// select().eq().gte() resolving to { count, error }, mirroring the shape
+// Supabase's real query builder returns when awaited directly.
+let recentReviewCount = 0;
+const from = vi.fn(() => ({
+  select: () => ({
+    eq: () => ({
+      gte: () => Promise.resolve({ count: recentReviewCount, error: null }),
+    }),
+  }),
+}));
 
 vi.mock("@/lib/supabase/server", () => ({
   createClient: () =>
     Promise.resolve({
       auth: { getUser },
       rpc,
+      from,
     }),
 }));
 
@@ -41,6 +53,7 @@ beforeEach(() => {
   rpc.mockReset();
   getUser.mockReset();
   getUser.mockResolvedValue({ data: { user: { id: "user-1" } }, error: null });
+  recentReviewCount = 0;
 });
 
 describe("createReview", () => {
@@ -139,6 +152,17 @@ describe("createReview", () => {
     expect(result).toEqual({
       error: "Unable to publish your review. Please try again.",
     });
+  });
+
+  it("rejects with a rate-limit message and skips the RPC after 10 reviews in 24h", async () => {
+    recentReviewCount = 10;
+
+    const result = await createReview(baseInput);
+
+    expect(result).toEqual({
+      error: "You've published 10 reviews in the last 24 hours. Please try again tomorrow.",
+    });
+    expect(rpc).not.toHaveBeenCalled();
   });
 });
 
